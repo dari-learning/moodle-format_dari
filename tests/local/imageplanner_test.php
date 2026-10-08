@@ -50,7 +50,9 @@ final class imageplanner_test extends \advanced_testcase {
         ]);
         $this->assertStringStartsWith(imageplanner::COURSE_OPENING, $request);
         $this->assertStringContainsString(
-            '- [section:11] SECTION card: "AUD – Auditing & Attestation" | activities: CPA Practice Exam', $request);
+            '- [section:11] SECTION card: "AUD – Auditing & Attestation" | activities: CPA Practice Exam',
+            $request
+        );
         $this->assertStringContainsString('- [section:12] SECTION card: section 2 (no descriptive title', $request);
         $this->assertStringContainsString('description: Leases and revenue recognition.', $request);
         $this->assertStringContainsString('"env_category": "one of: office,', $request);
@@ -72,8 +74,15 @@ final class imageplanner_test extends \advanced_testcase {
             'content' => 'Read these rules before you start the timed practice exam.',
             'purpose' => activitypurpose::INSTRUCTIONS, 'purposebasis' => 'title'];
         $section = ['concept' => 'An auditor tracing an invoice to a ledger entry', 'environment' => 'an audit room'];
-        $request = imageplanner::item_request(self::FACTS, [], 'cm:5', $facts, ['section:11' => $section],
-            'Old concept to drop', 'A checklist on a clipboard next to a stopwatch');
+        $request = imageplanner::item_request(
+            self::FACTS,
+            [],
+            'cm:5',
+            $facts,
+            ['section:11' => $section],
+            'Old concept to drop',
+            'A checklist on a clipboard next to a stopwatch'
+        );
         $this->assertStringStartsWith(imageplanner::ITEM_OPENING, $request);
         $this->assertStringContainsString('ACTIVITY card: Page "CPA Practice Exam Instructions" in section '
             . '"AUD – Auditing & Attestation" | purpose: instructions (judged from its title)', $request);
@@ -113,8 +122,14 @@ final class imageplanner_test extends \advanced_testcase {
         $concepts = ['A clerk stamps invoices', 'Hands sort receipts into trays', 'A partner signs the opinion letter',
             'An analyst compares two spreadsheets', 'A manager reads a variance report', 'Inventory pallets counted outside'];
         foreach (range(0, 5) as $n) {
-            $offices['k' . $n] = $item($n === 5 ? 'outdoor' : 'office', $comps[$n], $people[$n % 5], 'daylight',
-                'object' . $n, $concepts[$n]);
+            $offices['k' . $n] = $item(
+                $n === 5 ? 'outdoor' : 'office',
+                $comps[$n],
+                $people[$n % 5],
+                'daylight',
+                'object' . $n,
+                $concepts[$n]
+            );
         }
         $issues = imageplanner::diversity_issues($offices);
         $this->assertSame(['k3', 'k4'], array_keys($issues));
@@ -168,10 +183,15 @@ final class imageplanner_test extends \advanced_testcase {
         $replanned = imageplanner::plan_for($course, $brief, $context, (int) $teacher->id);
         $this->assertTrue($replanned['planned']);
         $this->assertCount(2, $this->aiactions, 'The changed section is planned on its own');
-        $this->assertStringStartsWith(imageplanner::ITEM_OPENING,
-            (string) $this->aiactions[1]->get_configuration('prompttext'));
-        $this->assertSame($other->plan, imageplanner::get_row((int) $course->id, $other->itemkey)->plan,
-            'The other section is untouched');
+        $this->assertStringStartsWith(
+            imageplanner::ITEM_OPENING,
+            (string) $this->aiactions[1]->get_configuration('prompttext')
+        );
+        $this->assertSame(
+            $other->plan,
+            imageplanner::get_row((int) $course->id, $other->itemkey)->plan,
+            'The other section is untouched'
+        );
     }
 
     /**
@@ -249,15 +269,23 @@ final class imageplanner_test extends \advanced_testcase {
         $this->assertNotSame($first['entry']['concept'], $new['entry']['concept']);
 
         $teacherbrief = cardprompt::compose($course, cardimage::TYPE_SECTION, $section, 'A sharpening steel on a board')['brief'];
-        imageplanner::plan_for($course, $teacherbrief, $context, (int) $teacher->id, imageplanner::MODE_AUTO,
-            'A sharpening steel on a board');
+        imageplanner::plan_for(
+            $course,
+            $teacherbrief,
+            $context,
+            (int) $teacher->id,
+            imageplanner::MODE_AUTO,
+            'A sharpening steel on a board'
+        );
         $this->assertCount(3, $this->aiactions);
         $this->assertStringContainsString('THE TEACHER ASKS FOR (highest priority', $this->last_prompt());
         $this->assertStringContainsString('A sharpening steel on a board', $this->last_prompt());
         $row = imageplanner::get_row((int) $course->id, 'section:' . $section->id);
         $this->assertSame(sha1('A sharpening steel on a board'), $row->teacherhash);
-        $this->assertSame('A sharpening steel on a board', imageplanner::teacher_text((int) $course->id,
-            'section:' . $section->id));
+        $this->assertSame('A sharpening steel on a board', imageplanner::teacher_text(
+            (int) $course->id,
+            'section:' . $section->id
+        ));
 
         // A later request without a description keeps it (no new request); Retry keeps it too.
         $kept = imageplanner::plan_for($course, $brief, $context, (int) $teacher->id);

@@ -108,8 +108,15 @@ class imageplanner {
      * @param bool $replace True when $teacher replaces the stored description even if empty.
      * @return array{course: array, entry: array, row: \stdClass, planned: bool, teacher: string}
      */
-    public static function plan_for(\stdClass $course, array $brief, \context $context, int $userid,
-            string $mode = self::MODE_AUTO, string $teacher = '', bool $replace = false): array {
+    public static function plan_for(
+        \stdClass $course,
+        array $brief,
+        \context $context,
+        int $userid,
+        string $mode = self::MODE_AUTO,
+        string $teacher = '',
+        bool $replace = false
+    ): array {
         $coursedata = self::course_plan($course, $brief, $context, $userid);
         $key = self::item_key($brief);
         $facts = self::item_facts($course, $key);
@@ -127,8 +134,16 @@ class imageplanner {
         }
         if ($stale || $mode === self::MODE_NEW) {
             $rejected = ($mode === self::MODE_NEW && $entry) ? (string) ($entry['concept'] ?? '') : '';
-            $entry = imagelog::time('item_plan', fn() => self::plan_item($course, $brief, $key, $facts, $context, $userid,
-                $rejected, $teacher), $key);
+            $entry = imagelog::time('item_plan', fn() => self::plan_item(
+                $course,
+                $brief,
+                $key,
+                $facts,
+                $context,
+                $userid,
+                $rejected,
+                $teacher
+            ), $key);
             if ($teacher !== '') {
                 $entry['teacher'] = $teacher;
             }
@@ -173,8 +188,13 @@ class imageplanner {
      * @return array The course-level data: interpretation, colour_treatment.
      * @throws planning_busy_exception When another worker is planning this course.
      */
-    public static function course_plan(\stdClass $course, array $brief, \context $context, int $userid,
-            bool $force = false): array {
+    public static function course_plan(
+        \stdClass $course,
+        array $brief,
+        \context $context,
+        int $userid,
+        bool $force = false
+    ): array {
         $facts = self::course_facts($course, $brief);
         $hash = sha1(self::VERSION . '|' . json_encode($facts));
         $row = self::get_row((int) $course->id, self::COURSE_KEY);
@@ -187,8 +207,13 @@ class imageplanner {
         $factory = \core\lock\lock_config::get_lock_factory('format_dari_imageplan');
         $lock = $factory->get_lock('course' . (int) $course->id, self::LOCK_WAIT);
         if (!$lock) {
-            imagelog::add('course_plan', 'info', 0, 'Another worker is planning this course; will retry.',
-                (int) $course->id);
+            imagelog::add(
+                'course_plan',
+                'info',
+                0,
+                'Another worker is planning this course; will retry.',
+                (int) $course->id
+            );
             throw new planning_busy_exception();
         }
         try {
@@ -213,8 +238,13 @@ class imageplanner {
      * @return array The course-level data.
      * @throws \moodle_exception When the reply is not a usable plan (nothing stored is touched).
      */
-    protected static function plan_course(\stdClass $course, array $facts, string $hash, \context $context,
-            int $userid): array {
+    protected static function plan_course(
+        \stdClass $course,
+        array $facts,
+        string $hash,
+        \context $context,
+        int $userid
+    ): array {
         global $DB;
         $sections = self::sections($course);
         $planned = array_slice($sections, 0, self::MAX_PLAN_SECTIONS, true);
@@ -284,8 +314,16 @@ class imageplanner {
      * @param string $teacher The teacher's own description, or ''.
      * @return array The plan item.
      */
-    public static function plan_item(\stdClass $course, array $brief, string $key, array $facts, \context $context,
-            int $userid, string $rejected = '', string $teacher = ''): array {
+    public static function plan_item(
+        \stdClass $course,
+        array $brief,
+        string $key,
+        array $facts,
+        \context $context,
+        int $userid,
+        string $rejected = '',
+        string $teacher = ''
+    ): array {
         $coursefacts = self::course_facts($course, $brief);
         $courserow = self::get_row((int) $course->id, self::COURSE_KEY);
         $coursedata = $courserow ? (array) json_decode((string) $courserow->plan, true) : [];
@@ -298,13 +336,21 @@ class imageplanner {
 
         $conflict = '';
         for ($attempt = 1; $attempt <= 2; $attempt++) {
-            $reply = ai::generate_text($context, $userid, self::item_request($coursefacts, $coursedata, $key, $facts,
-                $others, $rejected, $teacher, $conflict))['text'];
+            $reply = ai::generate_text($context, $userid, self::item_request(
+                $coursefacts,
+                $coursedata,
+                $key,
+                $facts,
+                $others,
+                $rejected,
+                $teacher,
+                $conflict
+            ))['text'];
             $entry = self::normalise_entry((array) (self::parse_json($reply) ?? []));
             if (!self::valid_entry($entry)) {
                 throw new \moodle_exception('error_imageplan_invalid', 'format_dari');
             }
-            // "New concept" must not come back with the concept the teacher rejected.
+            // A New concept request must not come back with the concept the teacher rejected.
             $repeat = $rejected !== '' && self::overlap((string) $entry['concept'], $rejected) >= 0.6;
             // A teacher's own description is kept even if it repeats another image.
             $similar = $teacher === '' ? self::similar_to($entry, $others) : [];
@@ -317,7 +363,9 @@ class imageplanner {
             $conflict = $repeat
                 ? 'Your first plan repeated the rejected concept. Choose a clearly different concept.'
                 : 'Your first plan was too similar to: ' . implode(' | ', array_map(
-                    fn($k) => self::summary_line($others[$k]), $similar)) . '. Choose a clearly different concept.';
+                    fn($k) => self::summary_line($others[$k]),
+                    $similar
+                )) . '. Choose a clearly different concept.';
             imagelog::add('diversity', 'info', 0, $key . ($repeat ? ' repeated the rejected concept'
                 : ' similar to ' . implode(', ', $similar)), (int) $course->id);
         }
@@ -395,8 +443,12 @@ class imageplanner {
             $title = text::plain((string) $cm->name, $context);
             $summary = cardprompt::excerpt(cardprompt::activity_intro($cm));
             $content = $summary === '' ? activitypurpose::content_text($cm) : '';
-            $purpose = activitypurpose::classify((string) $cm->modname, $title, $summary !== '' ? $summary : $content,
-                activitypurpose::quiz_graded($cm));
+            $purpose = activitypurpose::classify(
+                (string) $cm->modname,
+                $title,
+                $summary !== '' ? $summary : $content,
+                activitypurpose::quiz_graded($cm)
+            );
             return [
                 'kind' => 'activity',
                 'type' => cardprompt::activity_label((string) $cm->modname),
@@ -594,8 +646,16 @@ class imageplanner {
      * @param string $conflict Why the previous attempt was rejected, or ''.
      * @return string
      */
-    public static function item_request(array $facts, array $coursedata, string $key, array $itemfacts, array $others,
-            string $rejected = '', string $teacher = '', string $conflict = ''): string {
+    public static function item_request(
+        array $facts,
+        array $coursedata,
+        string $key,
+        array $itemfacts,
+        array $others,
+        string $rejected = '',
+        string $teacher = '',
+        string $conflict = ''
+    ): string {
         $lines = array_merge(
             [self::ITEM_OPENING, ''],
             self::method_lines($facts['audience'] === 'school students'),
@@ -652,8 +712,14 @@ class imageplanner {
      * @param int $userid The user.
      * @return array Key => revised entry.
      */
-    protected static function revise(array $facts, array $items, array $issues, array $sections, \context $context,
-            int $userid): array {
+    protected static function revise(
+        array $facts,
+        array $items,
+        array $issues,
+        array $sections,
+        \context $context,
+        int $userid
+    ): array {
         $lines = array_merge(
             [self::REVISE_OPENING, ''],
             self::method_lines($facts['audience'] === 'school students'),
@@ -705,8 +771,12 @@ class imageplanner {
         if (self::overlap((string) ($a['object'] ?? ''), (string) ($b['object'] ?? '')) >= 0.5) {
             $score++;
         }
-        if (self::overlap(($a['subject'] ?? '') . ' ' . ($a['action'] ?? ''),
-                ($b['subject'] ?? '') . ' ' . ($b['action'] ?? '')) >= 0.6) {
+        if (
+            self::overlap(
+                ($a['subject'] ?? '') . ' ' . ($a['action'] ?? ''),
+                ($b['subject'] ?? '') . ' ' . ($b['action'] ?? '')
+            ) >= 0.6
+        ) {
             $score++;
         }
         if (self::overlap((string) ($a['concept'] ?? ''), (string) ($b['concept'] ?? '')) >= 0.6) {
@@ -788,8 +858,10 @@ class imageplanner {
         $words = preg_split('~[^\p{L}\p{N}]+~u', \core_text::strtolower($phrase), -1, PREG_SPLIT_NO_EMPTY);
         $stop = ['a', 'an', 'the', 'of', 'in', 'on', 'at', 'with', 'and', 'from', 'to', 'its', 'their', 'his', 'her',
             'by', 'for', 'during', 'into', 'over', 'one', 'two', 'while', 'as', 'is', 'are', 'who', 'that'];
-        return array_values(array_unique(array_filter($words,
-            fn($w) => !in_array($w, $stop, true) && \core_text::strlen($w) > 2)));
+        return array_values(array_unique(array_filter(
+            $words,
+            fn($w) => !in_array($w, $stop, true) && \core_text::strlen($w) > 2
+        )));
     }
 
     /**
@@ -819,8 +891,10 @@ class imageplanner {
         $entry = [];
         foreach (self::TEXT_FIELDS as $field) {
             $value = $item[$field] ?? '';
-            $entry[$field] = self::clean(is_array($value) ? implode(', ', array_map('strval', $value)) : (string) $value,
-                300);
+            $entry[$field] = self::clean(
+                is_array($value) ? implode(', ', array_map('strval', $value)) : (string) $value,
+                300
+            );
         }
         foreach (self::CATEGORIES as $field => $allowed) {
             $value = \core_text::strtolower(trim((string) ($item[$field] ?? '')));
@@ -846,7 +920,7 @@ class imageplanner {
      * @return array|null
      */
     public static function parse_json(string $reply): ?array {
-        $reply = (string) preg_replace('~```[a-z]*~i', '', $reply);
+        $reply = (string) preg_replace('~' . str_repeat(chr(96), 3) . '[a-z]*~i', '', $reply);
         $start = strpos($reply, '{');
         $end = strrpos($reply, '}');
         if ($start === false || $end === false || $end <= $start) {
@@ -904,8 +978,15 @@ class imageplanner {
      * @param \stdClass|null $previous The row being replaced, for its counters.
      * @return \stdClass The stored row.
      */
-    public static function save_row(int $courseid, string $key, string $hash, string $teacherhash, array $plan,
-            ?string $prompt, ?\stdClass $previous): \stdClass {
+    public static function save_row(
+        int $courseid,
+        string $key,
+        string $hash,
+        string $teacherhash,
+        array $plan,
+        ?string $prompt,
+        ?\stdClass $previous
+    ): \stdClass {
         global $DB;
         $record = (object) [
             'courseid' => $courseid,

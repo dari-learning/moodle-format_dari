@@ -137,8 +137,10 @@ final class generate_banner_image_test extends external_testcase {
         $this->assertStringContainsString('minimal, clean lettering; no captions, logos or watermarks', $prompt);
         // The teacher's direction reached the planning request as its top priority, and the prompt
         // writer was told to honour it.
-        $texts = array_map(fn($a) => (string) $a->get_configuration('prompttext'),
-            $this->actions_of(\core_ai\aiactions\generate_text::class));
+        $texts = array_map(
+            fn($a) => (string) $a->get_configuration('prompttext'),
+            $this->actions_of(\core_ai\aiactions\generate_text::class)
+        );
         $plan = array_values(array_filter($texts, fn($t) => str_starts_with($t, \format_dari\local\imageplanner::ITEM_OPENING)));
         $this->assertCount(1, $plan);
         $this->assertStringContainsString('THE TEACHER ASKS FOR (highest priority', $plan[0]);

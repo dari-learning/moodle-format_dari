@@ -1,5 +1,21 @@
 # Release record
 
+## 2.1.1
+
+- Version code: `2026100907`
+
+Changes since 2.1.0:
+
+- **Passes Moodle's strict plugin checks** on Moodle™ 4.4, 4.5, 5.0 and 5.3: coding standards and
+  PHPDoc with no warnings, JavaScript and CSS lint, Mustache templates, upgrade savepoints, PHPUnit
+  and Behat. Brings in the CI corrections prepared for 1.0.6 (pull request #2), applied to the 2.x code.
+- Moodle 4.4: the direct AI connection (text, Google and OpenAI images) is created through an
+  injectable client, so it is tested offline exactly as it runs.
+- Moodle 4.5: AI availability is tested against core's static availability check.
+- The single-provider image route calls core's own steps by reflection rather than a bound closure.
+- AMD builds regenerated with Moodle's toolchain.
+- No change to features or settings.
+
 ## 2.1.0
 
 - Version code: `2026100906`

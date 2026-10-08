@@ -137,8 +137,10 @@ class before_footer_html_generation {
 
         // Browser error recording for people who can edit the course, on every Dari page, so a
         // failure a teacher sees can be read in the diagnostics log instead of described.
-        if (get_config('format_dari', 'diagnostics') !== '0' && $COURSE->id != SITEID
-                && has_capability('moodle/course:update', \context_course::instance($COURSE->id))) {
+        if (
+            get_config('format_dari', 'diagnostics') !== '0' && $COURSE->id != SITEID
+                && has_capability('moodle/course:update', \context_course::instance($COURSE->id))
+        ) {
             $PAGE->requires->js_call_amd('format_dari/diagnostics', 'init', [(int) $COURSE->id]);
         }
 

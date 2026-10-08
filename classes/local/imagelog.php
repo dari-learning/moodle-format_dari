@@ -87,8 +87,15 @@ class imagelog {
      * @param string|null $requestid Request id, or null for the current job's.
      * @return void
      */
-    public static function add(string $stage, string $status = 'ok', int $durationms = 0, string $message = '',
-            ?int $courseid = null, ?string $itemkey = null, ?string $requestid = null): void {
+    public static function add(
+        string $stage,
+        string $status = 'ok',
+        int $durationms = 0,
+        string $message = '',
+        ?int $courseid = null,
+        ?string $itemkey = null,
+        ?string $requestid = null
+    ): void {
         global $DB, $USER;
         if (get_config('format_dari', 'diagnostics') === '0') {
             return;

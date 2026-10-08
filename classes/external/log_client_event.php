@@ -63,8 +63,13 @@ class log_client_event extends external_api {
      * @param string $page Page.
      * @return array
      */
-    public static function execute(int $courseid, string $type, string $message, string $source = '',
-            string $page = ''): array {
+    public static function execute(
+        int $courseid,
+        string $type,
+        string $message,
+        string $source = '',
+        string $page = ''
+    ): array {
         global $DB, $USER;
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid' => $courseid, 'type' => $type, 'message' => $message, 'source' => $source, 'page' => $page,
@@ -73,8 +78,11 @@ class log_client_event extends external_api {
         self::validate_context($context);
         require_capability('moodle/course:update', $context);
 
-        $recent = $DB->count_records_select(imagelog::TABLE, 'userid = ? AND stage = ? AND timecreated > ?',
-            [(int) $USER->id, 'browser', time() - 60]);
+        $recent = $DB->count_records_select(
+            imagelog::TABLE,
+            'userid = ? AND stage = ? AND timecreated > ?',
+            [(int) $USER->id, 'browser', time() - 60]
+        );
         if ($recent >= self::PER_MINUTE) {
             return ['logged' => false];
         }

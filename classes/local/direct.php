@@ -51,8 +51,10 @@ class direct {
         if ($feature !== ai::FEATURE_IMAGE && self::endpoint() === '') {
             return false;
         }
-        if ($feature === ai::FEATURE_IMAGE && imagemodel::engine() === imagemodel::ENGINE_OPENAI
-                && self::endpoint() === '') {
+        if (
+            $feature === ai::FEATURE_IMAGE && imagemodel::engine() === imagemodel::ENGINE_OPENAI
+                && self::endpoint() === ''
+        ) {
             return false;
         }
         if ($feature === ai::FEATURE_IMAGE) {
@@ -208,7 +210,7 @@ class direct {
         $url = imagemodel::GOOGLE_API . rawurlencode(imagemodel::model()) . ':generateContent';
         \core_php_time_limit::raise(self::IMAGE_TIMEOUT + 60);
 
-        $curl = new \curl();
+        $curl = \core\di::get(direct_client::class)->create();
         $curl->setopt(['CURLOPT_TIMEOUT' => self::IMAGE_TIMEOUT, 'CURLOPT_CONNECTTIMEOUT' => 20]);
         $curl->setHeader(['Content-Type: application/json', 'Accept: application/json',
             'x-goog-api-key: ' . self::image_key()]);
@@ -218,8 +220,10 @@ class direct {
         $decoded = json_decode((string) $response, true);
 
         if ($curl->get_errno() || $code < 200 || $code >= 300) {
-            debugging('format_dari Google image HTTP ' . $code . ' ' . $curl->error . ' ' . substr((string) $response, 0, 500),
-                DEBUG_DEVELOPER);
+            debugging(
+                'format_dari Google image HTTP ' . $code . ' ' . $curl->error . ' ' . substr((string) $response, 0, 500),
+                DEBUG_DEVELOPER
+            );
             if ($code === 429) {
                 throw new \moodle_exception('error_apiratelimited', 'format_dari');
             }
@@ -228,8 +232,12 @@ class direct {
             }
             $message = is_array($decoded) ? (string) ($decoded['error']['message'] ?? '') : '';
             $message = $message !== '' ? $message : ($curl->error ?: ('HTTP ' . $code));
-            throw new \moodle_exception('error_ai_imagefailed_detail', 'format_dari', '',
-                s(\core_text::substr(trim(strip_tags($message)), 0, 200)));
+            throw new \moodle_exception(
+                'error_ai_imagefailed_detail',
+                'format_dari',
+                '',
+                s(\core_text::substr(trim(strip_tags($message)), 0, 200))
+            );
         }
 
         foreach ((array) ($decoded['candidates'][0]['content']['parts'] ?? []) as $part) {

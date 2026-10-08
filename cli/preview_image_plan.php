@@ -51,8 +51,13 @@ $context = context_course::instance($course->id);
 $admin = get_admin();
 \core\session\manager::set_user($admin);
 
-$rows = \format_dari\local\promptwriter::preview($course, $context, (int) $admin->id, (bool) $options['replan'],
-    (bool) $options['activities']);
+$rows = \format_dari\local\promptwriter::preview(
+    $course,
+    $context,
+    (int) $admin->id,
+    (bool) $options['replan'],
+    (bool) $options['activities']
+);
 
 if ($options['json']) {
     echo json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
@@ -75,6 +80,7 @@ foreach ($rows as $row) {
     echo 'Lighting:          ' . ($e['lighting'] ?? '') . "\n";
     echo 'Categories:        ' . implode(' / ', [$e['env_category'] ?? '', $e['composition'] ?? '',
         $e['people_arrangement'] ?? '', $e['light_category'] ?? '']) . "\n";
-    echo 'Final prompt (' . str_word_count((string) $row['prompt']) . " words):\n" . wordwrap((string) $row['prompt'], 100) . "\n\n";
+    echo 'Final prompt (' . str_word_count((string) $row['prompt']) . " words):\n"
+        . wordwrap((string) $row['prompt'], 100) . "\n\n";
 }
 exit(0);

@@ -253,8 +253,12 @@ class ai {
         $response = self::manager()->process_action($action);
         $ms = (int) round((microtime(true) - $start) * 1000);
         if (imagelog::$requestid !== null) {
-            imagelog::add('text_request', $response->get_success() ? 'ok' : 'fail', $ms,
-                \core_text::strlen($prompt) . ' chars sent');
+            imagelog::add(
+                'text_request',
+                $response->get_success() ? 'ok' : 'fail',
+                $ms,
+                \core_text::strlen($prompt) . ' chars sent'
+            );
         }
 
         if (!$response->get_success()) {

@@ -39,7 +39,10 @@ class get_image_prompt extends external_api {
         return new external_function_parameters([
             'courseid' => new external_value(PARAM_INT, 'Course id'),
             'targettype' => new external_value(PARAM_ALPHA, 'section, cm or banner'),
-            'targetid' => new external_value(PARAM_INT, 'course_sections.id, course_modules.id, or section id (0 = course) for a banner'),
+            'targetid' => new external_value(
+                PARAM_INT,
+                'course_sections.id, course_modules.id, or section id (0 = course) for a banner'
+            ),
         ]);
     }
 
@@ -67,8 +70,10 @@ class get_image_prompt extends external_api {
         }
         $stored = cardimage::get_prompt((int) $course->id, $params['targettype'], (int) $params['targetid']);
         $teacher = in_array($params['targettype'], [cardimage::TYPE_SECTION, cardimage::TYPE_CM], true)
-            ? \format_dari\local\imageplanner::teacher_text((int) $course->id,
-                $params['targettype'] . ':' . (int) $params['targetid'])
+            ? \format_dari\local\imageplanner::teacher_text(
+                (int) $course->id,
+                $params['targettype'] . ':' . (int) $params['targetid']
+            )
             : '';
         return [
             'teacherprompt' => $teacher,

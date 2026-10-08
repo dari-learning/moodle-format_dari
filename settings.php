@@ -55,10 +55,14 @@ if ($hassiteconfig) {
     $settings->add(new admin_setting_description(
         'format_dari/externalservicenotice',
         get_string('externalservice', 'format_dari'),
-        get_string(\format_dari\local\ai::subsystem_present() ? 'externalservice_desc' : 'externalservice_desc44', 'format_dari', (object) [
-            'aiurl' => (new moodle_url('/admin/settings.php', ['section' => 'aiprovider']))->out(false),
-            'usageurl' => (new moodle_url('/ai/usage_report.php'))->out(false),
-        ])
+        get_string(
+            \format_dari\local\ai::subsystem_present() ? 'externalservice_desc' : 'externalservice_desc44',
+            'format_dari',
+            (object) [
+                'aiurl' => (new moodle_url('/admin/settings.php', ['section' => 'aiprovider']))->out(false),
+                'usageurl' => (new moodle_url('/ai/usage_report.php'))->out(false),
+            ]
+        )
     ));
 
     // A live status line, so an administrator can see at a glance whether the tutor and the
@@ -68,7 +72,8 @@ if ($hassiteconfig) {
         $imagereason = \format_dari\local\ai::unavailable_reason(\format_dari\local\ai::FEATURE_IMAGE);
         $imagestatus = $imagereason === null ? 'aistatus_image_ok'
             : ($imagereason === 'error_ai_notopimagemodel' ? 'aistatus_image_wrongmodel' : 'aistatus_image_missing');
-        $status = html_writer::tag('ul',
+        $status = html_writer::tag(
+            'ul',
             html_writer::tag('li', get_string($textok ? 'aistatus_text_ok' : 'aistatus_text_missing', 'format_dari')) .
             html_writer::tag('li', get_string($imagestatus, 'format_dari', \format_dari\local\imagemodel::string_params())),
             ['class' => 'mb-0']
@@ -77,10 +82,17 @@ if ($hassiteconfig) {
         // Moodle 4.4: no AI subsystem, so Dari connects directly with the settings below.
         $textok = \format_dari\local\ai::is_available(\format_dari\local\ai::FEATURE_TEXT);
         $imageok = \format_dari\local\ai::is_available(\format_dari\local\ai::FEATURE_IMAGE);
-        $status = html_writer::tag('ul',
-            html_writer::tag('li', get_string($textok ? 'aistatus_direct_text_ok' : 'aistatus_direct_text_missing', 'format_dari')) .
-            html_writer::tag('li', get_string($imageok ? 'aistatus_direct_image_ok' : 'aistatus_direct_image_missing', 'format_dari',
-                \format_dari\local\imagemodel::string_params())),
+        $status = html_writer::tag(
+            'ul',
+            html_writer::tag('li', get_string(
+                $textok ? 'aistatus_direct_text_ok' : 'aistatus_direct_text_missing',
+                'format_dari'
+            )) .
+            html_writer::tag('li', get_string(
+                $imageok ? 'aistatus_direct_image_ok' : 'aistatus_direct_image_missing',
+                'format_dari',
+                \format_dari\local\imagemodel::string_params()
+            )),
             ['class' => 'mb-0']
         );
     }

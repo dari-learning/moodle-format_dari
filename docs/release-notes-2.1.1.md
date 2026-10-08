@@ -1,4 +1,4 @@
-**Dari Course Format 2.1.0**
+**Dari Course Format 2.1.1**
 
 Supports Moodle 4.4 to 5.3.
 
@@ -26,6 +26,9 @@ This release rebuilds how Dari creates AI images for course banners and section 
 - **Image generation log.** Shows how long each step of every image took and why any failed. It is on the Image plan preview page and downloadable as CSV.
 - **Browser error recording.** Browser errors on Dari pages are recorded for course editors. You can turn diagnostics off in the plugin settings.
 - **Privacy.** The privacy API covers the new log, which is kept for 30 days.
+
+**Quality**
+- Passes Moodle's strict plugin checks on Moodle 4.4, 4.5, 5.0 and 5.3: coding standards, PHPDoc, JavaScript and CSS lint, templates, upgrade steps, PHPUnit and Behat.
 
 **Upgrade notes**
 - Image plans made by earlier versions are cleared and planned again automatically.

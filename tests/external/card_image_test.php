@@ -328,8 +328,10 @@ final class card_image_test extends external_testcase {
         $this->setUser($this->teacher);
         $result = get_image_prompt::execute($this->course->id, 'cm', (int) $this->page->cmid);
         $this->assertSame('Two colleagues at a whiteboard', $result['teacherprompt']);
-        $this->assertStringContainsString('- The teacher asks for (must be honoured): Two colleagues at a whiteboard',
-            $this->last_prompt());
+        $this->assertStringContainsString(
+            '- The teacher asks for (must be honoured): Two colleagues at a whiteboard',
+            $this->last_prompt()
+        );
 
         \cache::make('format_dari', 'ajaxratelimit')->purge();
         generate_card_image::execute($this->course->id, 'cm', (int) $this->page->cmid, '', 'new', true);

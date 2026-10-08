@@ -244,13 +244,13 @@ class imagemodel {
         if ($provider === null) {
             throw new \moodle_exception('error_ai_notopimagemodel', 'format_dari', '', self::string_params());
         }
-        $run = function (object $provider, generate_image $action) {
-            $result = $this->call_action_provider($provider, $action);
-            if (method_exists($this, 'store_action_result')) {
-                $this->store_action_result($provider, $action, $result);
-            }
-            return $result;
-        };
-        return \Closure::bind($run, $manager, \core_ai\manager::class)($provider, $action);
+        // Core's own private steps, called on this one provider only.
+        $result = (new \ReflectionMethod(\core_ai\manager::class, 'call_action_provider'))
+            ->invoke($manager, $provider, $action);
+        if (method_exists($manager, 'store_action_result')) {
+            (new \ReflectionMethod(\core_ai\manager::class, 'store_action_result'))
+                ->invoke($manager, $provider, $action, $result);
+        }
+        return $result;
     }
 }

@@ -75,8 +75,15 @@ class generate_card_image extends \core\task\adhoc_task {
         $key = $type . ':' . $id;
         // A newer request for this card replaced this job: it must not touch the card.
         if (!cardimage::is_current($courseid, $type, $id, $requestid)) {
-            \format_dari\local\imagelog::add('superseded', 'info', 0, 'A newer request replaced this job before it started.',
-                $courseid, $key, $requestid);
+            \format_dari\local\imagelog::add(
+                'superseded',
+                'info',
+                0,
+                'A newer request replaced this job before it started.',
+                $courseid,
+                $key,
+                $requestid
+            );
             return;
         }
 
@@ -84,8 +91,12 @@ class generate_card_image extends \core\task\adhoc_task {
         cardimage::reset_cache();
         \format_dari\local\imagelog::begin($courseid, $key, $requestid);
         $queued = (int) ($data->queued ?? 0);
-        \format_dari\local\imagelog::add('started', 'ok', $queued > 0 ? max(0, time() - $queued) * 1000 : 0,
-            'Time waiting for Moodle\'s task runner (cron) before starting.');
+        \format_dari\local\imagelog::add(
+            'started',
+            'ok',
+            $queued > 0 ? max(0, time() - $queued) * 1000 : 0,
+            'Time waiting for Moodle\'s task runner (cron) before starting.'
+        );
         $start = microtime(true);
         cardimage::set_stage($courseid, $type, $id, $requestid, 'planning');
         try {
@@ -101,12 +112,22 @@ class generate_card_image extends \core\task\adhoc_task {
             );
             if ($url !== '' && cardimage::is_current($courseid, $type, $id, $requestid)) {
                 cardimage::set_status($courseid, $type, $id, 'done', $url, ['requestid' => $requestid, 'stage' => 'done']);
-                cardimage::set_prompt($courseid, $type, $id, \format_dari\local\ai::$lastprompt['prompt'],
-                    \format_dari\local\ai::$lastprompt['source']);
+                cardimage::set_prompt(
+                    $courseid,
+                    $type,
+                    $id,
+                    \format_dari\local\ai::$lastprompt['prompt'],
+                    \format_dari\local\ai::$lastprompt['source']
+                );
             }
-            \format_dari\local\imagelog::add('done', 'ok', (int) round((microtime(true) - $start) * 1000),
+            \format_dari\local\imagelog::add(
+                'done',
+                'ok',
+                (int) round((microtime(true) - $start) * 1000),
                 'Prompt source: ' . \format_dari\local\ai::$lastprompt['source']
-                . (\format_dari\local\ai::$lastprompt['reason'] !== '' ? ' (' . \format_dari\local\ai::$lastprompt['reason'] . ')' : ''));
+                . (\format_dari\local\ai::$lastprompt['reason'] !== ''
+                    ? ' (' . \format_dari\local\ai::$lastprompt['reason'] . ')' : '')
+            );
         } catch (\format_dari\local\planning_busy_exception $e) {
             // Another worker is planning this course. Nothing was requested yet, so try again shortly
             // as the same job (same request id); nothing is charged twice.
@@ -117,14 +138,23 @@ class generate_card_image extends \core\task\adhoc_task {
             $retry->set_next_run_time(time() + 30);
             \core\task\manager::queue_adhoc_task($retry);
             cardimage::set_stage($courseid, $type, $id, $requestid, 'waiting');
-            \format_dari\local\imagelog::add('requeued', 'info', 0, 'The course plan is being written by another worker; retry in 30 s.');
+            \format_dari\local\imagelog::add(
+                'requeued',
+                'info',
+                0,
+                'The course plan is being written by another worker; retry in 30 s.'
+            );
         } catch (\Throwable $e) {
             if (cardimage::is_current($courseid, $type, $id, $requestid)) {
                 cardimage::set_status($courseid, $type, $id, 'failed', $e->getMessage(), ['requestid' => $requestid,
                     'stage' => 'failed']);
             }
-            \format_dari\local\imagelog::add('failed', 'fail', (int) round((microtime(true) - $start) * 1000),
-                $e->getMessage());
+            \format_dari\local\imagelog::add(
+                'failed',
+                'fail',
+                (int) round((microtime(true) - $start) * 1000),
+                $e->getMessage()
+            );
         } finally {
             \format_dari\local\imagelog::end();
         }

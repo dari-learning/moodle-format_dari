@@ -393,8 +393,14 @@ class cardimage {
      * @param array $extra requestid, stage, queued (merged with what is stored for the same request).
      * @return void
      */
-    public static function set_status(int $courseid, string $type, int $id, string $state, string $detail = '',
-            array $extra = []): void {
+    public static function set_status(
+        int $courseid,
+        string $type,
+        int $id,
+        string $state,
+        string $detail = '',
+        array $extra = []
+    ): void {
         $current = self::get_status($courseid, $type, $id);
         $requestid = (string) ($extra['requestid'] ?? $current['requestid']);
         $same = $requestid === $current['requestid'];
@@ -424,8 +430,14 @@ class cardimage {
             return false;
         }
         $current = self::get_status($courseid, $type, $id);
-        self::set_status($courseid, $type, $id, $stage === 'waiting' ? 'queued' : 'running', $current['detail'],
-            ['requestid' => $requestid, 'stage' => $stage]);
+        self::set_status(
+            $courseid,
+            $type,
+            $id,
+            $stage === 'waiting' ? 'queued' : 'running',
+            $current['detail'],
+            ['requestid' => $requestid, 'stage' => $stage]
+        );
         return true;
     }
 
@@ -688,8 +700,11 @@ class cardimage {
         if ($prompt === '') {
             return;
         }
-        set_config(self::prompt_key($courseid, $type, $id),
-            json_encode(['prompt' => $prompt, 'source' => $source, 'time' => time()]), 'format_dari');
+        set_config(
+            self::prompt_key($courseid, $type, $id),
+            json_encode(['prompt' => $prompt, 'source' => $source, 'time' => time()]),
+            'format_dari'
+        );
     }
 
     /**

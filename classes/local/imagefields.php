@@ -30,7 +30,6 @@ namespace format_dari\local;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class imagefields {
-
     /**
      * Fields, most specific first. Each has: match (regex over the course's words), name (for
      * "a professional <name> online learning platform"), role, roles, place, props, and tasks as
@@ -406,9 +405,11 @@ class imagefields {
             . ($ownplace ? '' : ', in ' . $f['place']);
         if (!$banner) {
             $shots = self::SHOTS;
-            if (preg_match('~\b(with|to|and) (a|an|two|the|their)\b|colleague|team|client|customer|guest|resident|'
+            if (
+                preg_match('~\b(with|to|and) (a|an|two|the|their)\b|colleague|team|client|customer|guest|resident|'
                     . 'patient|learner|toddler|partner|apprentice|worker|pair|other|group|owner|director|manager|employee|'
-                    . 'teammate|driver~i', $task) === 1) {
+                    . 'teammate|driver~i', $task) === 1
+            ) {
                 // Someone else is already in the scene; do not add a second companion.
                 $shots = array_values(array_filter($shots, fn($s) => !str_contains($s, 'colleague')));
             }

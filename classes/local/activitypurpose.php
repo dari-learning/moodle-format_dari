@@ -60,7 +60,8 @@ class activitypurpose {
      */
     private const RULES = [
         self::INSTRUCTIONS => '~\b(instructions?|how to (use|complete|sit|prepare|navigate|submit|access)|read (this|me) first|'
-            . 'before you (start|begin)|before (the|your) (exam|test|assessment)|exam day|preparing for (the|your) exam|orientation|start here|getting started|welcome|what to expect|exam (rules|conditions)|'
+            . 'before you (start|begin)|before (the|your) (exam|test|assessment)|exam day|preparing for (the|your) exam|'
+            . 'orientation|start here|getting started|welcome|what to expect|exam (rules|conditions)|'
             . 'assessment (rules|conditions|guide)|candidate (guide|information))\b~iu',
         self::COMPLETION => '~\b(certificates?|completion|congratulations|graduat\w*|badges?)\b~iu',
         self::DISCUSSION => '~\b(forums?|discussions?|introduce yourself|q ?& ?a|chat|community|networking|debate|peer)\b~iu',
@@ -171,8 +172,14 @@ class activitypurpose {
             if ($cm->modname === 'page') {
                 $html = (string) $DB->get_field('page', 'content', ['id' => $cm->instance]);
             } else if ($cm->modname === 'book') {
-                $chapters = $DB->get_records('book_chapters', ['bookid' => $cm->instance, 'hidden' => 0], 'pagenum', 'content',
-                    0, 1);
+                $chapters = $DB->get_records(
+                    'book_chapters',
+                    ['bookid' => $cm->instance, 'hidden' => 0],
+                    'pagenum',
+                    'content',
+                    0,
+                    1
+                );
                 $html = $chapters ? (string) reset($chapters)->content : '';
             } else {
                 return '';

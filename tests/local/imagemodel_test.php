@@ -56,7 +56,8 @@ final class imagemodel_test extends \advanced_testcase {
         $this->assertTrue(imagemodel::matches('gemini-nano-banana-2.1'));
         $this->assertTrue(imagemodel::matches('google/gemini-nano-banana-2.1'));
         $this->assertTrue(imagemodel::matches(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-nano-banana-2.1:generateContent'));
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-nano-banana-2.1:generateContent'
+        ));
         $this->assertFalse(imagemodel::matches('gemini-3.1-flash-image'));
         $this->assertFalse(imagemodel::matches('imagen-4.0-generate-001'));
         $this->assertFalse(imagemodel::matches('gpt-image-2.5-sunburst'));

@@ -102,10 +102,19 @@ class generate_banner extends \core\task\adhoc_task {
                 (int) ($data->userid ?? 0)
             );
             generate_banner_image::set_status($courseid, 'done', $url, $sectionid);
-            \format_dari\local\cardimage::set_prompt($courseid, \format_dari\local\cardimage::TYPE_BANNER, $sectionid,
-                \format_dari\local\ai::$lastprompt['prompt'], \format_dari\local\ai::$lastprompt['source']);
-            \format_dari\local\imagelog::add('done', 'ok', (int) round((microtime(true) - $start) * 1000),
-                'Prompt source: ' . \format_dari\local\ai::$lastprompt['source']);
+            \format_dari\local\cardimage::set_prompt(
+                $courseid,
+                \format_dari\local\cardimage::TYPE_BANNER,
+                $sectionid,
+                \format_dari\local\ai::$lastprompt['prompt'],
+                \format_dari\local\ai::$lastprompt['source']
+            );
+            \format_dari\local\imagelog::add(
+                'done',
+                'ok',
+                (int) round((microtime(true) - $start) * 1000),
+                'Prompt source: ' . \format_dari\local\ai::$lastprompt['source']
+            );
         } catch (\format_dari\local\planning_busy_exception $e) {
             // Another worker is planning the course; nothing was requested yet. Try again shortly.
             $retry = new self();
@@ -117,8 +126,12 @@ class generate_banner extends \core\task\adhoc_task {
             generate_banner_image::set_status($courseid, 'queued', '', $sectionid);
             \format_dari\local\imagelog::add('requeued', 'info', 0, 'The course plan is being written; retry in 30 s.');
         } catch (\Throwable $e) {
-            \format_dari\local\imagelog::add('failed', 'fail', (int) round((microtime(true) - $start) * 1000),
-                $e->getMessage());
+            \format_dari\local\imagelog::add(
+                'failed',
+                'fail',
+                (int) round((microtime(true) - $start) * 1000),
+                $e->getMessage()
+            );
             // A section deleted between queueing and running lands here too: generate_and_store()
             // re-checks the target, so the teacher is told the section is gone rather than an
             // image being filed under an item id nothing points at any more.

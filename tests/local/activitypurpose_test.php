@@ -27,7 +27,6 @@ namespace format_dari\local;
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\activitypurpose::class)]
 final class activitypurpose_test extends \advanced_testcase {
-
     /**
      * Titles and descriptions outrank the module type.
      *
@@ -74,20 +73,30 @@ final class activitypurpose_test extends \advanced_testcase {
      * @param string $basis Expected basis.
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('cases')]
-    public function test_classify(string $modname, string $title, string $text, ?bool $graded, string $purpose,
-            string $basis): void {
-        $this->assertSame(['purpose' => $purpose, 'basis' => $basis],
-            activitypurpose::classify($modname, $title, $text, $graded));
+    public function test_classify(
+        string $modname,
+        string $title,
+        string $text,
+        ?bool $graded,
+        string $purpose,
+        string $basis
+    ): void {
+        $this->assertSame(
+            ['purpose' => $purpose, 'basis' => $basis],
+            activitypurpose::classify($modname, $title, $text, $graded)
+        );
     }
 
     /**
      * Every purpose has guidance for the planner.
      */
     public function test_guidance(): void {
-        foreach ([activitypurpose::CONTENT, activitypurpose::INSTRUCTIONS, activitypurpose::ASSESSMENT,
+        foreach (
+            [activitypurpose::CONTENT, activitypurpose::INSTRUCTIONS, activitypurpose::ASSESSMENT,
                 activitypurpose::PRACTICE, activitypurpose::DISCUSSION, activitypurpose::RESOURCES,
                 activitypurpose::SUBMISSION, activitypurpose::FEEDBACK, activitypurpose::COMPLETION,
-                activitypurpose::OTHER] as $purpose) {
+                activitypurpose::OTHER] as $purpose
+        ) {
             $this->assertNotEmpty(activitypurpose::GUIDANCE[$purpose] ?? '', $purpose);
         }
     }
@@ -98,15 +107,20 @@ final class activitypurpose_test extends \advanced_testcase {
      */
     public function test_real_activities(): void {
         $this->resetAfterTest();
-        $course = $this->getDataGenerator()->create_course(['format' => 'dari', 'numsections' => 1],
-            ['createsections' => true]);
+        $course = $this->getDataGenerator()->create_course(
+            ['format' => 'dari', 'numsections' => 1],
+            ['createsections' => true]
+        );
         $page = $this->getDataGenerator()->create_module('page', ['course' => $course->id, 'section' => 1,
             'name' => 'Part B', 'intro' => '<p></p>', 'content' => '<p>Before you start the exam, check your ID.</p>']);
         $quiz = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'section' => 1,
             'name' => 'Leases', 'intro' => '<p></p>', 'grade' => 0]);
         $modinfo = get_fast_modinfo($course);
 
-        $this->assertStringContainsString('Before you start the exam', activitypurpose::content_text($modinfo->get_cm($page->cmid)));
+        $this->assertStringContainsString(
+            'Before you start the exam',
+            activitypurpose::content_text($modinfo->get_cm($page->cmid))
+        );
         $facts = imageplanner::item_facts(get_course($course->id), 'cm:' . $page->cmid);
         $this->assertSame('instructions', $facts['purpose']);
 

@@ -90,10 +90,17 @@ class generate_card_image extends generate_banner_image {
      * @param int $targetid course_sections.id or course_modules.id.
      * @param string $prompt Teacher's description.
      * @param string $mode auto, retry or new.
+     * @param bool $replaceprompt Whether $prompt replaces the card's stored description even when empty.
      * @return array
      */
-    public static function execute($courseid, $targettype = '', $targetid = 0, $prompt = '', $mode = 'auto',
-            $replaceprompt = false): array {
+    public static function execute(
+        $courseid,
+        $targettype = '',
+        $targetid = 0,
+        $prompt = '',
+        $mode = 'auto',
+        $replaceprompt = false
+    ): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -125,8 +132,15 @@ class generate_card_image extends generate_banner_image {
         // The authoritative cap: the textarea's maxlength is a convenience and is not trusted.
         $prompttext = \core_text::substr(trim($params['prompt']), 0, self::PROMPT_MAX);
 
-        self::queue((int) $course->id, $params['targettype'], (int) $target->id, $prompttext, $mode, (int) $USER->id,
-            (bool) $params['replaceprompt']);
+        self::queue(
+            (int) $course->id,
+            $params['targettype'],
+            (int) $target->id,
+            $prompttext,
+            $mode,
+            (int) $USER->id,
+            (bool) $params['replaceprompt']
+        );
 
         return ['status' => 'queued', 'imageurl' => '', 'message' => ''];
     }
@@ -220,8 +234,15 @@ class generate_card_image extends generate_banner_image {
      * @param bool $replace Whether $prompt replaces the card's stored description even when empty.
      * @return string The request id.
      */
-    public static function queue(int $courseid, string $type, int $id, string $prompt, string $mode, int $userid,
-            bool $replace = false): string {
+    public static function queue(
+        int $courseid,
+        string $type,
+        int $id,
+        string $prompt,
+        string $mode,
+        int $userid,
+        bool $replace = false
+    ): string {
         $requestid = \core\uuid::generate();
         $task = new \format_dari\task\generate_card_image();
         $task->set_custom_data([
@@ -240,8 +261,15 @@ class generate_card_image extends generate_banner_image {
         cardimage::set_status($courseid, $type, $id, 'queued', '', ['requestid' => $requestid, 'stage' => 'waiting',
             'queued' => time()]);
         \core\task\manager::queue_adhoc_task($task);
-        \format_dari\local\imagelog::add('queued', 'info', 0, 'mode ' . $mode . ($prompt !== '' ? '; teacher description given' : ''),
-            $courseid, $type . ':' . $id, $requestid);
+        \format_dari\local\imagelog::add(
+            'queued',
+            'info',
+            0,
+            'mode ' . $mode . ($prompt !== '' ? '; teacher description given' : ''),
+            $courseid,
+            $type . ':' . $id,
+            $requestid
+        );
         return $requestid;
     }
 
@@ -287,7 +315,12 @@ class generate_card_image extends generate_banner_image {
         $imageprompt = \format_dari\local\ai::image_prompt($composed, $context, $userid);
 
         if (!cardimage::set_stage((int) $course->id, $type, (int) $target->id, $requestid, 'generating')) {
-            \format_dari\local\imagelog::add('superseded', 'info', 0, 'A newer request replaced this job before the image request.');
+            \format_dari\local\imagelog::add(
+                'superseded',
+                'info',
+                0,
+                'A newer request replaced this job before the image request.'
+            );
             return '';
         }
         try {
@@ -298,7 +331,12 @@ class generate_card_image extends generate_banner_image {
         }
 
         if (!cardimage::set_stage((int) $course->id, $type, (int) $target->id, $requestid, 'saving')) {
-            \format_dari\local\imagelog::add('superseded', 'info', 0, 'A newer request replaced this job; its image was not stored.');
+            \format_dari\local\imagelog::add(
+                'superseded',
+                'info',
+                0,
+                'A newer request replaced this job; its image was not stored.'
+            );
             return '';
         }
         $url = \format_dari\local\imagelog::time('save', fn() =>

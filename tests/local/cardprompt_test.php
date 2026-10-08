@@ -69,8 +69,10 @@ final class cardprompt_test extends \advanced_testcase {
         $this->assertSame('page', $out['brief']['sceneKey']);
         $this->assertStringStartsWith('An adult learner reading a printed guide in a comfortable armchair', $prompt);
         $this->assertStringContainsString('Sunlight through windows.', $prompt);
-        $this->assertStringContainsString('a lesson on Leading change in a Diploma of Leadership and Management course',
-            $prompt);
+        $this->assertStringContainsString(
+            'a lesson on Leading change in a Diploma of Leadership and Management course',
+            $prompt
+        );
         $this->assertStringEndsWith("\n\n" . $out['promptTail'], $prompt);
 
         // The tail: medium, accent colour in words, 16:9 composition, no text.
@@ -116,8 +118,10 @@ final class cardprompt_test extends \advanced_testcase {
         $this->assertStringContainsString('wall planner', $out['prompt']);
         $this->assertStringContainsString('The image introduces part of a', $out['prompt']);
 
-        foreach (['Welcome', 'Student instructions', 'Quiz', 'Assessment 1', 'Forum', 'Resources', 'Key dates',
-                'Live sessions', 'Videos', 'Feedback', 'Glossary', 'Reflection', 'Student support'] as $title) {
+        foreach (
+            ['Welcome', 'Student instructions', 'Quiz', 'Assessment 1', 'Forum', 'Resources', 'Key dates',
+                'Live sessions', 'Videos', 'Feedback', 'Glossary', 'Reflection', 'Student support'] as $title
+        ) {
             [$key, $scene] = cardprompt::scene($title, '');
             $this->assertNotSame('general', $key, $title);
             $this->assertStringNotContainsString('laptop', $scene, $title);
@@ -272,8 +276,10 @@ final class cardprompt_test extends \advanced_testcase {
         $cm = get_fast_modinfo($course->id)->get_cm($page->cmid);
         $out = cardprompt::compose(get_course($course->id), cardimage::TYPE_CM, $cm, str_repeat('x ', 1200));
 
-        $this->assertLessThanOrEqual(cardprompt::PROMPT_MAX + 2 + \core_text::strlen($out['promptTail']),
-            \core_text::strlen($out['prompt']));
+        $this->assertLessThanOrEqual(
+            cardprompt::PROMPT_MAX + 2 + \core_text::strlen($out['promptTail']),
+            \core_text::strlen($out['prompt'])
+        );
         $this->assertStringEndsWith($out['promptTail'], $out['prompt']);
     }
 

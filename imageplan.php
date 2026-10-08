@@ -75,8 +75,15 @@ if ($action !== '' && confirm_sesskey()) {
         ai::require_policy((int) $USER->id);
         $start = microtime(true);
         $rows = promptwriter::preview($course, $context, (int) $USER->id, $action === 'replan', (bool) $withactivities);
-        imagelog::add('preview', 'ok', (int) round((microtime(true) - $start) * 1000), count($rows) . ' images planned',
-            (int) $course->id, '', '');
+        imagelog::add(
+            'preview',
+            'ok',
+            (int) round((microtime(true) - $start) * 1000),
+            count($rows) . ' images planned',
+            (int) $course->id,
+            '',
+            ''
+        );
     } catch (\moodle_exception $e) {
         $error = $e->getMessage();
     }
@@ -89,12 +96,22 @@ echo html_writer::tag('p', get_string('imageplan_intro', 'format_dari', \format_
 // Plan buttons.
 echo html_writer::start_tag('form', ['method' => 'post', 'action' => $url->out(false), 'class' => 'mb-3']);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-echo html_writer::div(html_writer::checkbox('activities', 1, (bool) $withactivities,
-    get_string('imageplan_withactivities', 'format_dari')), 'mb-2');
-echo html_writer::tag('button', get_string('imageplan_run', 'format_dari'),
-    ['type' => 'submit', 'name' => 'action', 'value' => 'plan', 'class' => 'btn btn-primary me-2']);
-echo html_writer::tag('button', get_string('imageplan_replan', 'format_dari'),
-    ['type' => 'submit', 'name' => 'action', 'value' => 'replan', 'class' => 'btn btn-secondary']);
+echo html_writer::div(html_writer::checkbox(
+    'activities',
+    1,
+    (bool) $withactivities,
+    get_string('imageplan_withactivities', 'format_dari')
+), 'mb-2');
+echo html_writer::tag(
+    'button',
+    get_string('imageplan_run', 'format_dari'),
+    ['type' => 'submit', 'name' => 'action', 'value' => 'plan', 'class' => 'btn btn-primary me-2']
+);
+echo html_writer::tag(
+    'button',
+    get_string('imageplan_replan', 'format_dari'),
+    ['type' => 'submit', 'name' => 'action', 'value' => 'replan', 'class' => 'btn btn-secondary']
+);
 echo html_writer::end_tag('form');
 
 if ($error !== '') {
@@ -118,7 +135,10 @@ if ($rows === null) {
             continue;
         }
         $facts = imageplanner::item_facts($course, (string) $row->itemkey);
-        $rows[] = ['title' => ($facts['title'] ?? '') !== '' ? $facts['title'] : $row->itemkey, 'key' => $row->itemkey, 'entry' => (array) json_decode((string) $row->plan, true),
+        $rows[] = [
+            'title' => ($facts['title'] ?? '') !== '' ? $facts['title'] : $row->itemkey,
+            'key' => $row->itemkey,
+            'entry' => (array) json_decode((string) $row->plan, true),
             'prompt' => (string) ($row->prompt ?? ''), 'row' => $row];
     }
     if ($rows) {
@@ -174,8 +194,11 @@ foreach ($rows as $item) {
 // The diagnostics log.
 echo $OUTPUT->heading(get_string('imagelog', 'format_dari'), 3);
 echo html_writer::tag('p', get_string('imagelog_intro', 'format_dari'));
-echo html_writer::link(new moodle_url($url, ['download' => 'log', 'sesskey' => sesskey()]),
-    get_string('imagelog_download', 'format_dari'), ['class' => 'btn btn-secondary mb-3']);
+echo html_writer::link(
+    new moodle_url($url, ['download' => 'log', 'sesskey' => sesskey()]),
+    get_string('imagelog_download', 'format_dari'),
+    ['class' => 'btn btn-secondary mb-3']
+);
 
 $logrows = imagelog::recent((int) $course->id, 400);
 $jobs = imagelog::jobs($logrows);

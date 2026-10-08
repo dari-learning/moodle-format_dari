@@ -99,8 +99,12 @@ class get_card_image_status extends external_api {
             'status' => new external_value(PARAM_ALPHA, 'idle, queued, running, done or failed'),
             'imageurl' => new external_value(PARAM_URL, 'The image URL once done', VALUE_DEFAULT, ''),
             'message' => new external_value(PARAM_TEXT, 'Failure reason when failed', VALUE_DEFAULT, ''),
-            'stage' => new external_value(PARAM_ALPHA, 'waiting, planning, generating, saving, done or failed', VALUE_DEFAULT,
-                ''),
+            'stage' => new external_value(
+                PARAM_ALPHA,
+                'waiting, planning, generating, saving, done or failed',
+                VALUE_DEFAULT,
+                ''
+            ),
             'elapsed' => new external_value(PARAM_INT, 'Seconds since the job was queued', VALUE_DEFAULT, 0),
             'cronago' => new external_value(PARAM_INT, 'Seconds since Moodle cron last started, or -1', VALUE_DEFAULT, -1),
         ]);

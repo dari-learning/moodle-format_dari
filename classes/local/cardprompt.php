@@ -420,8 +420,13 @@ class cardprompt {
         [$scenekey, $scene] = self::scene($iscourse || $untitled ? '' : $topic, $in['modname'], $school);
         if ($scenekey === 'general' && $field !== null) {
             $seed = $course->id . '|' . $topic . '|' . $in['modname'] . '|' . $in['partname'];
-            $picked = imagefields::scene($field, $iscourse ? '' : $topic . ' ' . $detail . ' ' . implode(' ', $contents),
-                $imagekind === self::KIND_BANNER, $school, $seed);
+            $picked = imagefields::scene(
+                $field,
+                $iscourse ? '' : $topic . ' ' . $detail . ' ' . implode(' ', $contents),
+                $imagekind === self::KIND_BANNER,
+                $school,
+                $seed
+            );
             $scenekey = 'field:' . $field;
             $scene = $picked['scene'];
             $props = $picked['props'];
@@ -629,8 +634,10 @@ class cardprompt {
             $context = \context_course::instance($course->id);
             foreach ($modinfo->sections[$sectionnum] ?? [] as $cmid) {
                 $cm = $modinfo->get_cm($cmid);
-                if ((int) $cmid === $exclude || !$cm->visible || $cm->deletioninprogress
-                        || in_array($cm->modname, ['label', 'subsection'], true)) {
+                if (
+                    (int) $cmid === $exclude || !$cm->visible || $cm->deletioninprogress
+                        || in_array($cm->modname, ['label', 'subsection'], true)
+                ) {
                     continue;
                 }
                 $name = self::clean(text::plain((string) $cm->name, $context));

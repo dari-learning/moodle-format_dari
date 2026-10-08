@@ -109,8 +109,13 @@ class promptwriter {
      * @param bool $generating True when an image is about to be requested (counts an attempt).
      * @return array{prompt: string, entry: array, course: array, key: string}
      */
-    public static function prompt_for(\stdClass $course, array $brief, \context $context, int $userid,
-            bool $generating): array {
+    public static function prompt_for(
+        \stdClass $course,
+        array $brief,
+        \context $context,
+        int $userid,
+        bool $generating
+    ): array {
         $key = imageplanner::item_key($brief);
         $iscard = ($brief['imageKind'] ?? '') !== cardprompt::KIND_BANNER;
         // Cards and the course banner keep their own prompt; a section banner borrows its card's plan.
@@ -121,8 +126,15 @@ class promptwriter {
             $mode = imageplanner::MODE_AUTO;
         }
 
-        $plan = imageplanner::plan_for($course, $brief, $context, $userid, $mode, $tracked ? $teacher : '',
-            $tracked && !empty($brief['replaceTeacher']));
+        $plan = imageplanner::plan_for(
+            $course,
+            $brief,
+            $context,
+            $userid,
+            $mode,
+            $tracked ? $teacher : '',
+            $tracked && !empty($brief['replaceTeacher'])
+        );
         if ($tracked) {
             // The stored description, when this request did not give one, is part of the prompt too.
             $brief['teacherDirection'] = $plan['teacher'];
@@ -134,8 +146,13 @@ class promptwriter {
             self::$last = ['source' => 'plan', 'reason' => 'stored prompt reused'];
         } else {
             try {
-                $prompt = imagelog::time('prompt_written', fn() => self::write_prompt($brief, $plan['entry'],
-                    $plan['course'], $context, $userid));
+                $prompt = imagelog::time('prompt_written', fn() => self::write_prompt(
+                    $brief,
+                    $plan['entry'],
+                    $plan['course'],
+                    $context,
+                    $userid
+                ));
                 self::$last = ['source' => 'written', 'reason' => ''];
             } catch (planning_busy_exception $e) {
                 throw $e;
@@ -191,8 +208,13 @@ class promptwriter {
      * @return string
      * @throws \moodle_exception When no usable prompt came back.
      */
-    protected static function write_prompt(array $brief, array $entry, array $coursedata, \context $context,
-            int $userid): string {
+    protected static function write_prompt(
+        array $brief,
+        array $entry,
+        array $coursedata,
+        \context $context,
+        int $userid
+    ): string {
         $request = self::scene_request($brief, $entry, $coursedata);
         for ($attempt = 1; $attempt <= 2; $attempt++) {
             $prompt = self::parse_prompt(ai::generate_text($context, $userid, $request)['text']);
@@ -256,8 +278,13 @@ class promptwriter {
      * @param bool $activities Also plan every activity card.
      * @return array[] One row per image: title, key, entry, prompt (with the tail).
      */
-    public static function preview(\stdClass $course, \context $context, int $userid, bool $replan = false,
-            bool $activities = false): array {
+    public static function preview(
+        \stdClass $course,
+        \context $context,
+        int $userid,
+        bool $replan = false,
+        bool $activities = false
+    ): array {
         $modinfo = get_fast_modinfo($course);
         $targets = [];
         foreach ($modinfo->get_section_info_all() as $section) {
@@ -302,14 +329,17 @@ class promptwriter {
      * @return string
      */
     public static function parse_prompt(string $reply): string {
-        $reply = str_replace(['**', '__', '```'], '', $reply);
+        $reply = str_replace(['**', '__', str_repeat(chr(96), 3)], '', $reply);
         if (preg_match('~PROMPT\s*:\s*(.+)$~is', $reply, $m)) {
             $reply = $m[1];
         }
         $prompt = self::clean($reply, self::SCENE_MAX);
         $prompt = (string) preg_replace('~^((image )?(generation )?prompt|paragraph|scene)\s*:\s*~i', '', $prompt);
-        $prompt = (string) preg_replace('~^(Create|Generate)\s+an?\s+[^.]*?\b(image|photo|photograph)\s+(of|showing)\s+~i',
-            '', $prompt);
+        $prompt = (string) preg_replace(
+            '~^(Create|Generate)\s+an?\s+[^.]*?\b(image|photo|photograph)\s+(of|showing)\s+~i',
+            '',
+            $prompt
+        );
         $prompt = trim($prompt);
         if ($prompt !== '' && preg_match('~^[a-z]~', $prompt)) {
             $prompt = \core_text::strtoupper(\core_text::substr($prompt, 0, 1)) . \core_text::substr($prompt, 1);

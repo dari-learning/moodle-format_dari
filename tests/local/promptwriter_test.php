@@ -196,8 +196,10 @@ final class promptwriter_test extends \advanced_testcase {
         $rows = promptwriter::preview(get_course($this->course->id), $this->context, $this->userid, false, true);
         $this->assertCount(4, $rows, 'Two sections, one activity and the course banner');
         $this->assertStringStartsWith('cm:', $rows[1]['key']);
-        $this->assertStringContainsString('purpose: practice (judged from its title)',
-            $this->prompts_starting(imageplanner::ITEM_OPENING)[0]);
+        $this->assertStringContainsString(
+            'purpose: practice (judged from its title)',
+            $this->prompts_starting(imageplanner::ITEM_OPENING)[0]
+        );
     }
 
     /**
@@ -212,8 +214,11 @@ final class promptwriter_test extends \advanced_testcase {
         $retry = $this->composed(1);
         $retry['brief']['mode'] = imageplanner::MODE_RETRY;
         $this->assertSame($first, promptwriter::write($retry, $this->context, $this->userid));
-        $this->assertSame($first, promptwriter::write($this->composed(1), $this->context, $this->userid),
-            'After a failure the next automatic attempt keeps the same concept');
+        $this->assertSame(
+            $first,
+            promptwriter::write($this->composed(1), $this->context, $this->userid),
+            'After a failure the next automatic attempt keeps the same concept'
+        );
         $this->assertCount(2, $this->aiactions, 'Course plan and one prompt; retries made no request');
 
         $new = $this->composed(1);
@@ -243,8 +248,10 @@ final class promptwriter_test extends \advanced_testcase {
         $this->assertCount(1, $items);
         $this->assertStringContainsString('THE TEACHER ASKS FOR (highest priority', $items[0]);
         $this->assertStringContainsString('golden hour, no people', $items[0]);
-        $this->assertStringContainsString('- The teacher asks for (must be honoured): golden hour, no people',
-            $this->last_prompt());
+        $this->assertStringContainsString(
+            '- The teacher asks for (must be honoured): golden hour, no people',
+            $this->last_prompt()
+        );
         $this->assertNotEmpty($prompt);
 
         // The same description again: no new request.
@@ -255,13 +262,15 @@ final class promptwriter_test extends \advanced_testcase {
         $new = $this->composed(1);
         $new['brief']['mode'] = imageplanner::MODE_NEW;
         $regenerated = promptwriter::write($new, $this->context, $this->userid);
-        // (The stub plans the same concept again, so the planner asks once more for a different one.)
+        // The stub plans the same concept again, so the planner asks once more for a different one.
         $items = $this->prompts_starting(imageplanner::ITEM_OPENING);
         $this->assertCount(3, $items);
         $this->assertStringContainsString('golden hour, no people', $items[1]);
         $this->assertStringContainsString('Your first plan repeated the rejected concept', $items[2]);
-        $this->assertStringContainsString('- The teacher asks for (must be honoured): golden hour, no people',
-            $this->last_prompt());
+        $this->assertStringContainsString(
+            '- The teacher asks for (must be honoured): golden hour, no people',
+            $this->last_prompt()
+        );
         $this->assertNotEmpty($regenerated);
     }
 
@@ -336,8 +345,10 @@ final class promptwriter_test extends \advanced_testcase {
         set_config('version', 2026100900, 'format_dari');
 
         $this->assertTrue(xmldb_format_dari_upgrade(2026100900));
-        foreach (['directimagemodel', 'imagequality', 'imagestyle', 'aiscenewriter',
-                'artscenes_' . $this->course->id, 'artdirection_' . $this->course->id] as $name) {
+        foreach (
+            ['directimagemodel', 'imagequality', 'imagestyle', 'aiscenewriter',
+                'artscenes_' . $this->course->id, 'artdirection_' . $this->course->id] as $name
+        ) {
             $this->assertFalse(get_config('format_dari', $name), $name);
         }
         $this->assertSame('0', get_config('format_dari', 'directimages'));
