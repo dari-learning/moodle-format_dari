@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/../fixtures/ai_stub.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\promptwriter::class)]
 /**
  * Tests for \format_dari\local\promptwriter.
  *
@@ -41,7 +42,6 @@ require_once(__DIR__ . '/../fixtures/ai_stub.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\promptwriter
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\promptwriter::class)]
 final class promptwriter_test extends \advanced_testcase {
     use \format_dari\tests\ai_stub;
 
@@ -217,8 +217,10 @@ final class promptwriter_test extends \advanced_testcase {
         $prompt = promptwriter::write($this->composed(1), $this->context, $this->userid);
         $this->assertStringStartsWith('An apprentice chef in crisp whites', $prompt);
         $this->assertFalse(get_config('format_dari', 'artdirection_' . $this->course->id));
-        $this->assertStringContainsString("- World: I'm sorry, I can't help with that request.",
-            $this->prompts_starting('You write prompts for an AI image generator')[0]);
+        $this->assertStringContainsString(
+            "- World: I'm sorry, I can't help with that request.",
+            $this->prompts_starting('You write prompts for an AI image generator')[0]
+        );
 
         promptwriter::write($this->composed(2), $this->context, $this->userid);
         $this->assertCount(2, $this->prompts_starting('You are the art director'));
@@ -238,8 +240,10 @@ final class promptwriter_test extends \advanced_testcase {
         $this->assertStringContainsString('- World: A kitchen', $scenes[0]);
         $this->assertStringContainsString('the image for one section', $scenes[0]);
 
-        $this->assertSame(['A pastry cook pipes cream onto a tray of eclairs.'],
-            promptwriter::recent_scenes((int) $this->course->id));
+        $this->assertSame(
+            ['A pastry cook pipes cream onto a tray of eclairs.'],
+            promptwriter::recent_scenes((int) $this->course->id)
+        );
 
         promptwriter::write($this->composed(2), $this->context, $this->userid);
         $scenes = $this->prompts_starting('You write prompts for an AI image generator');
@@ -256,8 +260,12 @@ final class promptwriter_test extends \advanced_testcase {
     public function test_assemble_order_and_contents(): void {
         $art = promptwriter::parse_art('{"light": "Soft morning light.", "palette": "Steel and green", '
             . '"mood": "Calm", "avoid": "Bare hands on raw food"}');
-        $prompt = promptwriter::assemble('A chef plates a dish at the pass.', $art, ['style' => 'illustration'],
-            "Style: tail.\nNo visible text.");
+        $prompt = promptwriter::assemble(
+            'A chef plates a dish at the pass.',
+            $art,
+            ['style' => 'illustration'],
+            "Style: tail.\nNo visible text."
+        );
 
         $parts = explode("\n\n", $prompt);
         $this->assertCount(6, $parts);
@@ -269,8 +277,12 @@ final class promptwriter_test extends \advanced_testcase {
         $this->assertSame('Keep out: Bare hands on raw food.', $parts[5]);
 
         // Empty fields add nothing; an unknown style uses the photographic medium.
-        $prompt = promptwriter::assemble('A chef plates a dish at the pass.', promptwriter::parse_art('{}'),
-            ['style' => 'unknown'], '');
+        $prompt = promptwriter::assemble(
+            'A chef plates a dish at the pass.',
+            promptwriter::parse_art('{}'),
+            ['style' => 'unknown'],
+            ''
+        );
         $parts = explode("\n\n", $prompt);
         $this->assertCount(3, $parts);
         $this->assertStringContainsString('editorial photograph', $parts[1]);
@@ -284,10 +296,16 @@ final class promptwriter_test extends \advanced_testcase {
     public function test_assemble_keeps_the_tail_within_the_limit(): void {
         $composed = $this->composed();
         $long = str_repeat('word ', 300);
-        $art = array_fill_keys(['world', 'people', 'places', 'props', 'palette', 'light', 'mood', 'avoid'],
-            trim(substr($long, 0, 240)));
-        $prompt = promptwriter::assemble(trim(substr(str_repeat($long, 2), 0, 1200)), $art, $composed['brief'],
-            $composed['promptTail']);
+        $art = array_fill_keys(
+            ['world', 'people', 'places', 'props', 'palette', 'light', 'mood', 'avoid'],
+            trim(substr($long, 0, 240))
+        );
+        $prompt = promptwriter::assemble(
+            trim(substr(str_repeat($long, 2), 0, 1200)),
+            $art,
+            $composed['brief'],
+            $composed['promptTail']
+        );
 
         $this->assertLessThanOrEqual(3600, \core_text::strlen($prompt));
         $this->assertStringContainsString(trim($composed['promptTail']), $prompt);

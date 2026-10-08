@@ -49,6 +49,25 @@ use core_ai\aiactions\responses\response_generate_text;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 trait ai_stub {
+    /**
+     * Expected missing-provider error for the backend actually supported by this Moodle.
+     *
+     * @param bool $image Whether image generation is being requested.
+     * @return string
+     */
+    protected function no_provider_error(bool $image = false): string {
+        if (!\format_dari\local\ai::subsystem_present()) {
+            return 'error_ai_nodirect';
+        }
+        return $image ? 'error_ai_noimageprovider' : 'error_ai_notextprovider';
+    }
+
+    /** @var array Feature availability, changeable without flushing the plugin memo. */
+    protected array $aifeatures = [];
+
+    /** @var array Expected debugging messages from deliberately failed HTTP responses. */
+    protected array $directdebug = [];
+
     /** @var \core_ai\aiactions\base[] Every action the plugin handed to the manager, in order. */
     protected array $aiactions = [];
 
@@ -80,46 +99,145 @@ trait ai_stub {
         $this->aiactions = [];
         $this->aireplies = [];
         $this->aiimagereplies = [];
+        \format_dari\local\permissions::reset_memo();
+        $this->aifeatures = [generate_text::class => $text, generate_image::class => $image];
 
-        $manager = $this->getMockBuilder(\core_ai\manager::class)
+        if (!\format_dari\local\ai::subsystem_present()) {
+            $this->stub_direct_provider($text, $image);
+            \format_dari\local\ai::reset_memo();
+            return;
+        }
+
+        $static = (new \ReflectionMethod(\core_ai\manager::class, 'is_action_available'))->isStatic();
+        $managerclass = \core_ai\manager::class;
+        $methods = ['process_action'];
+        if ($static) {
+            global $CFG;
+            require_once($CFG->dirroot . '/course/format/dari/tests/fixtures/legacy_ai_manager.php');
+            $managerclass = \format_dari\test\legacy_ai_manager::class;
+            \format_dari\test\legacy_ai_manager::$availability = $this->aifeatures;
+        } else {
+            $methods[] = 'is_action_available';
+        }
+        $manager = $this->getMockBuilder($managerclass)
             ->disableOriginalConstructor()
-            ->onlyMethods(['is_action_available', 'process_action'])
+            ->onlyMethods($methods)
             ->getMock();
-        $manager->method('is_action_available')->willReturnCallback(
-            function (string $actionclass) use ($text, $image): bool {
-                if ($actionclass === generate_text::class) {
-                    return $text;
-                }
-                if ($actionclass === generate_image::class) {
-                    return $image;
-                }
-                return false;
-            }
-        );
+        if (!$static) {
+            $manager->method('is_action_available')->willReturnCallback(
+                fn(string $actionclass): bool => $this->aifeatures[$actionclass] ?? false
+            );
+        }
         $manager->method('process_action')->willReturnCallback(
-            function (\core_ai\aiactions\base $action) {
-                $this->aiactions[] = $action;
-                $isimage = $action instanceof generate_image;
-                $reply = $isimage ? array_shift($this->aiimagereplies) : array_shift($this->aireplies);
-                if ($reply !== null) {
-                    return $reply($action);
-                }
-                // Defaults: a small landscape PNG; the art director's two replies; a short answer.
-                if ($isimage) {
-                    return self::image_response($action, self::make_png(64, 36));
-                }
-                $prompt = (string) $action->get_configuration('prompttext');
-                if (strpos($prompt, 'You are the art director') === 0) {
-                    return self::text_response(self::$defaultart);
-                }
-                if (strpos($prompt, 'You write prompts for an AI image generator') === 0) {
-                    return self::text_response(self::$defaultscene);
-                }
-                return self::text_response('A complete answer.');
-            }
+            fn(object $action) => $this->reply_to_action($action)
         );
         \core\di::set(\core_ai\manager::class, $manager);
         \format_dari\local\ai::reset_memo();
+    }
+
+    /**
+     * Change provider availability without changing the plugin's cached answer.
+     *
+     * @param bool $text Whether text is available.
+     * @param bool $image Whether images are available.
+     */
+    protected function set_stub_availability(bool $text, bool $image): void {
+        $this->aifeatures = [generate_text::class => $text, generate_image::class => $image];
+        if (!\format_dari\local\ai::subsystem_present()) {
+            set_config('directtextmodel', $text ? 'test-text' : '', 'format_dari');
+            set_config('directimagemodel', $image ? 'dall-e-test' : '', 'format_dari');
+        } else if ((new \ReflectionMethod(\core_ai\manager::class, 'is_action_available'))->isStatic()) {
+            \format_dari\test\legacy_ai_manager::$availability = $this->aifeatures;
+        }
+    }
+
+    /**
+     * Serve queued replies for either real core actions or recorded HTTP requests.
+     *
+     * @param object $action The recorded action.
+     * @return mixed Response object on core AI, JSON-compatible array on direct AI.
+     */
+    protected function reply_to_action(object $action): mixed {
+        $this->aiactions[] = $action;
+        $isimage = $action instanceof generate_image
+            || ($action instanceof \format_dari\test\direct_action && $action->type === generate_image::class);
+        $reply = $isimage ? array_shift($this->aiimagereplies) : array_shift($this->aireplies);
+        if ($reply !== null) {
+            return $reply($action);
+        }
+        if ($isimage) {
+            return self::image_response($action, self::make_png(64, 36));
+        }
+        $prompt = (string) $action->get_configuration('prompttext');
+        if (strpos($prompt, 'You are the art director') === 0) {
+            return self::text_response(self::$defaultart);
+        }
+        if (strpos($prompt, 'You write prompts for an AI image generator') === 0) {
+            return self::text_response(self::$defaultscene);
+        }
+        return self::text_response('A complete answer.');
+    }
+
+    /**
+     * Exercise the actual direct-provider encoder and decoder without network access.
+     *
+     * @param bool $text Whether text generation is configured.
+     * @param bool $image Whether image generation is configured.
+     */
+    protected function stub_direct_provider(bool $text, bool $image): void {
+        global $CFG;
+        require_once($CFG->libdir . '/filelib.php');
+        require_once($CFG->dirroot . '/course/format/dari/tests/fixtures/direct_action.php');
+        set_config('directendpoint', 'https://provider.invalid/v1', 'format_dari');
+        set_config('directtextmodel', $text ? 'test-text' : '', 'format_dari');
+        set_config('directimagemodel', $image ? 'dall-e-test' : '', 'format_dari');
+        $curl = $this->getMockBuilder(\curl::class)->disableOriginalConstructor()
+            ->onlyMethods(['post', 'get_errno', 'setopt', 'setHeader'])->getMock();
+        $curl->method('get_errno')->willReturn(0);
+        $curl->method('post')->willReturnCallback(function (string $url, string $payload) use ($curl): string {
+            $body = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+            $isimage = str_ends_with($url, '/images/generations');
+            $this->assertSame(
+                'https://provider.invalid/v1' . ($isimage ? '/images/generations' : '/chat/completions'),
+                $url
+            );
+            $this->assertSame($isimage ? 'dall-e-test' : 'test-text', $body['model']);
+            $configuration = [
+                'prompttext' => $isimage ? $body['prompt'] : $body['messages'][0]['content'],
+                'aspectratio' => ($body['size'] ?? '') === '1024x1024' ? 'square' : 'landscape',
+                'quality' => $body['quality'] ?? null,
+                'style' => $body['style'] ?? null,
+                'numimages' => $body['n'] ?? null,
+            ];
+            $action = new \format_dari\test\direct_action(
+                $isimage ? generate_image::class : generate_text::class,
+                $configuration
+            );
+            $reply = $this->reply_to_action($action);
+            $code = $reply['_httpcode'] ?? 200;
+            unset($reply['_httpcode']);
+            $response = json_encode($reply, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+            $curl->info = ['http_code' => $code];
+            $curl->error = '';
+            if ($code >= 400) {
+                $this->directdebug[] = 'format_dari direct AI HTTP ' . $code . '  ' . substr($response, 0, 500);
+            }
+            return $response;
+        });
+        $factory = $this->createMock(\format_dari\local\direct_client::class);
+        $factory->method('create')->willReturn($curl);
+        \core\di::set(\format_dari\local\direct_client::class, $factory);
+    }
+
+    /**
+     * Verify expected diagnostics from deliberately failed direct-provider requests.
+     */
+    protected function tearDown(): void {
+        if ($this->directdebug) {
+            $this->assertDebuggingCalledCount(count($this->directdebug), $this->directdebug);
+            $this->directdebug = [];
+        }
+        parent::tearDown();
     }
 
     /**
@@ -152,6 +270,15 @@ trait ai_stub {
      * @return void
      */
     protected function queue_failure(int $code, string $message, bool $image = false): void {
+        if (!\format_dari\local\ai::subsystem_present()) {
+            $reply = fn($action) => ['_httpcode' => $code, 'error' => ['message' => $message]];
+            if ($image) {
+                $this->aiimagereplies[] = $reply;
+            } else {
+                $this->aireplies[] = $reply;
+            }
+            return;
+        }
         if ($image) {
             $this->aiimagereplies[] = fn($action) => new response_generate_image(false, $code, $message);
         } else {
@@ -166,7 +293,8 @@ trait ai_stub {
      * @return \core_ai\aiactions\base[]
      */
     protected function actions_of(string $class): array {
-        return array_values(array_filter($this->aiactions, fn($action) => $action instanceof $class));
+        return array_values(array_filter($this->aiactions, fn($action) => $action instanceof $class
+            || ($action instanceof \format_dari\test\direct_action && $action->type === $class)));
     }
 
     /**
@@ -174,9 +302,15 @@ trait ai_stub {
      *
      * @param string $text Generated text.
      * @param string $finishreason Provider finish reason.
-     * @return response_generate_text
+     * @return array|response_generate_text
      */
-    protected static function text_response(string $text, string $finishreason = 'stop'): response_generate_text {
+    protected static function text_response(string $text, string $finishreason = 'stop'): array|response_generate_text {
+        if (!\format_dari\local\ai::subsystem_present()) {
+            return [
+                'choices' => [['message' => ['content' => $text], 'finish_reason' => $finishreason]],
+                'model' => 'test-model',
+            ];
+        }
         $response = new response_generate_text(true);
         $response->set_response_data([
             'id' => 'test',
@@ -193,11 +327,14 @@ trait ai_stub {
     /**
      * Build a successful image response with a real draft file, as a provider does.
      *
-     * @param \core_ai\aiactions\base $action The action being answered.
+     * @param object $action The action being answered.
      * @param string $bytes Image bytes.
-     * @return response_generate_image
+     * @return array|response_generate_image
      */
-    protected static function image_response(\core_ai\aiactions\base $action, string $bytes): response_generate_image {
+    protected static function image_response(object $action, string $bytes): array|response_generate_image {
+        if (!\format_dari\local\ai::subsystem_present()) {
+            return ['data' => [['b64_json' => base64_encode($bytes)]]];
+        }
         $userid = (int) $action->get_configuration('userid');
         $file = get_file_storage()->create_file_from_string([
             'contextid' => \context_user::instance($userid)->id,
@@ -224,7 +361,11 @@ trait ai_stub {
      */
     protected function last_prompt(): string {
         for ($i = count($this->aiactions) - 1; $i >= 0; $i--) {
-            if ($this->aiactions[$i] instanceof generate_text) {
+            if (
+                $this->aiactions[$i] instanceof generate_text
+                || ($this->aiactions[$i] instanceof \format_dari\test\direct_action
+                    && $this->aiactions[$i]->type === generate_text::class)
+            ) {
                 return (string) $this->aiactions[$i]->get_configuration('prompttext');
             }
         }
@@ -238,7 +379,9 @@ trait ai_stub {
      * @return void
      */
     protected function accept_ai_policy(int $userid): void {
-        \core_ai\manager::user_policy_accepted($userid, \context_system::instance()->id);
+        if (\format_dari\local\ai::subsystem_present()) {
+            \core_ai\manager::user_policy_accepted($userid, \context_system::instance()->id);
+        }
     }
 
     /**
@@ -267,8 +410,14 @@ trait ai_stub {
         $img = imagecreatetruecolor($width, $height);
         for ($y = 0; $y < $height; $y += 4) {
             for ($x = 0; $x < $width; $x += 4) {
-                imagefilledrectangle($img, $x, $y, $x + 3, $y + 3,
-                    imagecolorallocate($img, ($x * 7 + $y) % 256, ($y * 5) % 256, ($x ^ $y) % 256));
+                imagefilledrectangle(
+                    $img,
+                    $x,
+                    $y,
+                    $x + 3,
+                    $y + 3,
+                    imagecolorallocate($img, ($x * 7 + $y) % 256, ($y * 5) % 256, ($x ^ $y) % 256)
+                );
             }
         }
         ob_start();

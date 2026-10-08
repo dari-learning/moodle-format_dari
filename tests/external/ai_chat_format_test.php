@@ -31,6 +31,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/external_testcase.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\ai_chat::class)]
 /**
  * Tests for Ask Dari's answer format contract.
  *
@@ -40,7 +41,6 @@ require_once(__DIR__ . '/external_testcase.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\external\ai_chat
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\ai_chat::class)]
 final class ai_chat_format_test extends external_testcase {
     /**
      * The guidelines carry the Markdown and quiz-block contract, and the academic-integrity rule

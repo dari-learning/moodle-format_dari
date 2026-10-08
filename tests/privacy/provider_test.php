@@ -33,6 +33,7 @@ use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 use stdClass;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\privacy\provider::class)]
 /**
  * Privacy provider test for format_dari.
  *
@@ -42,7 +43,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\privacy\provider
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\privacy\provider::class)]
 final class provider_test extends \core_privacy\tests\provider_testcase {
     /** @var stdClass A course using the Dari course format. */
     protected $course1;
@@ -191,17 +191,23 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         $this->assertContains('format_dari_ai_memory', $names);
         $this->assertContains('format_dari_actminutes', $names);
         $this->assertContains('format_dari_cardstyle', $names);
-        // AI requests go through core_ai, which is linked rather than described as an external
-        // location: there is no third-party service of the plugin's own any more.
-        $this->assertContains('core_ai', $names);
+        // Moodle 4.4 uses the configured external endpoint; newer versions use core AI.
+        $coreai = \format_dari\local\ai::subsystem_present();
+        $providername = $coreai ? 'core_ai' : 'dari_direct_ai';
+        $this->assertContains($providername, $names);
         foreach ($items as $item) {
-            if ($item->get_name() === 'core_ai') {
-                $this->assertInstanceOf(\core_privacy\local\metadata\types\subsystem_link::class, $item);
-                $this->assertSame('privacy:metadata:core_ai', $item->get_summary());
+            if ($item->get_name() === $providername) {
+                $providertype = $coreai ? \core_privacy\local\metadata\types\subsystem_link::class
+                    : \core_privacy\local\metadata\types\external_location::class;
+                $this->assertInstanceOf($providertype, $item);
+                $this->assertSame('privacy:metadata:' . $providername, $item->get_summary());
+            } else {
+                $this->assertNotInstanceOf(\core_privacy\local\metadata\types\external_location::class, $item);
             }
-            $this->assertNotInstanceOf(\core_privacy\local\metadata\types\external_location::class, $item);
-            $this->assertTrue(get_string_manager()->string_exists($item->get_summary(), 'format_dari'),
-                $item->get_summary());
+            $this->assertTrue(
+                get_string_manager()->string_exists($item->get_summary(), 'format_dari'),
+                $item->get_summary()
+            );
         }
     }
 

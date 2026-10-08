@@ -25,6 +25,7 @@
 
 namespace format_dari\local;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\answertext::class)]
 /**
  * Tests for the report previews of Ask Dari answers.
  *
@@ -34,7 +35,6 @@ namespace format_dari\local;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\answertext
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\answertext::class)]
 final class answertext_test extends \advanced_testcase {
     /**
      * Markdown markers are removed and the text reads as a sentence.

@@ -24,6 +24,10 @@ require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 require_once(__DIR__ . '/../fixtures/backup_guard.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\cardimage::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\observer::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\backup_format_dari_plugin::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\restore_format_dari_plugin::class)]
 /**
  * Tests for card images and card colours (2.5.0).
  *
@@ -36,10 +40,6 @@ require_once(__DIR__ . '/../fixtures/backup_guard.php');
  * @covers     \backup_format_dari_plugin
  * @covers     \restore_format_dari_plugin
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\cardimage::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\observer::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\backup_format_dari_plugin::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\restore_format_dari_plugin::class)]
 final class cardimage_test extends \advanced_testcase {
     use \format_dari\tests\backup_guard;
 
@@ -339,8 +339,10 @@ final class cardimage_test extends \advanced_testcase {
         // First, so that no other unconditional format plugin can mask a missing condition here.
         $this->hide_formats_that_shadow_dari_backups();
 
-        $other = $this->getDataGenerator()->create_course(['format' => 'topics', 'numsections' => 1],
-            ['createsections' => true]);
+        $other = $this->getDataGenerator()->create_course(
+            ['format' => 'topics', 'numsections' => 1],
+            ['createsections' => true]
+        );
         $this->getDataGenerator()->create_module('page', ['course' => $other->id, 'section' => 1]);
         $xml = $this->backup_xml($other, (int) $USER->id);
         $this->assertStringNotContainsString('plugin_format_dari_', $xml);

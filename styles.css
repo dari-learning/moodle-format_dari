@@ -62,26 +62,80 @@
     font-display: swap;
     font-weight: 100 1000;
     src: url([[font:format_dari|dm-sans-latin-wght-normal.woff2]]) format("woff2-variations");
-    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-        U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    unicode-range:
+        U+0000-00FF,
+        U+0131,
+        U+0152-0153,
+        U+02BB-02BC,
+        U+02C6,
+        U+02DA,
+        U+02DC,
+        U+0304,
+        U+0308,
+        U+0329,
+        U+2000-206F,
+        U+20AC,
+        U+2122,
+        U+2191,
+        U+2193,
+        U+2212,
+        U+2215,
+        U+FEFF,
+        U+FFFD;
 }
+
 @font-face {
     font-family: "DM Sans";
     font-style: normal;
     font-display: swap;
     font-weight: 100 1000;
     src: url([[font:format_dari|dm-sans-latin-ext-wght-normal.woff2]]) format("woff2-variations");
-    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
-        U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    unicode-range:
+        U+0100-02BA,
+        U+02BD-02C5,
+        U+02C7-02CC,
+        U+02CE-02D7,
+        U+02DD-02FF,
+        U+0304,
+        U+0308,
+        U+0329,
+        U+1D00-1DBF,
+        U+1E00-1E9F,
+        U+1EF2-1EFF,
+        U+2020,
+        U+20A0-20AB,
+        U+20AD-20C0,
+        U+2113,
+        U+2C60-2C7F,
+        U+A720-A7FF;
 }
+
 @font-face {
     font-family: "DM Sans";
     font-style: italic;
     font-display: swap;
     font-weight: 100 1000;
     src: url([[font:format_dari|dm-sans-latin-wght-italic.woff2]]) format("woff2-variations");
-    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-        U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    unicode-range:
+        U+0000-00FF,
+        U+0131,
+        U+0152-0153,
+        U+02BB-02BC,
+        U+02C6,
+        U+02DA,
+        U+02DC,
+        U+0304,
+        U+0308,
+        U+0329,
+        U+2000-206F,
+        U+20AC,
+        U+2122,
+        U+2191,
+        U+2193,
+        U+2212,
+        U+2215,
+        U+FEFF,
+        U+FFFD;
 }
 
 /* ==========================================================================
@@ -975,9 +1029,9 @@ body.dari-force-dark :is(.dariadmin-wrap, .aitutor-report-index) {
         --drf-focus-width: 3px;
         /* stylelint-disable length-zero-no-unit -- these feed blur(var(--drf-blur-*));
            blur(0px) is unambiguous where a bare 0 is a known cross-browser sharp edge. */
-        --drf-blur-sm: 0px;
-        --drf-blur-md: 0px;
-        --drf-blur-lg: 0px;
+        --drf-blur-sm: calc(1px - 1px);
+        --drf-blur-md: calc(1px - 1px);
+        --drf-blur-lg: calc(1px - 1px);
         /* stylelint-enable length-zero-no-unit */
     }
 
@@ -1014,9 +1068,9 @@ body.dari-force-dark :is(.dariadmin-wrap, .aitutor-report-index) {
     body.format-dari {
         /* stylelint-disable length-zero-no-unit -- these feed blur(var(--drf-blur-*));
            blur(0px) is unambiguous where a bare 0 is a known cross-browser sharp edge. */
-        --drf-blur-sm: 0px;
-        --drf-blur-md: 0px;
-        --drf-blur-lg: 0px;
+        --drf-blur-sm: calc(1px - 1px);
+        --drf-blur-md: calc(1px - 1px);
+        --drf-blur-lg: calc(1px - 1px);
         /* stylelint-enable length-zero-no-unit */
         --drf-surface-scrim: rgba(2, 6, 23, 0.92);
         --drf-surface-overlay: var(--drf-surface-raised);
@@ -1372,7 +1426,8 @@ body.format-dari .dari-activity-content > * {
 /* Media and tables inside prose are exempt — they should use the full width. */
 /* stylelint-disable-next-line max-line-length -- cannot be wrapped: Moodle's
    selector-combinator-space-before forbids a newline before the ">" combinator. */
-body.format-dari :is(.dari-general-summary, .format-dari-section-summary, .dari-activity-content) > :is(img, video, iframe, table, figure, .mediaplugin, .table-responsive) {
+body.format-dari :is(.dari-general-summary, .format-dari-section-summary, .dari-activity-content) > :is(img, video,
+iframe, table, figure, .mediaplugin, .table-responsive) {
     max-inline-size: 100%;
 }
 
@@ -5518,7 +5573,7 @@ body.format-dari .courseindex-item .text-truncate {
    colour the rest of the index uses and be legible on every site. */
 body.format-dari .courseindex-item:is(.pageitem, [data-selected="true"]):not(#_drf_never):not(#_drf_never),
 body.format-dari .courseindex-item:is(.pageitem, [data-selected="true"]):not(#_drf_never):not(#_drf_never)
-    :is(a, span, .text-truncate, .courseindex-link, .courseindex-sectionname, .inplaceeditable, .quickeditlink):not(.badge) {
+:is(a, span, .text-truncate, .courseindex-link, .courseindex-sectionname, .inplaceeditable, .quickeditlink):not(.badge) {
     /* stylelint-disable-next-line declaration-no-important -- pinned to the background above. */
     color: var(--drf-text-primary) !important;
     font-weight: var(--drf-weight-semibold);
@@ -5536,7 +5591,8 @@ body.format-dari .courseindex .btn.btn-icon:focus-visible {
 
 /* Completion icons stay visible in edit mode, where core hides them.
    `!important` #20: core marks them with a display utility. */
-body.format-dari .courseindex :is(.completioninfo, [data-region="completioninfo"], .completion-icon, .courseindex-completion) {
+body.format-dari .courseindex :is(.completioninfo, [data-region="completioninfo"], .completion-icon,
+.courseindex-completion) {
     /* stylelint-disable-next-line declaration-no-important -- deliberate; see the numbered note above. */
     display: inline-flex !important;
     visibility: visible;
@@ -5597,7 +5653,7 @@ body.format-dari .courseindex :is(i, .fa, [class*="fa-"]) {
    report.php sets pagelayout `incourse`, so body.format-dari is present and
    these rules are correctly scoped.
 
-   The three report pages used to ship an inline <style> block per page. Those
+   The three report pages used to ship an inline \3c style> block per page. Those
    blocks are gone: the pages are renderables + mustache templates now, and this
    sheet is the ONLY source of styling for them. Everything the old inline
    blocks provided is therefore expressed here, tokenised — which is what buys
@@ -5957,7 +6013,7 @@ body.format-dari .dari-pagination :is(.page-item.disabled a, .disabled) {
 }
 
 /* --------------------------------------------------------------------------
-   21a. report.php — the rules the removed inline <style> block used to carry
+   21a. report.php — the rules the removed inline \3c style> block used to carry
    -------------------------------------------------------------------------- */
 
 body.format-dari .dari-report-title {
@@ -6652,7 +6708,7 @@ body.format-dari .dari-report-perpage select:focus-visible,
    21c. index.php — `.aitutor-` namespace, `admin` pagelayout
    --------------------------------------------------------------------------
    styles.css previously had NO rules at all for `.aitutor-*`: they lived only
-   in the inline <style> block index.php used to print.
+   in the inline \3c style> block index.php used to print.
    -------------------------------------------------------------------------- */
 
 /* Same canvas as the two report pages above. */
@@ -6948,7 +7004,8 @@ body.format-dari .dari-report-perpage select:focus-visible,
        must change with it. */
     html body.format-dari,
     html[data-bs-theme] body.format-dari,
-    html[data-bs-theme]:not([data-bs-theme="light"]) body.format-dari:not(.dari-force-light):not([data-bs-theme="light"]),
+    html[data-bs-theme]:not([data-bs-theme="light"])
+    body.format-dari:not(.dari-force-light):not([data-bs-theme="light"]),
     body.format-dari.dari-follow-os:not(.dari-force-light),
     body.format-dari.dari-force-dark,
     body.format-dari.dark-mode {
@@ -6978,9 +7035,9 @@ body.format-dari .dari-report-perpage select:focus-visible,
         --drf-elevation-5: none;
         /* stylelint-disable length-zero-no-unit -- these feed blur(var(--drf-blur-*));
            blur(0px) is unambiguous where a bare 0 is a known cross-browser sharp edge. */
-        --drf-blur-sm: 0px;
-        --drf-blur-md: 0px;
-        --drf-blur-lg: 0px;
+        --drf-blur-sm: calc(1px - 1px);
+        --drf-blur-md: calc(1px - 1px);
+        --drf-blur-lg: calc(1px - 1px);
         /* stylelint-enable length-zero-no-unit */
     }
 
@@ -8350,7 +8407,8 @@ body.format-dari.dari-hidecrumb-students:not(.dari-is-grader):not(.editing):not(
 /* The header band. It is empty on a course page for a student — no heading, no
    breadcrumb — so with the tabs gone there is nothing left in it to show. */
 body.format-dari.dari-hidenav-all:not(.editing):not(.editingon):not(.editing-mode) #page-header,
-body.format-dari.dari-hidenav-students:not(.dari-is-grader):not(.editing):not(.editingon):not(.editing-mode) #page-header {
+body.format-dari.dari-hidenav-students:not(.dari-is-grader):not(.editing):not(.editingon):not(.editing-mode)
+#page-header {
     display: none;
 }
 
@@ -8374,7 +8432,8 @@ body.format-dari.dari-hidenav-students:not(.dari-is-grader):not(.editing):not(.e
 /* And the banner keeps its own 12px, so the cards sit one gutter below it
    rather than welded to its lower edge. */
 body.format-dari.dari-hidenav-all:not(.editing):not(.editingon):not(.editing-mode) .dari-cards-container,
-body.format-dari.dari-hidenav-students:not(.dari-is-grader):not(.editing):not(.editingon):not(.editing-mode) .dari-cards-container {
+body.format-dari.dari-hidenav-students:not(.dari-is-grader):not(.editing):not(.editingon):not(.editing-mode)
+.dari-cards-container {
     margin-block-start: var(--drf-space-4);
 }
 
@@ -8436,7 +8495,8 @@ body.format-dari .dari-hero-banner.dari-hero-has-image .dari-progress-ring-text 
    and leave the banner still sitting below it.
    ========================================================================== */
 
-body.format-dari:not(.editing):not(.editingon):not(.editing-mode):has(.dari-hero-sticky-wrap[data-dari-atop]) #page-header {
+body.format-dari:not(.editing):not(.editingon):not(.editing-mode):has(.dari-hero-sticky-wrap[data-dari-atop])
+#page-header {
     display: none;
 }
 
@@ -8448,7 +8508,8 @@ body.format-dari:not(.editing):not(.editingon):not(.editing-mode):has(.dari-hero
 
 /* The tab row's own breathing space, when it is shown. It should sit close
    under the banner, not float in the middle of a band. */
-body.format-dari:not(.editing):not(.editingon):not(.editing-mode):has(.dari-hero-sticky-wrap[data-dari-atop]) .secondary-navigation {
+body.format-dari:not(.editing):not(.editingon):not(.editing-mode):has(.dari-hero-sticky-wrap[data-dari-atop])
+.secondary-navigation {
     margin-block: 0 var(--drf-space-3);
 }
 
@@ -8538,7 +8599,8 @@ body.format-dari:not(.editing):not(.editingon):not(.editing-mode):has(.dari-hero
    margins stacked and the measured banner-to-card gap came out at 54px instead
    of 20. Matching 15's selector shape settles it, and .course-content's own 8px
    goes with it so the single deliberate gap is the only thing left. */
-body.format-dari:is(.dari-hidenav-all, .dari-hidenav-students):not(.editing):not(.editingon):not(.editing-mode):has(.dari-hero-sticky-wrap[data-dari-atop])
+body.format-dari:is(.dari-hidenav-all,
+.dari-hidenav-students):not(.editing):not(.editingon):not(.editing-mode):has(.dari-hero-sticky-wrap[data-dari-atop])
 :is(.dari-cards-container, .dari-activity-cards-container, .course-content) {
     margin-block-start: 0;
     padding-block-start: 0;
@@ -9128,8 +9190,8 @@ body.format-dari .dari-hero-sticky-wrap {
     /* Kept as 0px rather than 0: these are consumed by calc() in the alignment rules, and a
        bare 0 there is invalid. */
     /* stylelint-disable length-zero-no-unit */
-    --drf-hero-align-start: 0px;
-    --drf-hero-align-end: 0px;
+    --drf-hero-align-start: calc(1px - 1px);
+    --drf-hero-align-end: calc(1px - 1px);
     /* stylelint-enable length-zero-no-unit */
 
     inline-size: 100%;
@@ -9759,7 +9821,7 @@ body.dari-player-on .courseindex-item.dari-player-row:focus-within
         background: currentColor;
         /* A 1x1 fully transparent GIF. The smallest thing that reliably replaces an <img>'s
            content without removing the element. */
-        content: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
+        content: url("[[pix:format_dari|transparent]]");
         mask-image: var(--drf-player-icon);
         mask-repeat: no-repeat;
         mask-position: center;
@@ -9954,7 +10016,7 @@ body.dari-player-on .courseindex-item.courseindex-section-title .courseindex-che
    it duplicated the tick at the end of the row, and it told a learner nothing about what the
    activity actually is. */
 .dari-player-row-icon {
-/* The activity icon at the head of the row, in the accent so the row is identifiable by shape and
+    /* The activity icon at the head of the row, in the accent so the row is identifiable by shape and
    colour before it is read. Core's completion circle is hidden with it: it duplicated the tick at
    the end of the row and told a learner nothing about what the activity is. */
     display: flex;
@@ -9991,7 +10053,7 @@ body.dari-player-on .courseindex-item.dari-player-row .completioninfo {
 
 /* The time pill: the same bordered, clock-marked treatment as an activity card's. */
 .dari-player-row-time {
-/* The time, quiet and right-aligned. No pill here: a bordered chip on every row rebuilds the
+    /* The time, quiet and right-aligned. No pill here: a bordered chip on every row rebuilds the
    boxed look the rows just shed. */
     display: inline-flex;
     align-items: center;
@@ -10023,7 +10085,7 @@ body.dari-player-on .courseindex-item.dari-player-row .completioninfo {
    check when done, because colour alone would fail WCAG 1.4.1. The green is the same
    --drf-status-done token the cards and the hero ring use. */
 .dari-player-tick {
-/* The tick. Shape as well as colour: an outlined circle when incomplete and a filled one with a
+    /* The tick. Shape as well as colour: an outlined circle when incomplete and a filled one with a
    check when done, because colour alone would fail WCAG 1.4.1. */
     flex: none;
     display: grid;
@@ -10464,7 +10526,7 @@ body.dari-index-merged #theme_boost-drawers-courseindex .drawerheader {
    the same number, so the page's top edge follows the sidebar's without either being told about
    the other. 164px was 44 of strip plus 120 of band; the strip is gone, so 120 is the whole of it. */
 body.dari-index-merged {
-    --drf-drawerstrip: 0px;
+    --drf-drawerstrip: calc(1px - 1px);
     /* 126px -- 168 reduced by a quarter. 2.3.2 raised this from 120 to 168 to
        recover image height that `background-size: cover` was cropping away, and overshot: the
        band read as too tall for what it holds. 126 keeps a little of that gain (the banner is
@@ -11285,8 +11347,13 @@ body#page-admin-setting-formatsettingdari #adminsettings .form-item.acfs-flash {
 }
 
 @keyframes acfs-flash {
-    0%, 12% { background: rgb(var(--c) / 0.16); }
-    100%    { background: transparent; }
+    0%,
+    12% {
+        background: rgb(var(--c) / 0.16);
+    }
+    100% {
+        background: transparent;
+    }
 }
 
 /* An SVG with a viewBox and no width/height attribute falls back to 300x150.
@@ -11298,8 +11365,7 @@ body#page-admin-setting-formatsettingdari #adminsettings .form-item.acfs-flash {
    18px. A guard that has to be excluded from by name will always be one name behind. Naming the
    places an unsized icon actually appears is both narrower and self-maintaining. */
 body#page-admin-setting-formatsettingdari
-:is(.acfs-head, .acfs-search, .acfs-chevwrap, .acfs-jump, button, a, label) >
-svg:not([width]):not([height]) {
+:is(.acfs-head, .acfs-search, .acfs-chevwrap, .acfs-jump, button, a, label) > svg:not([width]):not([height]) {
     inline-size: 1em;
     block-size: 1em;
 }
@@ -11384,7 +11450,7 @@ body.format-dari .dari-hero-banner.dari-hero-has-image
    Two rules were setting this, with different radii and different fills -- the duplicate-declaration
    trap again -- so they are consolidated here into one that sets nothing. */
 body.format-dari .dari-hero-banner.dari-hero-has-image .dari-hero-nav {
-/* Note: the chevron has NO surface of its own. See the consolidated note further down
+    /* Note: the chevron has NO surface of its own. See the consolidated note further down
    -- this block used to give it a scrim, a border and a blur, and the block below gave it a second,
    different one. Only the colour survives here. */
     background: transparent;
@@ -11541,7 +11607,7 @@ body.dari-player-on .dari-player-meta a {
    somebody else's markup. */
 @media (max-width: 767px) {
     body.format-dari :is(.format-dari-container, .dari-cards-container,
-    .dari-activity-cards-container, .dari-hero-banner) {
+.dari-activity-cards-container, .dari-hero-banner) {
         max-inline-size: 100%;
         overflow-x: clip;
     }
@@ -11978,12 +12044,12 @@ body#page-admin-setting-formatsettingdari #adminsettings .acfs-intro h3 {
 body#page-admin-setting-formatsettingdari {
     /* The chevron, drawn here so no theme can remove it. Two colours, because a
        dark #343a40 arrow is invisible on a dark control. */
-    --drfs-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23475569' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --drfs-chevron: url("[[pix:format_dari|settings-chevron-1]]");
 }
 
 @media (prefers-color-scheme: dark) {
     body#page-admin-setting-formatsettingdari:not([data-acfs-theme="light"]) {
-        --drfs-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23b3c0d1' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        --drfs-chevron: url("[[pix:format_dari|settings-chevron-2]]");
     }
 }
 
@@ -12527,7 +12593,7 @@ body.format-dari .dari-hero-banner.dari-hero-has-image
     }
 
     body.format-dari .dari-hero-sticky-wrap {
-        --drf-topblock: 0px;
+        --drf-topblock: calc(1px - 1px);
     }
 
     /* The title is the reason the banner exists; it keeps its two lines. */
@@ -12766,8 +12832,7 @@ footer[role="contentinfo"]) {
 }
 
 body.format-dari.dari-hidefooter-all:not(.editing):not(.editingon):not(.editing-mode) > footer,
-body.format-dari.dari-hidefooter-students:not(.dari-is-grader):not(.editing):not(.editingon):not(.editing-mode)
-> footer {
+body.format-dari.dari-hidefooter-students:not(.dari-is-grader):not(.editing):not(.editingon):not(.editing-mode) > footer {
     display: none;
 }
 
@@ -12853,9 +12918,11 @@ body.format-dari .dari-bgen-extra-hint {
    :has() is unsupported only on engines older than every browser Moodle 4.4 targets, and there
    the rule simply does not apply -- the band stays, which is the previous behaviour. */
 body.format-dari.dari-hidelogoband-all:not(.editing):not(.editingon):not(.editing-mode)
-nav.navbar:has(.navbar-brand):not(:has(.usermenu)):not(:has(#user-menu-toggle)):not(:has([data-region="drawer-toggle"])):not(:has(.editmode-switch-form)),
+nav.navbar:has(.navbar-brand):not(:has(.usermenu)):not(:has(#user-menu-toggle)):not(:has(
+    [data-region="drawer-toggle"])):not(:has(.editmode-switch-form)),
 body.format-dari.dari-hidelogoband-students:not(.dari-is-grader):not(.editing):not(.editingon):not(.editing-mode)
-nav.navbar:has(.navbar-brand):not(:has(.usermenu)):not(:has(#user-menu-toggle)):not(:has([data-region="drawer-toggle"])):not(:has(.editmode-switch-form)) {
+nav.navbar:has(.navbar-brand):not(:has(.usermenu)):not(:has(#user-menu-toggle)):not(:has(
+        [data-region="drawer-toggle"])):not(:has(.editmode-switch-form)) {
     /* stylelint-disable-next-line declaration-no-important */
     display: none !important;
 }
@@ -12915,7 +12982,7 @@ body.format-dari.dari-hidefooter-students:not(.dari-is-grader):not(.editing):not
    ========================================================================== */
 
 body.format-dari.dari-hero-collapsed {
-    --drf-topblock: 0px;
+    --drf-topblock: calc(1px - 1px);
 }
 
 /* The banner. The second selector is deliberately more specific than image mode's own
@@ -14229,8 +14296,17 @@ body#page-admin-setting-formatsettingdari {
     --dset-leaf: 14px;
     --dset-leaf-sm: 10px;
     --dset-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 16px rgba(15, 23, 42, 0.05);
-    --dset-display: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-        "Helvetica Neue", "Noto Sans", Arial, sans-serif;
+    --dset-display:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        Roboto,
+        "Helvetica Neue",
+        "Noto Sans",
+        Arial,
+        sans-serif;
     --dset-top: 76px;   /* clears Boost's fixed 60px navbar */
 }
 
@@ -14828,59 +14904,208 @@ body#page-admin-setting-formatsettingdari .dset-fig .x {
     letter-spacing: 0;
 }
 
-body#page-admin-setting-formatsettingdari .dset-fig .x8 { font-size: 8.5px; }
-body#page-admin-setting-formatsettingdari .dset-fig .x9 { font-size: 9.5px; }
-body#page-admin-setting-formatsettingdari .dset-fig .x10 { font-size: 10.5px; }
-body#page-admin-setting-formatsettingdari .dset-fig .x11 { font-size: 11.5px; letter-spacing: -0.01em; }
-body#page-admin-setting-formatsettingdari .dset-fig .x13 { font-size: 13.5px; letter-spacing: -0.015em; }
-body#page-admin-setting-formatsettingdari .dset-fig .x-aa { font-size: 56px; font-weight: 700; letter-spacing: -0.03em; }
-body#page-admin-setting-formatsettingdari .dset-fig .b { font-weight: 650; }
-body#page-admin-setting-formatsettingdari .dset-fig .k2 { fill: var(--pv-ink2); }
-body#page-admin-setting-formatsettingdari .dset-fig .k3 { fill: var(--pv-ink3); }
-body#page-admin-setting-formatsettingdari .dset-fig .kw { fill: #fff; }
-body#page-admin-setting-formatsettingdari .dset-fig .kb { fill: var(--pv-brand-text); }
-body#page-admin-setting-formatsettingdari .dset-fig .kok { fill: var(--pv-ok-text); }
-body#page-admin-setting-formatsettingdari .dset-fig .kfl { fill: var(--pv-brand-text); text-decoration: underline; }
-body#page-admin-setting-formatsettingdari .dset-fig .kf { fill: var(--pv-ink3); }
+body#page-admin-setting-formatsettingdari .dset-fig .x8 {
+    font-size: 8.5px;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .x9 {
+    font-size: 9.5px;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .x10 {
+    font-size: 10.5px;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .x11 {
+    font-size: 11.5px;
+    letter-spacing: -0.01em;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .x13 {
+    font-size: 13.5px;
+    letter-spacing: -0.015em;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .x-aa {
+    font-size: 56px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .b {
+    font-weight: 650;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .k2 {
+    fill: var(--pv-ink2);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .k3 {
+    fill: var(--pv-ink3);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .kw {
+    fill: #fff;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .kb {
+    fill: var(--pv-brand-text);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .kok {
+    fill: var(--pv-ok-text);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .kfl {
+    fill: var(--pv-brand-text);
+    text-decoration: underline;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .kf {
+    fill: var(--pv-ink3);
+}
 /* A light chosen colour: text and icons on it switch to ink. */
-body#page-admin-setting-formatsettingdari .dset-fig.pv-c-light .x.onc { fill: var(--pv-ink); }
-body#page-admin-setting-formatsettingdari .dset-fig.pv-c-light .ik.onc { stroke: var(--pv-ink); }
+body#page-admin-setting-formatsettingdari .dset-fig.pv-c-light .x.onc {
+    fill: var(--pv-ink);
+}
+body#page-admin-setting-formatsettingdari .dset-fig.pv-c-light .ik.onc {
+    stroke: var(--pv-ink);
+}
 
 /* Surfaces. */
-body#page-admin-setting-formatsettingdari .dset-fig .p-page { fill: var(--pv-page); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-surf0 { fill: var(--pv-surface); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-index { fill: var(--pv-index); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-head { fill: var(--pv-head); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-banner { fill: var(--pv-banner); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-foot { fill: var(--pv-foot); stroke: var(--pv-line); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-card { fill: var(--pv-surface); stroke: var(--pv-line); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-bubble { fill: var(--pv-surface2); stroke: var(--pv-line); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-chip { fill: var(--pv-chip); stroke: var(--pv-line); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-btn { fill: var(--pv-surface); stroke: var(--pv-line); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-glass { fill: rgba(255, 255, 255, 0.2); stroke: rgba(255, 255, 255, 0.45); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-line { fill: none; stroke: var(--pv-line); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-sep { fill: none; stroke: rgba(255, 255, 255, 0.2); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-edge { fill: none; stroke: var(--pv-line); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-brand { fill: var(--pv-brand); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-brandsoft { fill: var(--pv-brand-soft); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-c { fill: var(--pv-c, var(--pv-brand)); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-cs { fill: var(--pv-brand-soft); fill: color-mix(in srgb, var(--pv-c, var(--pv-brand)) 16%, var(--pv-surface)); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-ok { fill: var(--pv-ok); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-okbadge { fill: var(--pv-ok-soft); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-tick0 { fill: var(--pv-surface); stroke: var(--pv-line2); stroke-width: 1.2; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-track { fill: var(--pv-track); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-modico { fill: var(--pv-brand); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-pop { fill: var(--pv-surface); stroke: var(--pv-line); stroke-width: 1; filter: drop-shadow(0 6px 10px rgba(2, 6, 23, 0.25)); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-dim { fill: rgba(2, 6, 23, 0.42); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-shadow { fill: var(--pv-surface); filter: drop-shadow(0 4px 6px rgba(2, 6, 23, 0.28)); }
-body#page-admin-setting-formatsettingdari .dset-fig .p-scroll { fill: none; stroke: var(--pv-line2); stroke-width: 3; stroke-linecap: round; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-arrow { fill: none; stroke: var(--pv-ink3); stroke-width: 1.4; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-arrowh { fill: none; stroke: var(--pv-ink3); stroke-width: 1.4; stroke-linejoin: round; }
-body#page-admin-setting-formatsettingdari .dset-fig .p-dash { fill: none; stroke: var(--pv-line2); stroke-dasharray: 3 3; }
-body#page-admin-setting-formatsettingdari .dset-fig .ring-t { fill: none; stroke: var(--pv-track); stroke-width: 2.5; }
-body#page-admin-setting-formatsettingdari .dset-fig .ring-a { fill: none; stroke: var(--pv-brand); stroke-width: 2.5; stroke-linecap: round; }
-body#page-admin-setting-formatsettingdari .dset-fig .ring-tw { fill: none; stroke: rgba(255, 255, 255, 0.3); stroke-width: 2.5; }
-body#page-admin-setting-formatsettingdari .dset-fig .ring-aw { fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; }
+body#page-admin-setting-formatsettingdari .dset-fig .p-page {
+    fill: var(--pv-page);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-surf0 {
+    fill: var(--pv-surface);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-index {
+    fill: var(--pv-index);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-head {
+    fill: var(--pv-head);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-banner {
+    fill: var(--pv-banner);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-foot {
+    fill: var(--pv-foot);
+    stroke: var(--pv-line);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-card {
+    fill: var(--pv-surface);
+    stroke: var(--pv-line);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-bubble {
+    fill: var(--pv-surface2);
+    stroke: var(--pv-line);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-chip {
+    fill: var(--pv-chip);
+    stroke: var(--pv-line);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-btn {
+    fill: var(--pv-surface);
+    stroke: var(--pv-line);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-glass {
+    fill: rgba(255, 255, 255, 0.2);
+    stroke: rgba(255, 255, 255, 0.45);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-line {
+    fill: none;
+    stroke: var(--pv-line);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-sep {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.2);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-edge {
+    fill: none;
+    stroke: var(--pv-line);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-brand {
+    fill: var(--pv-brand);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-brandsoft {
+    fill: var(--pv-brand-soft);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-c {
+    fill: var(--pv-c, var(--pv-brand));
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-cs {
+    fill: color-mix(in srgb, var(--pv-c, var(--pv-brand)) 16%, var(--pv-surface));
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-ok {
+    fill: var(--pv-ok);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-okbadge {
+    fill: var(--pv-ok-soft);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-tick0 {
+    fill: var(--pv-surface);
+    stroke: var(--pv-line2);
+    stroke-width: 1.2;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-track {
+    fill: var(--pv-track);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-modico {
+    fill: var(--pv-brand);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-pop {
+    fill: var(--pv-surface);
+    stroke: var(--pv-line);
+    stroke-width: 1;
+    filter: drop-shadow(0 6px 10px rgba(2, 6, 23, 0.25));
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-dim {
+    fill: rgba(2, 6, 23, 0.42);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-shadow {
+    fill: var(--pv-surface);
+    filter: drop-shadow(0 4px 6px rgba(2, 6, 23, 0.28));
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-scroll {
+    fill: none;
+    stroke: var(--pv-line2);
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-arrow {
+    fill: none;
+    stroke: var(--pv-ink3);
+    stroke-width: 1.4;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-arrowh {
+    fill: none;
+    stroke: var(--pv-ink3);
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .p-dash {
+    fill: none;
+    stroke: var(--pv-line2);
+    stroke-dasharray: 3 3;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .ring-t {
+    fill: none;
+    stroke: var(--pv-track);
+    stroke-width: 2.5;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .ring-a {
+    fill: none;
+    stroke: var(--pv-brand);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .ring-tw {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.3);
+    stroke-width: 2.5;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .ring-aw {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+}
 
 /* Icons. */
 body#page-admin-setting-formatsettingdari .dset-fig .ik {
@@ -14890,12 +15115,26 @@ body#page-admin-setting-formatsettingdari .dset-fig .ik {
     stroke-linejoin: round;
 }
 
-body#page-admin-setting-formatsettingdari .dset-fig .ic-2 { stroke: var(--pv-ink2); }
-body#page-admin-setting-formatsettingdari .dset-fig .ic-w { stroke: #fff; }
-body#page-admin-setting-formatsettingdari .dset-fig .ic-b { stroke: var(--pv-brand-text); }
-body#page-admin-setting-formatsettingdari .dset-fig .ic-c { stroke: var(--pv-c, var(--pv-brand)); }
-body#page-admin-setting-formatsettingdari .dset-fig .ic-wf { fill: #fff; stroke: none; }
-body#page-admin-setting-formatsettingdari .dset-fig .ic-bf { fill: var(--pv-brand-text); stroke: none; }
+body#page-admin-setting-formatsettingdari .dset-fig .ic-2 {
+    stroke: var(--pv-ink2);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .ic-w {
+    stroke: #fff;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .ic-b {
+    stroke: var(--pv-brand-text);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .ic-c {
+    stroke: var(--pv-c, var(--pv-brand));
+}
+body#page-admin-setting-formatsettingdari .dset-fig .ic-wf {
+    fill: #fff;
+    stroke: none;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .ic-bf {
+    fill: var(--pv-brand-text);
+    stroke: none;
+}
 
 /* What the setting changes: ringed and named in the primary colour. */
 body#page-admin-setting-formatsettingdari .dset-fig .hl {
@@ -14907,22 +15146,58 @@ body#page-admin-setting-formatsettingdari .dset-fig .hl {
 }
 
 body#page-admin-setting-formatsettingdari .dset-fig .co-bg,
-body#page-admin-setting-formatsettingdari .dset-fig .co-dot { fill: var(--pv-brand); }
-body#page-admin-setting-formatsettingdari .dset-fig .co-ln { fill: none; stroke: var(--pv-brand-text); stroke-width: 1.2; }
-body#page-admin-setting-formatsettingdari .dset-fig .pv-spot { fill: none; stroke: var(--pv-brand); stroke-width: 2; }
+body#page-admin-setting-formatsettingdari .dset-fig .co-dot {
+    fill: var(--pv-brand);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .co-ln {
+    fill: none;
+    stroke: var(--pv-brand-text);
+    stroke-width: 1.2;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .pv-spot {
+    fill: none;
+    stroke: var(--pv-brand);
+    stroke-width: 2;
+}
 
 /* Two states: each panel framed, labelled, and the one matching the setting marked. */
-body#page-admin-setting-formatsettingdari .dset-fig .pv-frame { fill: var(--pv-page); stroke: var(--pv-line2); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .pv-cur { fill: none; stroke: none; }
-body#page-admin-setting-formatsettingdari .dset-fig .is-current .pv-cur { stroke: var(--pv-brand); stroke-width: 2; }
-body#page-admin-setting-formatsettingdari .dset-fig .tag-on { fill: var(--pv-brand); }
-body#page-admin-setting-formatsettingdari .dset-fig .tag-off { fill: var(--pv-faint); }
+body#page-admin-setting-formatsettingdari .dset-fig .pv-frame {
+    fill: var(--pv-page);
+    stroke: var(--pv-line2);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .pv-cur {
+    fill: none;
+    stroke: none;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .is-current .pv-cur {
+    stroke: var(--pv-brand);
+    stroke-width: 2;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .tag-on {
+    fill: var(--pv-brand);
+}
+body#page-admin-setting-formatsettingdari .dset-fig .tag-off {
+    fill: var(--pv-faint);
+}
 
 /* The "all courses" stack. */
-body#page-admin-setting-formatsettingdari .dset-fig .pv-sheet { fill: var(--pv-surface); stroke: var(--pv-line2); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .pv-sheet-edge { fill: none; stroke: var(--pv-line2); stroke-width: 1; }
-body#page-admin-setting-formatsettingdari .dset-fig .back1 { opacity: 0.85; }
-body#page-admin-setting-formatsettingdari .dset-fig .back2 { opacity: 0.6; }
+body#page-admin-setting-formatsettingdari .dset-fig .pv-sheet {
+    fill: var(--pv-surface);
+    stroke: var(--pv-line2);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .pv-sheet-edge {
+    fill: none;
+    stroke: var(--pv-line2);
+    stroke-width: 1;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .back1 {
+    opacity: 0.85;
+}
+body#page-admin-setting-formatsettingdari .dset-fig .back2 {
+    opacity: 0.6;
+}
 
 body#page-admin-setting-formatsettingdari .dset-figcap {
     display: flex;
@@ -15209,7 +15484,8 @@ body.format-dari.dari-force-dark :is(#theme_boost-drawers-courseindex, .drawer) 
     border-color: var(--drf-border-subtle);
 }
 
-body.format-dari.dari-force-dark :is(#page-header, .page-header-headings, .secondary-navigation) :is(h1, h2, a, .nav-link) {
+body.format-dari.dari-force-dark :is(#page-header, .page-header-headings, .secondary-navigation) :is(h1, h2, a,
+.nav-link) {
     color: var(--drf-text-primary);
 }
 
@@ -15238,7 +15514,8 @@ body.format-dari.dari-force-dark .drf-card {
     }
 }
 
-body.format-dari.dari-force-dark :is(.secondary-navigation, .secondary-navigation .navigation, .secondary-navigation .moremenu) {
+body.format-dari.dari-force-dark :is(.secondary-navigation, .secondary-navigation .navigation, .secondary-navigation
+.moremenu) {
     background: transparent;
 }
 
@@ -15256,14 +15533,18 @@ body.format-dari.dari-force-dark :is(.drawerheader, .drawer-toggles) :is(.btn, a
 
 
 /* Dark: the index's own panel colour is mixed toward white by the server, so it is reset here. */
-html[data-bs-theme="dark"] body.dari-player-on.format-dari:not(.dari-force-light) #theme_boost-drawers-courseindex :is(.drawercontent, #courseindex, .courseindex, .courseindex-section, .courseindex-sectioncontent),
-body.dari-player-on.format-dari.dark-mode:not(.dari-force-light) #theme_boost-drawers-courseindex :is(.drawercontent, #courseindex, .courseindex, .courseindex-section, .courseindex-sectioncontent),
-body.dari-player-on.format-dari.dari-force-dark #theme_boost-drawers-courseindex :is(.drawercontent, #courseindex, .courseindex, .courseindex-section, .courseindex-sectioncontent) {
+html[data-bs-theme="dark"] body.dari-player-on.format-dari:not(.dari-force-light) #theme_boost-drawers-courseindex
+:is(.drawercontent, #courseindex, .courseindex, .courseindex-section, .courseindex-sectioncontent),
+body.dari-player-on.format-dari.dark-mode:not(.dari-force-light) #theme_boost-drawers-courseindex
+:is(.drawercontent, #courseindex, .courseindex, .courseindex-section, .courseindex-sectioncontent),
+body.dari-player-on.format-dari.dari-force-dark #theme_boost-drawers-courseindex :is(.drawercontent, #courseindex,
+.courseindex, .courseindex-section, .courseindex-sectioncontent) {
     background: var(--drf-neutral-900);
 }
 
 @media (prefers-color-scheme: dark) {
-    body.dari-player-on.format-dari.dari-follow-os:not(.dari-force-light) #theme_boost-drawers-courseindex :is(.drawercontent, #courseindex, .courseindex, .courseindex-section, .courseindex-sectioncontent) {
+    body.dari-player-on.format-dari.dari-follow-os:not(.dari-force-light) #theme_boost-drawers-courseindex
+    :is(.drawercontent, #courseindex, .courseindex, .courseindex-section, .courseindex-sectioncontent) {
         background: var(--drf-neutral-900);
     }
 }
@@ -15291,8 +15572,17 @@ body.dari-player-on.format-dari.dari-force-dark #theme_boost-drawers-courseindex
 body.format-dari,
 .dariadmin-wrap,
 .aitutor-report-index {
-    --drf-font-family: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-        "Helvetica Neue", "Noto Sans", Arial, sans-serif;
+    --drf-font-family:
+        "DM Sans",
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        Roboto,
+        "Helvetica Neue",
+        "Noto Sans",
+        Arial,
+        sans-serif;
     --drf-radius-xs: 6px;
     --drf-radius-sm: 8px;
     --drf-radius-md: 12px;
@@ -15341,8 +15631,12 @@ body.format-dari,
     --drf-inverse-text: #f1f5f9;
     --drf-inverse-ai-tint: rgba(15, 108, 191, 0.2);
     --drf-inverse-ai-tint: color-mix(in srgb, var(--drf-brand) 24%, transparent);
-    --drf-inverse-ai-wash: linear-gradient(135deg, color-mix(in srgb, var(--drf-brand) 24%, transparent) 0%,
-        color-mix(in srgb, var(--drf-brand) 10%, transparent) 100%);
+    --drf-inverse-ai-wash:
+        linear-gradient(
+            135deg,
+            color-mix(in srgb, var(--drf-brand) 24%, transparent) 0%,
+            color-mix(in srgb, var(--drf-brand) 10%, transparent) 100%
+        );
     --drf-ai-bg: var(--dp-tint-2);
     --drf-ai-border: var(--dp-tint-line);
     --drf-ai-fg: var(--dp-brand-deep);
@@ -15529,7 +15823,8 @@ body.format-dari #dari-hero-banner .dari-hero-ai-btn.dari-ai-delete-banner:hover
 }
 
 /* Image mode: glass keys over the photograph. */
-body.format-dari #dari-hero-banner.dari-hero-has-image :is(.dari-hero-home, .dari-hero-grades, .dari-hero-back, .dari-hero-nav) {
+body.format-dari #dari-hero-banner.dari-hero-has-image :is(.dari-hero-home, .dari-hero-grades, .dari-hero-back,
+.dari-hero-nav) {
     border-color: rgba(255, 255, 255, 0.26);
     color: #fff;
     background: rgba(255, 255, 255, 0.14);
@@ -15538,7 +15833,8 @@ body.format-dari #dari-hero-banner.dari-hero-has-image :is(.dari-hero-home, .dar
     backdrop-filter: blur(var(--drf-blur-md)) saturate(140%);
 }
 
-body.format-dari #dari-hero-banner.dari-hero-has-image :is(.dari-hero-home, .dari-hero-grades, .dari-hero-back, .dari-hero-nav):hover {
+body.format-dari #dari-hero-banner.dari-hero-has-image :is(.dari-hero-home, .dari-hero-grades, .dari-hero-back,
+.dari-hero-nav):hover {
     color: #fff;
     background: rgba(255, 255, 255, 0.24);
 }
@@ -15825,26 +16121,29 @@ body.dari-player-on #theme_boost-drawers-courseindex :is(.dari-player-nav a, .da
 /* Section headings: the filled band, square, a little taller. */
 body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.courseindex-section-title,
 body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.courseindex-section-title:hover,
-body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-section.current .courseindex-item.courseindex-section-title,
-body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.courseindex-section-title:is(.pageitem, .active, :focus-within) {
+body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-section.current
+.courseindex-item.courseindex-section-title,
+body.dari-player-on #theme_boost-drawers-courseindex #courseindex
+.courseindex-item.courseindex-section-title:is(.pageitem, .active, :focus-within) {
     min-block-size: 50px;
     margin: 0;
     padding-block: 3px;
     padding-inline: 10px 14px;
-    border: 0 !important;
-    border-radius: 0 !important;
+    border: 0;
+    border-radius: 0;
     /* Exactly the theme's primary colour (or the course/site heading colour when one is set). */
-    background: var(--drf-index-heading-bg, var(--drf-brand)) !important;
+    background: var(--drf-index-heading-bg, var(--drf-brand));
     box-shadow: inset 0 -1px 0 rgba(2, 6, 23, 0.12);
 }
 
 body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.courseindex-section-title
 :is(a, .courseindex-link, .courseindex-chevron, span, .icon) {
-    color: #fff !important;
-    background: transparent !important;
+    color: #fff;
+    background: transparent;
 }
 
-body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.courseindex-section-title .courseindex-link {
+body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.courseindex-section-title
+.courseindex-link {
     font-size: 0.9375rem;
     font-weight: 650;
     letter-spacing: -0.01em;
@@ -15856,21 +16155,21 @@ body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-i
     padding-block: 11px;
     padding-inline: 14px 12px;
     gap: 10px;
-    border: 0 !important;
-    border-block-end: 1px solid var(--dp-hairline) !important;
-    border-radius: 0 !important;
-    background: transparent !important;
+    border: 0;
+    border-block-end: 1px solid var(--dp-hairline);
+    border-radius: 0;
+    background: transparent;
     box-shadow: none;
 }
 
 body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.dari-player-row:hover {
-    background: var(--dp-tint-1) !important;
+    background: var(--dp-tint-1);
 }
 
 body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.dari-player-row .courseindex-link {
     font-size: 0.9rem;
     font-weight: 500;
-    color: var(--drf-text-primary) !important;
+    color: var(--drf-text-primary);
 }
 
 body.dari-player-on #theme_boost-drawers-courseindex #courseindex .dari-player-row-icon {
@@ -15885,16 +16184,19 @@ body.dari-player-on #theme_boost-drawers-courseindex #courseindex .dari-player-r
 }
 
 /* The current activity: a square tint with a solid primary bar. */
-body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.dari-player-row:is(.pageitem, [data-selected="true"]) {
-    background: var(--dp-tint-2) !important;
+body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.dari-player-row:is(.pageitem,
+[data-selected="true"]) {
+    background: var(--dp-tint-2);
     box-shadow: inset 3px 0 0 var(--drf-brand);
 }
 
-[dir="rtl"] body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.dari-player-row:is(.pageitem, [data-selected="true"]) {
+[dir="rtl"] body.dari-player-on #theme_boost-drawers-courseindex #courseindex
+.courseindex-item.dari-player-row:is(.pageitem, [data-selected="true"]) {
     box-shadow: inset -3px 0 0 var(--drf-brand);
 }
 
-body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.dari-player-row:is(.pageitem, [data-selected="true"]) .courseindex-link {
+body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item.dari-player-row:is(.pageitem,
+[data-selected="true"]) .courseindex-link {
     font-weight: 650;
 }
 
@@ -15927,7 +16229,7 @@ body.dari-player-on #theme_boost-drawers-courseindex #courseindex .dari-player-t
     inline-size: 18px;
     block-size: 18px;
     border: 1.5px solid var(--drf-border-strong);
-    border-radius: 0 !important;
+    border-radius: 0;
     background: var(--dp-panel);
     box-shadow: none;
 }
@@ -15947,8 +16249,9 @@ body.dari-player-on #theme_boost-drawers-courseindex #courseindex .dari-player-t
     stroke-linejoin: round;
 }
 
-body.dari-player-on #theme_boost-drawers-courseindex #courseindex :is(.badge, .rounded-pill, .courseindex-item, .btn, .current-badge) {
-    border-radius: 0 !important;
+body.dari-player-on #theme_boost-drawers-courseindex #courseindex :is(.badge, .rounded-pill, .courseindex-item,
+.btn, .current-badge) {
+    border-radius: 0;
 }
 
 body.dari-player-on #theme_boost-drawers-courseindex #courseindex .courseindex-item:focus-visible,
@@ -16100,7 +16403,8 @@ body.format-dari .dari-ai-tool-btn {
 }
 
 /* Quiz and other answer widgets. */
-body.format-dari :is(.dari-ai-quiz, .dari-ai-quizset, .dari-ai-checklist, .dari-ai-callout, .dari-ai-codeblock, .dari-ai-table-wrap) {
+body.format-dari :is(.dari-ai-quiz, .dari-ai-quizset, .dari-ai-checklist, .dari-ai-callout, .dari-ai-codeblock,
+.dari-ai-table-wrap) {
     border-radius: 12px;
 }
 
@@ -16200,9 +16504,9 @@ body.format-dari .dari-tour-count {
 /* --- P10. Preferences --------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
     body.format-dari :is(.drf-card, .drf-card__action, .drf-tools__btn, .dari-icon-picker-item,
-    .dari-ai-quick-btn, .dari-ai-tool-card, .dari-ai-tool, #dari-hero-banner a, #dari-hero-banner button),
+.dari-ai-quick-btn, .dari-ai-tool-card, .dari-ai-tool, #dari-hero-banner a, #dari-hero-banner button),
     body.format-dari :is(.drf-card, .drf-tools__btn, .dari-icon-picker-item, .dari-ai-quick-btn,
-    .dari-ai-tool-card, .dari-ai-tool, #dari-hero-banner a, #dari-hero-banner button):hover {
+.dari-ai-tool-card, .dari-ai-tool, #dari-hero-banner a, #dari-hero-banner button):hover {
         transform: none;
         transition: none;
     }
@@ -16210,7 +16514,7 @@ body.format-dari .dari-tour-count {
 
 @media (prefers-reduced-transparency: reduce) {
     body.format-dari :is(.drf-media__eyebrow, #dari-hero-banner.dari-hero-has-image a,
-    #dari-hero-banner.dari-hero-has-image button) {
+#dari-hero-banner.dari-hero-has-image button) {
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
     }
@@ -16229,7 +16533,7 @@ body.format-dari .dari-tour-count {
     }
 
     body.format-dari :is(.dari-hero-ai-btn, .dari-ai-send-btn, .drf-btn--ai, .drf-card__addicon,
-    .dari-ai-message-user .dari-ai-message-content) {
+.dari-ai-message-user .dari-ai-message-content) {
         border: 1px solid ButtonText;
         background: ButtonFace;
         color: ButtonText;
@@ -16348,8 +16652,10 @@ body.format-dari #dari-hero-banner.dari-hero-banner.dari-hero-has-image {
 }
 
 /* Dark: the brand-coloured course name in the index header and the module glyphs on chips. */
-html[data-bs-theme="dark"] body.dari-player-on.format-dari:not(.dari-force-light) #theme_boost-drawers-courseindex .dari-player-coursename,
-body.dari-player-on.format-dari.dark-mode:not(.dari-force-light) #theme_boost-drawers-courseindex .dari-player-coursename,
+html[data-bs-theme="dark"] body.dari-player-on.format-dari:not(.dari-force-light) #theme_boost-drawers-courseindex
+.dari-player-coursename,
+body.dari-player-on.format-dari.dark-mode:not(.dari-force-light) #theme_boost-drawers-courseindex
+.dari-player-coursename,
 body.dari-player-on.format-dari.dari-force-dark #theme_boost-drawers-courseindex .dari-player-coursename {
     color: var(--dp-brand-text);
 }
@@ -16361,7 +16667,8 @@ body.format-dari.dari-force-dark .drf-card__metaitem img {
 }
 
 @media (prefers-color-scheme: dark) {
-    body.dari-player-on.format-dari.dari-follow-os:not(.dari-force-light) #theme_boost-drawers-courseindex .dari-player-coursename {
+    body.dari-player-on.format-dari.dari-follow-os:not(.dari-force-light) #theme_boost-drawers-courseindex
+    .dari-player-coursename {
         color: var(--dp-brand-text);
     }
 
@@ -16382,8 +16689,8 @@ body.format-dari .dari-hero-docs {
     inline-size: 40px;
     block-size: 40px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.94) !important;
-    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.06);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -16422,9 +16729,14 @@ body.format-dari .dari-hero-docs-icon {
     block-size: 40px;
     object-fit: contain;
 }
+
 @media (prefers-reduced-motion: reduce) {
-    body.format-dari .dari-hero-docs { transition: none; }
-    body.format-dari .dari-hero-docs:hover { transform: none; }
+    body.format-dari .dari-hero-docs {
+        transition: none;
+    }
+    body.format-dari .dari-hero-docs:hover {
+        transform: none;
+    }
 }
 
 /* --------------------------------------------------------------------------
@@ -16435,7 +16747,7 @@ body.format-dari :is(#dari-hero-banner, .dari-hero-banner, .dari-hero-sticky-wra
 .dari-hero-bg-img, .dari-hero-overlay),
 body.format-dari :is(#dari-hero-banner, .dari-hero-banner)::before,
 body.format-dari :is(#dari-hero-banner, .dari-hero-banner)::after {
-    border-radius: 0 !important;
+    border-radius: 0;
 }
 
 body.dari-player-on #theme_boost-drawers-courseindex #courseindex .dari-player-tick,
@@ -16443,7 +16755,7 @@ body.dari-player-on .dari-player-tick {
     inline-size: 20px;
     block-size: 20px;
     border: 2px solid #94a3b8;
-    border-radius: 50% !important;
+    border-radius: 50%;
     background: transparent;
 }
 
@@ -16640,7 +16952,12 @@ body.format-dari .drf-cmimage-btn:focus-visible {
     outline: 3px solid var(--drf-focus-color, var(--drf-brand));
     outline-offset: 2px;
 }
+
 @media (prefers-reduced-motion: reduce) {
-    body.format-dari .drf-cmimage-btn { transition: none; }
-    body.format-dari .drf-cmimage-btn:hover { transform: none; }
+    body.format-dari .drf-cmimage-btn {
+        transition: none;
+    }
+    body.format-dari .drf-cmimage-btn:hover {
+        transform: none;
+    }
 }

@@ -72,7 +72,7 @@ const SELECTORS = {
     quizoption: '.dari-ai-quiz-option',
     quizhint: '.dari-ai-quiz-hintbtn',
     followup: '.dari-ai-followup',
-    checkbox: '.dari-ai-checklist-box',
+    checkbox: '.dari-ai-checklist-box'
 };
 
 /** @type {String} localStorage key remembering whether the learner prefers the Study view. */
@@ -86,7 +86,8 @@ const LETTERS = 'ABCDEFGH';
  *
  * @type {String}
  */
-const FOCUSABLE = 'a[href], area[href], button:not([disabled]), ' +
+const FOCUSABLE =
+    'a[href], area[href], button:not([disabled]), ' +
     'input:not([disabled]):not([type="hidden"]), select:not([disabled]), ' +
     'textarea:not([disabled]), iframe, [tabindex]:not([tabindex="-1"]), ' +
     '[contenteditable="true"]';
@@ -122,7 +123,7 @@ const STRING_IDS = {
     quizincomplete: 'aiassistant_quiz_incomplete',
     cutoff: 'aiassistant_cutoff',
     askagain: 'aiassistant_askagain',
-    policydeclined: 'aiassistant_policydeclined',
+    policydeclined: 'aiassistant_policydeclined'
 };
 
 /**
@@ -132,12 +133,44 @@ const STRING_IDS = {
  * @type {Object}
  */
 const PARAM_STRING_IDS = {
-    quizcounter: ['aiassistant_quiz_counter', {num: '{num}', total: '{total}'}],
+    quizcounter: [
+        'aiassistant_quiz_counter',
+        {
+            num: '{num}',
+            total: '{total}'
+        }
+    ],
     quizincorrect: ['aiassistant_quiz_incorrect', '{answer}'],
-    quizscore: ['aiassistant_quiz_score', {score: '{score}', total: '{total}'}],
-    quizchoose: ['aiassistant_quiz_choose', {question: '{question}', letter: '{letter}', option: '{option}'}],
-    quizexplainprompt: ['aiassistant_quiz_explain_prompt', {question: '{question}', letter: '{letter}', option: '{option}'}],
-    checklistprogress: ['aiassistant_checklist_progress', {done: '{done}', total: '{total}'}],
+    quizscore: [
+        'aiassistant_quiz_score',
+        {
+            score: '{score}',
+            total: '{total}'
+        }
+    ],
+    quizchoose: [
+        'aiassistant_quiz_choose',
+        {
+            question: '{question}',
+            letter: '{letter}',
+            option: '{option}'
+        }
+    ],
+    quizexplainprompt: [
+        'aiassistant_quiz_explain_prompt',
+        {
+            question: '{question}',
+            letter: '{letter}',
+            option: '{option}'
+        }
+    ],
+    checklistprogress: [
+        'aiassistant_checklist_progress',
+        {
+            showCopiedFeedback: '{showCopiedFeedback}',
+            total: '{total}'
+        }
+    ]
 };
 
 /** @type {Number} How many characters of a question are quoted back in the greeting. */
@@ -196,17 +229,20 @@ let welcomeSnapshot = null;
  *                            exception object carrying a translated .message.
  */
 const callExternal = (shortname, args) => {
-    const payload = {courseid: config.courseid};
+    const payload = {
+        courseid: config.courseid
+    };
     Object.keys(args || {}).forEach((name) => {
         if (args[name] !== null && args[name] !== undefined) {
             payload[name] = args[name];
         }
     });
-
-    return Ajax.call([{
-        methodname: 'format_dari_' + shortname,
-        args: payload,
-    }])[0];
+    return Ajax.call([
+        {
+            methodname: 'format_dari_' + shortname,
+            args: payload
+        }
+    ])[0];
 };
 
 /**
@@ -237,7 +273,6 @@ const getInput = () => document.getElementById(SELECTORS.input);
  */
 const isOpen = () => {
     const panel = getPanel();
-
     return !!panel && panel.style.display !== 'none' && panel.style.display !== '';
 };
 
@@ -252,7 +287,6 @@ const enqueue = (task) => {
     renderQueue = renderQueue.then(task).catch((error) => {
         Notification.exception(error);
     });
-
     return renderQueue;
 };
 
@@ -283,13 +317,11 @@ const loadHistory = () => {
         const saved = sessionStorage.getItem('dari_chat_' + config.courseid + '_' + config.userid);
         if (saved) {
             const parsed = JSON.parse(saved);
-
             return Array.isArray(parsed) ? parsed : [];
         }
     } catch (error) {
         return [];
     }
-
     return [];
 };
 
@@ -300,9 +332,10 @@ const loadHistory = () => {
  * @param {Object} values Token values.
  * @returns {String} The finished string.
  */
-const fmt = (alias, values) => String(strings[alias] || '').replace(/\{(\w+)\}/g, (match, name) => (
-    values && values[name] !== undefined ? String(values[name]) : match
-));
+const fmt = (alias, values) =>
+    String(strings[alias] || '').replace(/\{(\w+)\}/g, (match, name) =>
+        values && values[name] !== undefined ? String(values[name]) : match
+    );
 
 /**
  * Shorten text for quoting back to the tutor.
@@ -312,7 +345,9 @@ const fmt = (alias, values) => String(strings[alias] || '').replace(/\{(\w+)\}/g
  * @returns {String} The text, with an ellipsis when cut.
  */
 const truncate = (text, length) => {
-    const value = String(text || '').replace(/\s+/g, ' ').trim();
+    const value = String(text || '')
+        .replace(/\s+/g, ' ')
+        .trim();
     return value.length > length ? value.substring(0, length - 1) + '…' : value;
 };
 
@@ -366,26 +401,29 @@ const updateChecklist = (card) => {
         return;
     }
     const boxes = card.querySelectorAll(SELECTORS.checkbox);
-    let done = 0;
+    let showCopiedFeedback = 0;
     boxes.forEach((box) => {
         if (box.checked) {
-            done++;
+            showCopiedFeedback++;
         }
         const item = box.closest('.dari-ai-checklist-item');
         if (item) {
-            item.classList.toggle('is-done', box.checked);
+            item.classList.toggle('is-showCopiedFeedback', box.checked);
         }
     });
     const total = boxes.length;
     const bar = card.querySelector('.dari-ai-checklist-bar > span');
     if (bar) {
-        bar.style.inlineSize = (total ? Math.round((done / total) * 100) : 0) + '%';
+        bar.style.inlineSize = (total ? Math.round((showCopiedFeedback / total) * 100) : 0) + '%';
     }
     const count = card.querySelector('.dari-ai-checklist-count');
     if (count) {
-        count.textContent = fmt('checklistprogress', {done: done, total: total});
+        count.textContent = fmt('checklistprogress', {
+            showCopiedFeedback: showCopiedFeedback,
+            total: total
+        });
     }
-    card.classList.toggle('is-complete', total > 0 && done === total);
+    card.classList.toggle('is-complete', total > 0 && showCopiedFeedback === total);
 };
 
 /**
@@ -403,7 +441,10 @@ const decorate = (body) => {
         cards.forEach((card, index) => {
             const badge = card.querySelector('.dari-ai-quiz-badge');
             if (badge) {
-                badge.textContent = fmt('quizcounter', {num: index + 1, total: cards.length});
+                badge.textContent = fmt('quizcounter', {
+                    num: index + 1,
+                    total: cards.length
+                });
             }
         });
     });
@@ -448,62 +489,61 @@ const scrollToTurn = (bubble, tobottom) => {
  * @param {Object} [turn] The stored history entry, so state inside the answer can be kept.
  * @returns {Promise} Resolves once the turn is in the DOM.
  */
-const appendMessage = (content, isuser, chatid, restored, iserror, turn) => enqueue(() => {
-    const messages = getMessages();
-    if (!messages) {
-        return null;
-    }
-    const isbot = !isuser && !iserror;
-
-    return Templates.render('format_dari/chatbox_message', {
-        content: content,
-        isuser: !!isuser,
-        iserror: !!iserror,
-        rateable: isbot && !!chatid && !restored,
-        chatid: chatid ? String(chatid) : '',
-        helpfullabel: strings.ratehelpful,
-        nothelpfullabel: strings.ratenothelpful,
-        copylabel: strings.copy,
-        restored: !!restored && isbot && !!chatid,
-        restoredlabel: strings.restored,
-    }).then((html) => {
-        Templates.appendNodeContents(messages, html, '');
-        const bubble = messages.lastElementChild;
-        if (isbot && bubble) {
-            const body = bubble.querySelector('.dari-ai-message-content');
-            if (body) {
-                // Build off-DOM first: if rendering ever throws on an unexpected answer, the
-                // escaped plain text the template already put there stays, with its line breaks,
-                // instead of an empty bubble and an exception dialog on every page that replays it.
-                try {
-                    const rendered = renderRich(content, {
-                        quizlabel: strings.quizlabel,
-                        hint: strings.quizhint,
-                        incomplete: strings.quizincomplete,
-                    });
-                    body.textContent = '';
-                    body.appendChild(rendered);
-                    body.classList.add('dari-ai-prose');
-                    decorate(body);
-                    if (turn) {
-                        turnOf.set(bubble, turn);
-                        replayTurnState(bubble, turn);
+const appendMessage = (content, isuser, chatid, restored, iserror, turn) =>
+    enqueue(() => {
+        const messages = getMessages();
+        if (!messages) {
+            return null;
+        }
+        const isbot = !isuser && !iserror;
+        return Templates.render('format_dari/chatbox_message', {
+            content: content,
+            isuser: !!isuser,
+            iserror: !!iserror,
+            rateable: isbot && !!chatid && !restored,
+            chatid: chatid ? String(chatid) : '',
+            helpfullabel: strings.ratehelpful,
+            nothelpfullabel: strings.ratenothelpful,
+            copylabel: strings.copy,
+            restored: !!restored && isbot && !!chatid,
+            restoredlabel: strings.restored
+        }).then((html) => {
+            Templates.appendNodeContents(messages, html, '');
+            const bubble = messages.lastElementChild;
+            if (isbot && bubble) {
+                const body = bubble.querySelector('.dari-ai-message-content');
+                if (body) {
+                    // Build off-DOM first: if rendering ever throws on an unexpected answer, the
+                    // escaped plain text the template already put there stays, with its line breaks,
+                    // instead of an empty bubble and an exception dialog on every page that replays it.
+                    try {
+                        const rendered = renderRich(content, {
+                            quizlabel: strings.quizlabel,
+                            hint: strings.quizhint,
+                            incomplete: strings.quizincomplete
+                        });
+                        body.textContent = '';
+                        body.appendChild(rendered);
+                        body.classList.add('dari-ai-prose');
+                        decorate(body);
+                        if (turn) {
+                            turnOf.set(bubble, turn);
+                            replayTurnState(bubble, turn);
+                        }
+                    } catch (error) {
+                        body.textContent = content;
+                        body.classList.add('dari-ai-plain');
                     }
-                } catch (error) {
-                    body.textContent = content;
-                    body.classList.add('dari-ai-plain');
+                }
+                rawText.set(bubble, content);
+                if (body && turn && turn.cut) {
+                    body.appendChild(cutOffNotice(turn.ask));
                 }
             }
-            rawText.set(bubble, content);
-            if (body && turn && turn.cut) {
-                body.appendChild(cutOffNotice(turn.ask));
-            }
-        }
-        scrollToTurn(bubble, !!isuser || !!restored);
-
-        return null;
+            scrollToTurn(bubble, !!isuser || !!restored);
+            return null;
+        });
     });
-});
 
 /**
  * The note under an answer the service cut off, with a button that asks the question again.
@@ -545,7 +585,11 @@ const addMessage = (content, isuser, chatid, iserror, extra) => {
     // for the rest of the session would only mislead.
     let turn = null;
     if (!iserror) {
-        turn = {content: content, isUser: !!isuser, chatid: chatid};
+        turn = {
+            content: content,
+            isUser: !!isuser,
+            chatid: chatid
+        };
         if (extra && extra.cut) {
             turn.cut = true;
             turn.ask = extra.ask || '';
@@ -553,7 +597,6 @@ const addMessage = (content, isuser, chatid, iserror, extra) => {
         history.push(turn);
         saveHistory();
     }
-
     return appendMessage(content, isuser, chatid, false, iserror, turn);
 };
 
@@ -606,7 +649,6 @@ const newConversation = () => {
         if (input) {
             input.focus();
         }
-
         return null;
     });
 };
@@ -616,39 +658,39 @@ const newConversation = () => {
  *
  * @returns {Promise} Resolves once the turn is in the DOM.
  */
-const showLoading = () => enqueue(() => {
-    const messages = getMessages();
-    if (!messages) {
-        return null;
-    }
-
-    return Templates.render('format_dari/chatbox_loading', {thinkinglabel: strings.thinking})
-        .then((html) => {
+const showLoading = () =>
+    enqueue(() => {
+        const messages = getMessages();
+        if (!messages) {
+            return null;
+        }
+        return Templates.render('format_dari/chatbox_loading', {
+            thinkinglabel: strings.thinking
+        }).then((html) => {
             Templates.appendNodeContents(messages, html, '');
             messages.setAttribute('aria-busy', 'true');
             messages.scrollTop = messages.scrollHeight;
-
             return null;
         });
-});
+    });
 
 /**
  * Remove the "composing an answer" turn.
  *
  * @returns {Promise} Resolves once the turn is gone.
  */
-const hideLoading = () => enqueue(() => {
-    const bubble = document.getElementById(SELECTORS.loading);
-    if (bubble) {
-        bubble.remove();
-    }
-    const messages = getMessages();
-    if (messages) {
-        messages.setAttribute('aria-busy', 'false');
-    }
-
-    return null;
-});
+const hideLoading = () =>
+    enqueue(() => {
+        const bubble = document.getElementById(SELECTORS.loading);
+        if (bubble) {
+            bubble.remove();
+        }
+        const messages = getMessages();
+        if (messages) {
+            messages.setAttribute('aria-busy', 'false');
+        }
+        return null;
+    });
 
 /**
  * Remember the server rendered greeting so it can be put back when the question context goes away.
@@ -695,14 +737,11 @@ const updateWelcomeMessage = () => {
         return Promise.resolve();
     }
     snapshotWelcome();
-
     const context = window.DARI_QUIZ_CONTEXT;
     if (!context || !context.questionNumber) {
         restoreWelcome();
-
         return Promise.resolve();
     }
-
     let pending;
     if (context.questionText) {
         let topic = context.questionText.substring(0, TOPIC_LENGTH);
@@ -711,17 +750,17 @@ const updateWelcomeMessage = () => {
         }
         pending = getString('aiassistant_welcome_question', 'format_dari', {
             num: context.questionNumber,
-            topic: topic,
+            topic: topic
         });
     } else {
         pending = getString('aiassistant_welcome_questionnotopic', 'format_dari', context.questionNumber);
     }
-
-    return pending.then((message) => {
-        body.textContent = message;
-
-        return message;
-    }).catch(Notification.exception);
+    return pending
+        .then((message) => {
+            body.textContent = message;
+            return message;
+        })
+        .catch(Notification.exception);
 };
 
 /**
@@ -734,38 +773,37 @@ const fetchActivityContext = (slot) => {
     if (!config.activityid) {
         return Promise.resolve();
     }
-
     return callExternal('get_activity_context', {
         activityid: config.activityid,
-        questionslot: parseInt(slot, 10) || 0,
-    }).then((data) => {
-        if (!data || !data.context) {
+        questionslot: parseInt(slot, 10) || 0
+    })
+        .then((data) => {
+            if (!data || !data.context) {
+                return null;
+            }
+            window.DARI_ACTIVITY_CONTEXT = data.context;
+            if (data.context.type === 'assign' && data.context.intro) {
+                window.DARI_QUIZ_CONTEXT = {
+                    slot: 0,
+                    questionNumber: 0,
+                    questionText: data.context.intro.substring(0, INTRO_LENGTH)
+                };
+            }
+            // The external function omits currentquestion entirely when no slot matched.
+            if (data.context.currentquestion) {
+                window.DARI_QUIZ_CONTEXT = {
+                    slot: data.context.currentquestion.slot,
+                    questionNumber: data.context.currentquestion.slot,
+                    questionText: data.context.currentquestion.text.substring(0, INTRO_LENGTH)
+                };
+            }
+            return updateWelcomeMessage();
+        })
+        .catch(() => {
+            // Activity context is an enhancement: without it the tutor simply answers with less
+            // context. A failure here must never surface to the learner or break the panel.
             return null;
-        }
-        window.DARI_ACTIVITY_CONTEXT = data.context;
-
-        if (data.context.type === 'assign' && data.context.intro) {
-            window.DARI_QUIZ_CONTEXT = {
-                slot: 0,
-                questionNumber: 0,
-                questionText: data.context.intro.substring(0, INTRO_LENGTH),
-            };
-        }
-        // The external function omits currentquestion entirely when no slot matched.
-        if (data.context.currentquestion) {
-            window.DARI_QUIZ_CONTEXT = {
-                slot: data.context.currentquestion.slot,
-                questionNumber: data.context.currentquestion.slot,
-                questionText: data.context.currentquestion.text.substring(0, INTRO_LENGTH),
-            };
-        }
-
-        return updateWelcomeMessage();
-    }).catch(() => {
-        // Activity context is an enhancement: without it the tutor simply answers with less
-        // context. A failure here must never surface to the learner or break the panel.
-        return null;
-    });
+        });
 };
 
 /**
@@ -776,41 +814,35 @@ const fetchActivityContext = (slot) => {
 const updateQuizContext = () => {
     const currentButton = document.querySelector('.qnbutton.current');
     const questionElement = document.querySelector('.que .qtext');
-
     if (currentButton) {
         const slot = currentButton.getAttribute('data-slot');
         const text = questionElement ? questionElement.innerText.trim() : '';
         window.DARI_QUIZ_CONTEXT = {
             slot: slot,
             questionNumber: slot,
-            questionText: text.substring(0, INTRO_LENGTH),
+            questionText: text.substring(0, INTRO_LENGTH)
         };
         if (!text) {
             fetchActivityContext(slot);
         }
-
         return;
     }
-
     const aiquizQuestion = document.querySelector('.aiquiz-question-text, .knowledgecheck-question');
     if (aiquizQuestion) {
         const slotElement = document.querySelector('[data-questionslot], [data-slot]');
         const slot = slotElement
-            ? (slotElement.getAttribute('data-questionslot') || slotElement.getAttribute('data-slot'))
+            ? slotElement.getAttribute('data-questionslot') || slotElement.getAttribute('data-slot')
             : '1';
         window.DARI_QUIZ_CONTEXT = {
             slot: slot,
             questionNumber: slot,
-            questionText: aiquizQuestion.innerText.trim().substring(0, INTRO_LENGTH),
+            questionText: aiquizQuestion.innerText.trim().substring(0, INTRO_LENGTH)
         };
-
         return;
     }
-
     if (window.DARI_ACTIVITY_CONTEXT) {
         return;
     }
-
     window.DARI_QUIZ_CONTEXT = null;
 };
 
@@ -856,8 +888,11 @@ const setView = (expanded, remember) => {
     let anchor = null;
     let anchoroffset = 0;
     if (messages && isOpen()) {
-        anchor = Array.prototype.find.call(messages.children,
-            (child) => child.offsetTop + child.offsetHeight > messages.scrollTop) || null;
+        anchor =
+            Array.prototype.find.call(
+                messages.children,
+                (child) => child.offsetTop + child.offsetHeight > messages.scrollTop
+            ) || null;
         anchoroffset = anchor ? anchor.offsetTop - messages.scrollTop : 0;
     }
     panel.setAttribute('data-view', expanded ? 'expanded' : 'compact');
@@ -983,67 +1018,66 @@ const sendMessage = () => {
     if (!input || !getMessages()) {
         return;
     }
-
     const question = input.value.trim();
     if (!question || loading) {
         return;
     }
-
     addMessage(question, true);
     input.value = '';
     input.style.height = 'auto';
     setBusy(true);
     showLoading();
-
     const params = {
         question: question,
         activityid: config.activityid,
         sectionid: config.sectionid,
-        isfirstmessage: firstmessage,
+        isfirstmessage: firstmessage
     };
     firstmessage = false;
-
     const questioncontext = window.DARI_QUIZ_CONTEXT;
     if (questioncontext) {
         params.questionslot = parseInt(questioncontext.questionNumber, 10) || 0;
         params.questiontext = questioncontext.questionText || '';
     }
-
     const activitycontext = window.DARI_ACTIVITY_CONTEXT;
     if (activitycontext && activitycontext.questions && activitycontext.questions.length) {
-        params.allquestions = activitycontext.questions.map(
-            (question2) => 'Q' + question2.slot + ': ' + question2.text.substring(0, QUESTION_LENGTH)
-        ).join(' | ');
+        params.allquestions = activitycontext.questions
+            .map((question2) => 'Q' + question2.slot + ': ' + question2.text.substring(0, QUESTION_LENGTH))
+            .join(' | ');
     }
 
     // The site's AI usage policy (core_ai) must be accepted once before anything is sent to the
     // site's AI provider. Declining puts the question back in the box rather than losing it.
-    ensureAiPolicy().then((accepted) => {
-        if (!accepted) {
-            const error = new Error(strings.policydeclined || strings.error);
-            error.declined = true;
-            throw error;
-        }
-        return callExternal('ai_chat', params);
-    }).then((data) => {
-        hideLoading();
-        setBusy(false);
-        addMessage(data.answer, false, data.chatid, false, {cut: !!data.truncated, ask: question});
-
-        return data;
-    }).catch((error) => {
-        // The service is down, the session expired, the throttle tripped or the AI service
-        // refused. Say so inside the conversation, where the learner is looking, instead of
-        // throwing at the console. Moodle exceptions carry a translated .message.
-        hideLoading();
-        setBusy(false);
-        if (error && error.declined && !input.value) {
-            input.value = question;
-        }
-        addMessage((error && error.message) || strings.error, false, null, true);
-
-        return null;
-    });
+    ensureAiPolicy()
+        .then((accepted) => {
+            if (!accepted) {
+                const error = new Error(strings.policydeclined || strings.error);
+                error.declined = true;
+                throw error;
+            }
+            return callExternal('ai_chat', params);
+        })
+        .then((data) => {
+            hideLoading();
+            setBusy(false);
+            addMessage(data.answer, false, data.chatid, false, {
+                cut: !!data.truncated,
+                ask: question
+            });
+            return data;
+        })
+        .catch((error) => {
+            // The service is down, the session expired, the throttle tripped or the AI service
+            // refused. Say so inside the conversation, where the learner is looking, instead of
+            // throwing at the console. Moodle exceptions carry a translated .message.
+            hideLoading();
+            setBusy(false);
+            if (error && error.declined && !input.value) {
+                input.value = question;
+            }
+            addMessage((error && error.message) || strings.error, false, null, true);
+            return null;
+        });
 };
 
 /**
@@ -1108,7 +1142,10 @@ const updateScore = (set) => {
     if (answered < cards.length) {
         return;
     }
-    score.textContent = fmt('quizscore', {score: right, total: cards.length});
+    score.textContent = fmt('quizscore', {
+        score: right,
+        total: cards.length
+    });
     score.setAttribute('data-perfect', right === cards.length ? 'true' : 'false');
     score.hidden = false;
 };
@@ -1122,7 +1159,9 @@ const updateScore = (set) => {
  */
 const focusFeedback = (feedback) => {
     feedback.setAttribute('tabindex', '-1');
-    feedback.focus({preventScroll: true});
+    feedback.focus({
+        preventScroll: true
+    });
 };
 
 /**
@@ -1149,13 +1188,11 @@ const markQuiz = (card, chosen, silent) => {
     };
     const questionnode = card.querySelector('.dari-ai-quiz-question');
     const question = truncate(plainText(questionnode ? questionnode.textContent : ''), 180);
-
     options.forEach((option) => {
         option.disabled = true;
     });
     button.classList.add('is-chosen');
     button.setAttribute('aria-pressed', 'true');
-
     const feedback = card.querySelector('.dari-ai-quiz-feedback');
     const verdict = card.querySelector('.dari-ai-quiz-verdict');
     const actions = card.querySelector('.dari-ai-quiz-actions');
@@ -1163,33 +1200,47 @@ const markQuiz = (card, chosen, silent) => {
     if (hintwrap) {
         hintwrap.hidden = true;
     }
-
     if (isNaN(answer) || answer < 0 || answer >= options.length) {
         card.setAttribute('data-state', 'sent');
         verdict.textContent = strings.quizsent;
         feedback.hidden = false;
         if (!silent) {
             focusFeedback(feedback);
-            sendText(fmt('quizchoose', {question: question, letter: LETTERS[chosen], option: optiontext(chosen)}));
+            sendText(
+                fmt('quizchoose', {
+                    question: question,
+                    letter: LETTERS[chosen],
+                    option: optiontext(chosen)
+                })
+            );
         }
         return;
     }
-
     const correct = chosen === answer;
     card.setAttribute('data-state', correct ? 'correct' : 'incorrect');
     options[answer].classList.add('is-answer');
     if (!correct) {
         button.classList.add('is-wrong');
     }
-    verdict.textContent = correct ? strings.quizcorrect : fmt('quizincorrect', {answer: LETTERS[answer]});
+    verdict.textContent = correct
+        ? strings.quizcorrect
+        : fmt('quizincorrect', {
+              answer: LETTERS[answer]
+          });
     while (actions.firstChild) {
         actions.removeChild(actions.firstChild);
     }
-    actions.appendChild(makeFollowup(strings.quizexplain, fmt('quizexplainprompt', {
-        question: question,
-        letter: LETTERS[answer],
-        option: optiontext(answer),
-    }), false));
+    actions.appendChild(
+        makeFollowup(
+            strings.quizexplain,
+            fmt('quizexplainprompt', {
+                question: question,
+                letter: LETTERS[answer],
+                option: optiontext(answer)
+            }),
+            false
+        )
+    );
     const set = card.closest('.dari-ai-quizset');
     const cards = set ? set.querySelectorAll('.dari-ai-quiz') : [];
     if (!cards.length || cards[cards.length - 1] === card) {
@@ -1251,7 +1302,6 @@ const answerQuiz = (button) => {
     if (retrynote) {
         retrynote.remove();
     }
-
     rememberInTurn(card, (turn, bubble) => {
         const index = Array.prototype.indexOf.call(bubble.querySelectorAll('.dari-ai-quiz'), card);
         turn.quiz = turn.quiz || {};
@@ -1278,7 +1328,7 @@ const rememberInTurn = (element, change) => {
 };
 
 /**
- * Replay what the learner had done inside a stored answer: answered questions, ticked boxes.
+ * Replay what the learner had showCopiedFeedback inside a stored answer: answered questions, ticked boxes.
  *
  * @param {Element} bubble The answer's .dari-ai-message.
  * @param {Object} turn The stored turn.
@@ -1317,7 +1367,7 @@ const copyAnswer = (button) => {
     const content = bubble && bubble.querySelector('.dari-ai-message-content');
     const text = (bubble && rawText.get(bubble)) || (content ? content.innerText : '');
     const label = button.querySelector('.dari-ai-copy-text');
-    const done = () => {
+    const showCopiedFeedback = () => {
         button.classList.add('is-copied');
         if (label) {
             label.textContent = strings.copied;
@@ -1330,7 +1380,10 @@ const copyAnswer = (button) => {
         }, 1800);
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(done).catch(() => null);
+        navigator.clipboard
+            .writeText(text)
+            .then(showCopiedFeedback)
+            .catch(() => null);
         return;
     }
     const scratch = document.createElement('textarea');
@@ -1342,7 +1395,7 @@ const copyAnswer = (button) => {
     scratch.select();
     try {
         if (document.execCommand('copy')) {
-            done();
+            showCopiedFeedback();
         }
     } catch (error) {
         // Clipboard unavailable; nothing else to do.
@@ -1356,20 +1409,15 @@ const copyAnswer = (button) => {
  * the page after load on activity and section pages, and answers are added after that.
  *
  * @param {Event} event The click event.
+ * @param {Element} target The clicked element.
  * @returns {void}
  */
-const handleClick = (event) => {
-    const target = event.target;
-    if (!target || typeof target.closest !== 'function') {
-        return;
-    }
-
+const handlePanelClick = (event, target) => {
     if (target.closest(SELECTORS.close)) {
         event.preventDefault();
         closePanel();
-        return;
+        return true;
     }
-
     const toggleTarget = target.closest(SELECTORS.toggle);
     if (toggleTarget) {
         event.preventDefault();
@@ -1378,33 +1426,38 @@ const handleClick = (event) => {
         } else {
             openPanel(toggleTarget);
         }
-        return;
+        return true;
     }
-
     if (target.id === SELECTORS.backdrop) {
         event.preventDefault();
         setView(false, true);
-        return;
+        return true;
     }
-
     if (target.closest(SELECTORS.expand)) {
         event.preventDefault();
         setView(!isExpanded(), true);
-        return;
+        return true;
     }
-
     if (target.closest(SELECTORS.newchat)) {
         event.preventDefault();
         newConversation();
-        return;
+        return true;
     }
-
     if (target.closest(SELECTORS.sendbtn)) {
         event.preventDefault();
         sendMessage();
+        return true;
+    }
+    return false;
+};
+const handleClick = (event) => {
+    const target = event.target;
+    if (!target || typeof target.closest !== 'function') {
         return;
     }
-
+    if (handlePanelClick(event, target)) {
+        return;
+    }
     const quickTarget = target.closest(SELECTORS.quickbtn);
     if (quickTarget) {
         event.preventDefault();
@@ -1417,14 +1470,12 @@ const handleClick = (event) => {
         }
         return;
     }
-
     const optionTarget = target.closest(SELECTORS.quizoption);
     if (optionTarget) {
         event.preventDefault();
         answerQuiz(optionTarget);
         return;
     }
-
     const hintTarget = target.closest(SELECTORS.quizhint);
     if (hintTarget) {
         event.preventDefault();
@@ -1436,21 +1487,18 @@ const handleClick = (event) => {
         }
         return;
     }
-
     const followTarget = target.closest(SELECTORS.followup);
     if (followTarget) {
         event.preventDefault();
         sendText(followTarget.getAttribute('data-followup'));
         return;
     }
-
     const copyTarget = target.closest(SELECTORS.copybtn);
     if (copyTarget) {
         event.preventDefault();
         copyAnswer(copyTarget);
         return;
     }
-
     const rateTarget = target.closest(SELECTORS.ratebtn);
     if (rateTarget) {
         rateChat(rateTarget);
@@ -1473,18 +1521,16 @@ const rateChat = (button) => {
     if (!chatid || !rate) {
         return;
     }
-
     callExternal('rate_chat', {
         chatid: parseInt(chatid, 10),
-        rating: parseInt(rate, 10),
+        rating: parseInt(rate, 10)
     }).catch(() => {
         // Ratings are fire and forget telemetry. A failed rating is not worth interrupting the
         // conversation for, but it must still be caught so it never reaches the console.
         return null;
     });
-
     rating.textContent = strings.thanks;
-    rating.className = 'dari-ai-rating-done';
+    rating.className = 'dari-ai-rating-showCopiedFeedback';
 };
 
 /**
@@ -1497,7 +1543,6 @@ const handleDialogKeys = (event) => {
     if (!isOpen()) {
         return;
     }
-
     if (event.key === 'Escape' || event.keyCode === 27) {
         event.preventDefault();
         // Escape steps out of the Study view first, then closes, as full-screen views do.
@@ -1506,17 +1551,14 @@ const handleDialogKeys = (event) => {
             return;
         }
         closePanel();
-
         return;
     }
-
     if (event.key !== 'Tab' && event.keyCode !== 9) {
         return;
     }
     if (!isExpanded()) {
         return;
     }
-
     const panel = getPanel();
     const focusable = Array.prototype.filter.call(
         panel.querySelectorAll(FOCUSABLE),
@@ -1524,10 +1566,8 @@ const handleDialogKeys = (event) => {
     );
     if (!focusable.length) {
         event.preventDefault();
-
         return;
     }
-
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
     if (!panel.contains(event.target)) {
@@ -1554,16 +1594,17 @@ const registerInputHandlers = () => {
             sendMessage();
         }
     });
-
     document.addEventListener('change', (event) => {
         if (event.target && event.target.matches && event.target.matches(SELECTORS.checkbox)) {
             updateChecklist(event.target.closest('.dari-ai-checklist'));
             rememberInTurn(event.target, (turn, bubble) => {
-                turn.checks = Array.prototype.map.call(bubble.querySelectorAll(SELECTORS.checkbox), (box) => box.checked);
+                turn.checks = Array.prototype.map.call(
+                    bubble.querySelectorAll(SELECTORS.checkbox),
+                    (box) => box.checked
+                );
             });
         }
     });
-
     document.addEventListener('input', (event) => {
         if (event.target && event.target.id === SELECTORS.input) {
             event.target.style.height = 'auto';
@@ -1608,7 +1649,6 @@ const whenPanelReady = (callback, attempts) => {
     const remaining = attempts === undefined ? 40 : attempts;
     if (getPanel()) {
         callback();
-
         return;
     }
     if (remaining <= 0) {
@@ -1625,18 +1665,22 @@ const whenPanelReady = (callback, attempts) => {
 const loadStrings = () => {
     const aliases = Object.keys(STRING_IDS);
     const paramaliases = Object.keys(PARAM_STRING_IDS);
-    const request = aliases.map((alias) => ({key: STRING_IDS[alias], component: 'format_dari'}))
-        .concat(paramaliases.map((alias) => ({
-            key: PARAM_STRING_IDS[alias][0],
-            component: 'format_dari',
-            param: PARAM_STRING_IDS[alias][1],
-        })));
-
+    const request = aliases
+        .map((alias) => ({
+            key: STRING_IDS[alias],
+            component: 'format_dari'
+        }))
+        .concat(
+            paramaliases.map((alias) => ({
+                key: PARAM_STRING_IDS[alias][0],
+                component: 'format_dari',
+                param: PARAM_STRING_IDS[alias][1]
+            }))
+        );
     return getStrings(request).then((values) => {
         aliases.concat(paramaliases).forEach((alias, index) => {
             strings[alias] = values[index];
         });
-
         return strings;
     });
 };
@@ -1666,23 +1710,21 @@ export const init = (initconfig) => {
     config = initconfig || {};
     window.DARI_QUIZ_CONTEXT = null;
     window.DARI_ACTIVITY_CONTEXT = null;
-
     stringsReady = loadStrings();
     renderQueue = stringsReady.catch((error) => {
         Notification.exception(error);
-
         return null;
     });
-
     document.addEventListener('click', handleClick);
     document.addEventListener('keydown', handleDialogKeys);
     registerInputHandlers();
-
     whenPanelReady(() => {
+        document.querySelectorAll(SELECTORS.toggle).forEach((toggle) => {
+            toggle.setAttribute('aria-controls', SELECTORS.panel);
+        });
         snapshotWelcome();
         restoreHistory();
     });
-
     if (config.contextaware && config.activityid) {
         fetchActivityContext(0);
         updateQuizContext();
@@ -1700,23 +1742,30 @@ export const init = (initconfig) => {
     // not reappear on every visit. Never while editing: a teacher arranging a course does not
     // want a chat panel opening over it. Never on top of the tour either, which is doing the same
     // introducing job more thoroughly.
-    if (config.introduce && !document.body.classList.contains('editing')
-            && !document.querySelector('.dari-tour-offer, .dari-tour')) {
+    if (
+        config.introduce &&
+        !document.body.classList.contains('editing') &&
+        !document.querySelector('.dari-tour-offer, .dari-tour')
+    ) {
         window.setTimeout(() => {
             if (document.querySelector('.dari-tour-offer, .dari-tour')) {
                 return;
             }
             const toggle = document.querySelector(SELECTORS.toggle);
             openPanel(toggle, true);
-            Ajax.call([{
-                methodname: 'core_user_update_user_preferences',
-                args: {
-                    preferences: [{
-                        type: 'format_dari_tutor_seen_' + config.courseid,
-                        value: '1',
-                    }],
-                },
-            }])[0].catch(() => null);
+            Ajax.call([
+                {
+                    methodname: 'core_user_update_user_preferences',
+                    args: {
+                        preferences: [
+                            {
+                                type: 'format_dari_tutor_seen_' + config.courseid,
+                                value: '1'
+                            }
+                        ]
+                    }
+                }
+            ])[0].catch(() => null);
         }, 1200);
     }
 };

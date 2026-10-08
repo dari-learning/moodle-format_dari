@@ -12,25 +12,27 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Version details for the Dari course format.
+ * HTTP client factory for the Moodle 4.4 AI provider.
  *
  * @package    format_dari
  * @copyright  2026 Dari Learning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+namespace format_dari\local;
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->component    = 'format_dari';
-$plugin->version      = 2026100806;
-// Supports Moodle 4.4 to 5.3. Moodle 4.4 is the minimum: the hero banner and Ask Dari are injected
-// through the footer hook added in 4.4. On 4.5 and later all AI goes through Moodle's AI subsystem;
-// on 4.4, which has none, Dari uses the school's own OpenAI-compatible connection set in its settings.
-$plugin->requires     = 2024042200;
-$plugin->supported    = [404, 503];
-$plugin->maturity     = MATURITY_STABLE;
-$plugin->release      = '1.0.6';
-$plugin->dependencies = [];
+/**
+ * Creates independent Moodle HTTP clients, injectable for offline provider tests.
+ */
+class direct_client {
+    /**
+     * Create a client without sharing request headers or options.
+     *
+     * @return \curl
+     */
+    public function create(): \curl {
+        return new \curl();
+    }
+}

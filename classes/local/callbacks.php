@@ -294,8 +294,10 @@ class callbacks {
         }
 
         // The course's Ask Dari report, in the course "More" menu, for anyone who may view it.
-        if ($navigation && has_capability('format/dari:viewreport', $context)
-                && !$navigation->find('format_dari_askdarireport', \navigation_node::TYPE_SETTING)) {
+        if (
+            $navigation && has_capability('format/dari:viewreport', $context)
+                && !$navigation->find('format_dari_askdarireport', \navigation_node::TYPE_SETTING)
+        ) {
             $navigation->add(
                 get_string('aireport', 'format_dari'),
                 new \moodle_url('/course/format/dari/report.php', ['id' => $course->id]),

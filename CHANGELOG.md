@@ -1,5 +1,25 @@
 # Release record
 
+## 1.0.6 — unreleased CI fixes
+
+- Version code: `2026100806`. The supplied 1.0.5 ZIP and its release tag remain unchanged.
+- Correct Moodle coding standards and PHPDoc errors without relaxing validation.
+- Refactor JavaScript helpers and rich-text parsing to satisfy the existing lint limits;
+  regenerate the affected AMD builds and source maps.
+- Format CSS, replace embedded data URLs with bundled assets, and remove redundant
+  overrides from the final scoped course rules.
+- Link tutor controls to their panel only after the panel exists, and make the
+  standalone section-card template example use its editing-mode accessibility context.
+- Correct the Behat field locator to the actual activities-on-cards setting label.
+- Exercise Moodle 4.4's direct AI HTTP encoder/decoder offline instead of mocking
+  a core AI subsystem that does not exist on that version. Use a static availability
+  fixture for Moodle 4.5, retain core AI action tests on newer versions, and check
+  the appropriate privacy disclosure for each provider path.
+- Reset request-local role caches between isolated test requests.
+
+The declared Moodle range is unchanged. This candidate is not a published release;
+CI results and manual release checks must be reviewed before distributing it.
+
 ## 1.0.5 — initial repository import
 
 - Component: `format_dari`

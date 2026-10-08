@@ -70,7 +70,6 @@ class provider implements
     \core_privacy\local\request\core_userlist_provider,
     \core_privacy\local\request\plugin\provider,
     \core_privacy\local\request\user_preference_provider {
-
     /** @var string[] Preference names, or name prefixes ending in "_", that this plugin stores. */
     protected const PREFERENCES = [
         'format_dari_tour_seen' => 'tourseen',

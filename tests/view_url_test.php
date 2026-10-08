@@ -31,6 +31,7 @@ global $CFG;
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/course/format/dari/lib.php');
 
+#[\PHPUnit\Framework\Attributes\CoversMethod(\format_dari::class, 'get_view_url')]
 /**
  * Tests for the section view URL, including stale section returns.
  *
@@ -40,7 +41,6 @@ require_once($CFG->dirroot . '/course/format/dari/lib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari::get_view_url
  */
-#[\PHPUnit\Framework\Attributes\CoversMethod(\format_dari::class, 'get_view_url')]
 final class view_url_test extends \advanced_testcase {
     /**
      * A section return that still resolves must keep producing a section page URL.

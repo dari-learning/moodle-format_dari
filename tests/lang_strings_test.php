@@ -16,6 +16,7 @@
 
 namespace format_dari;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari::class)]
 /**
  * Every language string the plugin asks for must exist.
  *
@@ -35,7 +36,6 @@ namespace format_dari;
  * @copyright  2026 Dari Learning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari::class)]
 final class lang_strings_test extends \advanced_testcase {
     /**
      * Every string referenced in the plugin's PHP is defined in the language file.
@@ -169,8 +169,10 @@ final class lang_strings_test extends \advanced_testcase {
         $found = [];
         foreach ($files as $file) {
             $path = $file->getPathname();
-            if (!in_array($file->getExtension(), ['php', 'js', 'mustache'], true)
-                    || strpos($path, '/tests/') !== false || strpos($path, '/amd/build/') !== false) {
+            if (
+                !in_array($file->getExtension(), ['php', 'js', 'mustache'], true)
+                    || strpos($path, '/tests/') !== false || strpos($path, '/amd/build/') !== false
+            ) {
                 continue;
             }
             $source = file_get_contents($path);

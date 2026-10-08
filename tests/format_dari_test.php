@@ -33,6 +33,7 @@ require_once($CFG->dirroot . '/course/format/dari/lib.php');
 
 use format_dari\local\icons;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\icons::class)]
 /**
  * Unit tests for the Dari course format helper functions.
  *
@@ -42,7 +43,6 @@ use format_dari\local\icons;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\icons
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\icons::class)]
 final class format_dari_test extends \advanced_testcase {
     /**
      * A section with no icon set must report an empty icon.

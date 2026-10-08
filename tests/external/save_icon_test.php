@@ -33,6 +33,7 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testcase.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\save_icon::class)]
 /**
  * Tests for the format_dari_save_icon external function.
  *
@@ -42,7 +43,6 @@ require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testca
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\external\save_icon
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\save_icon::class)]
 final class save_icon_test extends external_testcase {
     /**
      * The id of section 1 of the fixture course.
