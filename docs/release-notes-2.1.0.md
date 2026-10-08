@@ -1,4 +1,4 @@
-**Dari Course Format 2.0.5**
+**Dari Course Format 2.1.0**
 
 Supports Moodle 4.4 to 5.3.
 

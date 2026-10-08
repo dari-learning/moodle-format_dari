@@ -1,5 +1,13 @@
 # Release record
 
+## 2.1.0
+
+- Version code: `2026100906`
+
+Same code as 2.0.5, released under a new version number so it can be uploaded to Moodle™
+Marketplace after 2.0.5. The README and SECURITY notes are brought up to date. The Marketplace
+release notes for 2.1.0 cover every change since 2.0.0.
+
 ## 2.0.5
 
 - Version code: `2026100905`

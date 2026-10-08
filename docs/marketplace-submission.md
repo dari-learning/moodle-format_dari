@@ -8,8 +8,8 @@
 | Provider | Dari Learning |
 | Plugin type | Course format |
 | Frankenstyle component | `format_dari` |
-| Version | `2.0.5` |
-| Version code | `2026100905` |
+| Version | `2.1.0` |
+| Version code | `2026100906` |
 | Repository | https://github.com/dari-learning/moodle-format_dari |
 | Bug tracker | https://github.com/dari-learning/moodle-format_dari/issues |
 | Documentation | https://darilearning.com/docs |
@@ -62,9 +62,9 @@ Dari turns any Moodle™ course into a clear, visual learning experience. Learne
 ### Compatibility
 Moodle™ 4.4 to 5.3. GNU GPL v3 or later.
 
-## Release notes (2.0.5)
+## Release notes (2.1.0)
 
-See [release-notes-2.0.5.md](release-notes-2.0.5.md). Paste it into the version's release notes field. It covers every change since 2.0.0.
+See [release-notes-2.1.0.md](release-notes-2.1.0.md). Paste it into the version's release notes field. It covers every change since 2.0.0.
 
 ## External services and privacy disclosures
 
@@ -101,8 +101,8 @@ Prepared in the repository:
 - [x] Issue forms, support/contribution guidance, and private security reporting.
 - [x] CI configuration for selected Moodle™ versions and two database types.
 - [x] Genuine supplied screenshots in `docs/screenshots/`.
-- [x] Source for 2.0.5 on `main` (commit for release 2026100905).
-- [ ] Create the `v2.0.5` tag and GitHub release (Releases, then Draft a new release, then new tag `v2.0.5` on `main`).
+- [x] Source for 2.1.0 on `main` (release 2026100906).
+- [ ] Create the `v2.1.0` tag and GitHub release (Releases, then Draft a new release, then new tag `v2.1.0` on `main`).
 
 Maintainer actions still required:
 
@@ -111,7 +111,7 @@ Maintainer actions still required:
 - [ ] Confirm supported-version claims with installation/upgrade tests.
 - [ ] Verify backup/restore, uninstall, privacy export/deletion, roles, accessibility,
   mobile behaviour, and AI-provider configuration in real test environments.
-- [ ] Verify the website and documentation reflect 2.0.5, including the image engine
+- [ ] Verify the website and documentation reflect 2.1.0, including the image engine
   (Google Nano Banana 2.1 default), Image plan preview, diagnostics log, primary-colour
   and Google Fonts details.
 - [ ] Read the current Marketplace submission guidelines while signed in.
