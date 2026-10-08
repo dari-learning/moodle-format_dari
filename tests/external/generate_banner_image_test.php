@@ -77,7 +77,7 @@ final class generate_banner_image_test extends external_testcase {
             // No core policy API exists on 4.4; the permitted request must still queue normally.
             $this->assertTrue(\format_dari\local\ai::policy_accepted((int) $teacher->id));
             $this->assertSame('queued', generate_banner_image::execute($this->course->id)['status']);
-            $this->assertCount(1, $this->pending_tasks('\format_dari\task\generate_banner'));
+            $this->assertCount(1, \core\task\manager::get_adhoc_tasks('\\format_dari\\task\\generate_banner'));
             return;
         }
         $this->assert_throws_errorcode('error_ai_policynotaccepted', function (): void {

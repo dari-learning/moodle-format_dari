@@ -107,3 +107,20 @@ jobs:
       - name: Behat browser scenarios
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci behat --profile chrome
+      - name: Export exact AMD rebuild evidence after failed validation
+        id: amd_reference
+        if: ${{ failure() && !cancelled() }}
+        run: |
+          pluginpath="$(dirname "$(find moodle -path '*/course/format/dari/version.php' -print -quit)")"
+          test -n "$pluginpath"
+          cd moodle
+          npx grunt amd --root="${pluginpath#moodle/}"
+          cd ..
+          tar -C "$pluginpath" -czf amd-reference.tgz amd/build
+      - name: Save AMD rebuild evidence
+        if: ${{ failure() && !cancelled() && steps.amd_reference.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: amd-reference-${{ matrix.moodle-branch }}
+          path: amd-reference.tgz
+          retention-days: 7
