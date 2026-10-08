@@ -32,6 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testcase.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\get_progress::class)]
 /**
  * Tests for the format_dari_get_progress external function.
  *
@@ -41,7 +42,6 @@ require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testca
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\external\get_progress
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\get_progress::class)]
 final class get_progress_test extends external_testcase {
     /**
      * A learner gets their own progress figures back.

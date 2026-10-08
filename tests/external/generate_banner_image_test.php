@@ -30,6 +30,7 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testcase.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\generate_banner_image::class)]
 /**
  * Tests for the format_dari_generate_banner_image external function.
  *
@@ -41,7 +42,6 @@ require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testca
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\external\generate_banner_image
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\generate_banner_image::class)]
 final class generate_banner_image_test extends external_testcase {
     /**
      * A student cannot generate a banner.
@@ -103,8 +103,12 @@ final class generate_banner_image_test extends external_testcase {
         $this->setUser($this->teacher);
         $this->queue_image_reply();
 
-        $url = generate_banner_image::generate_and_store(get_course($this->course->id), 'warm light', 0,
-            (int) $this->teacher->id);
+        $url = generate_banner_image::generate_and_store(
+            get_course($this->course->id),
+            'warm light',
+            0,
+            (int) $this->teacher->id
+        );
 
         $this->assertStringContainsString('/format_dari/bannerimage/', $url);
         $files = get_file_storage()->get_area_files($this->context->id, 'format_dari', 'bannerimage', false, 'id', false);
@@ -115,7 +119,9 @@ final class generate_banner_image_test extends external_testcase {
         $this->assertCount(1, $images);
         $action = $images[0];
         $this->assertSame('landscape', $action->get_configuration('aspectratio'));
-        $this->assertSame($this->context->id, $action->get_configuration('contextid'));
+        if (\format_dari\local\ai::subsystem_present()) {
+            $this->assertSame($this->context->id, $action->get_configuration('contextid'));
+        }
         $prompt = $action->get_configuration('prompttext');
         // The banner was planned with the teacher's direction first, its prompt written from that
         // plan, and the banner's fixed tail follows it unchanged.

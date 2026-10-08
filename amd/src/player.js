@@ -22,7 +22,6 @@
  */
 
 import {get_string as getString} from 'core/str';
-
 const HEADER_ID = 'dari-player-header';
 
 /**
@@ -62,29 +61,32 @@ const buildHeader = (config, strings) => {
     const header = document.createElement('div');
     header.id = HEADER_ID;
     header.className = 'dari-player-header';
-
-    const logo = config.logourl
-        ? '<img class="dari-player-logo" src="' + config.logourl + '" alt="">'
-        : '';
+    const logo = config.logourl ? '<img class="dari-player-logo" src="' + config.logourl + '" alt="">' : '';
 
     // The ring is an SVG rather than a CSS conic-gradient so it animates smoothly and reads
     // correctly when a page is printed.
     const pct = config.percent;
-    const ring = (pct === null || pct === undefined) ? '' :
-        '<div class="dari-player-ring" role="img" aria-label="' + strings.progress.replace('{$a}', pct) + '">' +
-            '<svg viewBox="0 0 44 44" aria-hidden="true">' +
-                '<circle class="dari-player-ring-bg" cx="22" cy="22" r="19"></circle>' +
-                '<circle class="dari-player-ring-fill" cx="22" cy="22" r="19"' +
-                    ' style="stroke-dasharray: ' + (pct * 1.194) + ' 200"></circle>' +
-            '</svg>' +
-            '<span class="dari-player-ring-text" aria-hidden="true">' + pct + '%</span>' +
-        '</div>';
-
+    const ring =
+        pct === null || pct === undefined
+            ? ''
+            : '<div class="dari-player-ring" role="img" aria-label="' +
+              strings.progress.replace('{$a}', pct) +
+              '">' +
+              '<svg viewBox="0 0 44 44" aria-hidden="true">' +
+              '<circle class="dari-player-ring-bg" cx="22" cy="22" r="19"></circle>' +
+              '<circle class="dari-player-ring-fill" cx="22" cy="22" r="19"' +
+              ' style="stroke-dasharray: ' +
+              pct * 1.194 +
+              ' 200"></circle>' +
+              '</svg>' +
+              '<span class="dari-player-ring-text" aria-hidden="true">' +
+              pct +
+              '%</span>' +
+              '</div>';
     const meta = [];
     if (config.totaltime) {
         meta.push('<span class="dari-player-meta-item">' + config.totaltime + '</span>');
     }
-
     header.innerHTML =
         // Note: one link, not three.
         //
@@ -93,22 +95,36 @@ const buildHeader = (config, strings) => {
         // leaving a course is going back to their courses; from My courses every other page on the
         // site is one click away, including the two that were here. Three icons bought nothing and
         // cost ~66px, which is the width the logo was missing.
-        '<div class="dari-player-brand">' + logo +
-            '<nav class="dari-player-nav" aria-label="' + strings.navlabel + '">' +
-                '<a href="' + config.nav.mycourses + '" title="' + strings.mycourses + '">' +
-                    '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-                    '<rect x="3.75" y="3.75" width="7" height="7" rx="1.75"/>' +
-                    '<rect x="13.25" y="3.75" width="7" height="7" rx="1.75"/>' +
-                    '<rect x="3.75" y="13.25" width="7" height="7" rx="1.75"/>' +
-                    '<rect x="13.25" y="13.25" width="7" height="7" rx="1.75"/></svg>' +
-                    '<span class="accesshide">' + strings.mycourses + '</span></a>' +
-            '</nav>' +
+        '<div class="dari-player-brand">' +
+        logo +
+        '<nav class="dari-player-nav" aria-label="' +
+        strings.navlabel +
+        '">' +
+        '<a href="' +
+        config.nav.mycourses +
+        '" title="' +
+        strings.mycourses +
+        '">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<rect x="3.75" y="3.75" width="7" height="7" rx="1.75"/>' +
+        '<rect x="13.25" y="3.75" width="7" height="7" rx="1.75"/>' +
+        '<rect x="3.75" y="13.25" width="7" height="7" rx="1.75"/>' +
+        '<rect x="13.25" y="13.25" width="7" height="7" rx="1.75"/></svg>' +
+        '<span class="accesshide">' +
+        strings.mycourses +
+        '</span></a>' +
+        '</nav>' +
         '</div>' +
         '<div class="dari-player-title-row">' +
-            '<div class="dari-player-titles">' +
-                '<a class="dari-player-coursename" href="' + config.courseurl + '"></a>' +
-                '<p class="dari-player-meta">' + meta.join('') + '</p>' +
-            '</div>' + ring +
+        '<div class="dari-player-titles">' +
+        '<a class="dari-player-coursename" href="' +
+        config.courseurl +
+        '"></a>' +
+        '<p class="dari-player-meta">' +
+        meta.join('') +
+        '</p>' +
+        '</div>' +
+        ring +
         '</div>';
 
     // Assigned rather than interpolated: a course name can contain anything.
@@ -118,10 +134,8 @@ const buildHeader = (config, strings) => {
     // 1.8s as the banner's. Two rings showing the same course on the same screen behaving
     // differently is worse than neither being animated.
     animateRing(header, pct);
-
     return header;
 };
-
 const RING_DURATION = 1800;
 
 /**
@@ -144,11 +158,8 @@ const animateRing = (header, pct) => {
     if (!fill) {
         return;
     }
-
     const target = pct * 1.194;
-    const reduced = window.matchMedia
-        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced || !window.requestAnimationFrame) {
         fill.style.strokeDasharray = target + ' 200';
         if (text) {
@@ -162,10 +173,8 @@ const animateRing = (header, pct) => {
     fill.style.transition = 'none';
     fill.style.strokeDasharray = '0 200';
     void fill.getBoundingClientRect();
-    fill.style.transition = 'stroke-dasharray ' + (RING_DURATION / 1000)
-        + 's cubic-bezier(0.22, 1, 0.36, 1)';
+    fill.style.transition = 'stroke-dasharray ' + RING_DURATION / 1000 + 's cubic-bezier(0.22, 1, 0.36, 1)';
     fill.style.strokeDasharray = target + ' 200';
-
     if (!text) {
         return;
     }
@@ -236,7 +245,6 @@ const describeCompletion = (mark, data, strings) => {
 
 const TIP_ID = 'dari-completion-tip';
 const TIP_GAP = 10;
-
 let tipEl = null;
 let tipOwner = null;
 let tipHideTimer = null;
@@ -276,7 +284,6 @@ const buildCondition = (condition) => {
         state = 'dari-tip-failed';
     }
     li.className = 'dari-tip-item ' + state;
-
     const marker = document.createElement('span');
     marker.className = 'dari-tip-marker';
     marker.setAttribute('aria-hidden', 'true');
@@ -287,11 +294,9 @@ const buildCondition = (condition) => {
     } else if (condition.failed) {
         marker.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6.75 6.75l10.5 10.5M17.25 6.75 6.75 17.25"/></svg>';
     }
-
     const text = document.createElement('span');
     text.className = 'dari-tip-text';
     text.textContent = condition.text;
-
     li.appendChild(marker);
     li.appendChild(text);
     return li;
@@ -326,27 +331,21 @@ const fillTip = (tip, data, strings) => {
     if (!data.tracked) {
         return false;
     }
-
     tip.textContent = '';
-
     const status = document.createElement('p');
-    status.className = 'dari-tip-status '
-        + (data.complete ? 'dari-tip-status-done' : 'dari-tip-status-pending');
+    status.className = 'dari-tip-status ' + (data.complete ? 'dari-tip-status-done' : 'dari-tip-status-pending');
     status.textContent = data.complete ? strings.done : strings.notdone;
     tip.appendChild(status);
-
     if (conditions.length) {
         const head = document.createElement('p');
         head.className = 'dari-tip-head';
         head.textContent = strings.requires;
         tip.appendChild(head);
-
         const list = document.createElement('ul');
         list.className = 'dari-tip-list';
         conditions.forEach((condition) => list.appendChild(buildCondition(condition)));
         tip.appendChild(list);
     }
-
     if (hasfacts) {
         const facts = document.createElement('div');
         facts.className = 'dari-tip-facts';
@@ -361,7 +360,6 @@ const fillTip = (tip, data, strings) => {
         });
         tip.appendChild(facts);
     }
-
     return true;
 };
 
@@ -382,19 +380,17 @@ const placeTip = (tip, anchor) => {
     const vw = document.documentElement.clientWidth;
     const vh = document.documentElement.clientHeight;
     const rtl = document.documentElement.dir === 'rtl';
-
-    let left = rtl ? (a.left - TIP_GAP - t.width) : (a.right + TIP_GAP);
-    const flipped = rtl ? (left < TIP_GAP) : (left + t.width > vw - TIP_GAP);
+    let left = rtl ? a.left - TIP_GAP - t.width : a.right + TIP_GAP;
+    const flipped = rtl ? left < TIP_GAP : left + t.width > vw - TIP_GAP;
     if (flipped) {
-        left = rtl ? (a.right + TIP_GAP) : (a.left - TIP_GAP - t.width);
+        left = rtl ? a.right + TIP_GAP : a.left - TIP_GAP - t.width;
     }
     left = Math.max(TIP_GAP, Math.min(left, vw - t.width - TIP_GAP));
 
     // Centred on the tick, then pulled back inside the viewport rather than allowed to run off the
     // bottom of a row near the end of a long index.
-    let top = a.top + (a.height / 2) - (t.height / 2);
+    let top = a.top + a.height / 2 - t.height / 2;
     top = Math.max(TIP_GAP, Math.min(top, vh - t.height - TIP_GAP));
-
     tip.style.left = Math.round(left) + 'px';
     tip.style.top = Math.round(top) + 'px';
 };
@@ -436,12 +432,10 @@ const showTip = (anchor, data, strings) => {
         return;
     }
     hideTip();
-
     const tip = getTip();
     if (!fillTip(tip, data, strings)) {
         return;
     }
-
     tipOwner = anchor;
     // Suppress the browser's own tooltip while ours is up, remembering it so hideTip() can restore
     // it. Removing it permanently would strip the fallback from anyone who never triggers hover.
@@ -483,13 +477,11 @@ export const bindTip = (mark, data, strings) => {
     // Reachable by keyboard: the tick carries information nothing else on the row does, so it has
     // to be focusable for that information to be available without a mouse.
     mark.setAttribute('tabindex', '0');
-
     const open = () => showTip(mark, data, strings);
     const close = () => {
         window.clearTimeout(tipHideTimer);
         tipHideTimer = window.setTimeout(hideTip, 120);
     };
-
     mark.addEventListener('mouseenter', open);
     mark.addEventListener('focus', open);
     mark.addEventListener('mouseleave', close);
@@ -520,14 +512,12 @@ export const bindTip = (mark, data, strings) => {
         }
     });
 };
-
 const decorateRow = (row, data, strings) => {
     if (row.dataset.dariPlayer === '1') {
         return;
     }
     row.dataset.dariPlayer = '1';
     row.classList.add('dari-player-row');
-
     if (data.complete) {
         row.classList.add('dari-player-row-done');
     }
@@ -550,23 +540,21 @@ const decorateRow = (row, data, strings) => {
         icon.appendChild(img);
         row.insertBefore(icon, row.firstChild);
     }
-
     if (data.time) {
         const time = document.createElement('span');
         time.className = 'dari-player-row-time';
         time.title = strings.esttime.replace('{$a}', data.time);
         // The same clock the activity cards carry, so the two pills are the same object.
-        time.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">'
-            + '<circle cx="12" cy="13.25" r="7.5"></circle>'
-            + '<path d="M12 9.5v3.75l2.5 1.5M9.5 3.25h5"></path></svg>';
+        time.innerHTML =
+            '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+            '<circle cx="12" cy="13.25" r="7.5"></circle>' +
+            '<path d="M12 9.5v3.75l2.5 1.5M9.5 3.25h5"></path></svg>';
         time.appendChild(document.createTextNode(data.time));
         row.appendChild(time);
     }
-
     if (data.tracked) {
         const mark = document.createElement('span');
-        mark.className = 'dari-player-tick'
-            + (data.complete ? ' dari-player-tick-done' : '');
+        mark.className = 'dari-player-tick' + (data.complete ? ' dari-player-tick-done' : '');
         describeCompletion(mark, data, strings);
         mark.setAttribute('role', 'img');
         mark.setAttribute('aria-label', data.complete ? strings.done : strings.notdone);
@@ -658,7 +646,6 @@ const decorate = (config, strings) => {
         // Section headings get the tooltip treatment too: they are the longest names in the panel
         // and the first thing clipped.
         titleIfClipped(row);
-
         const cmid = cmidOf(row);
         if (!cmid || !config.activities[cmid]) {
             return;
@@ -747,7 +734,6 @@ const adoptDrawerControls = (header, strings) => {
     if (!strip || brand.querySelector('.dari-player-drawerctl')) {
         return;
     }
-
     const slot = document.createElement('div');
     slot.className = 'dari-player-drawerctl';
 
@@ -782,32 +768,29 @@ const adoptDrawerControls = (header, strings) => {
     // missing from a stale language cache resolves to "[[player_closeindex]]" rather than throwing,
     // but a rejected getString would take the whole init with it -- and the close control is the
     // one thing on this panel that must not depend on anything else working.
-    const label = (typeof strings.closeindex === 'string' && strings.closeindex.indexOf('[[') !== 0)
-        ? strings.closeindex
-        : 'Close course index';
+    const label =
+        typeof strings.closeindex === 'string' && strings.closeindex.indexOf('[[') !== 0
+            ? strings.closeindex
+            : 'Close course index';
     close.setAttribute('aria-label', label);
     close.setAttribute('title', label);
-    close.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
-        + '<path d="M6.75 6.75l10.5 10.5M17.25 6.75 6.75 17.25"></path></svg>';
+    close.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+        '<path d="M6.75 6.75l10.5 10.5M17.25 6.75 6.75 17.25"></path></svg>';
     slot.appendChild(close);
-
     brand.appendChild(slot);
     // The class is what the stylesheet keys the collapsed strip and the shorter top block off, so
     // it is set only once the move has actually succeeded. A failed adopt leaves three rows, which
     // is the old layout -- not a broken one.
     document.body.classList.add('dari-index-merged');
 };
-
+const cannotInitialise = (config, index) => !config || !config.activities || !index;
 export const init = async(passed) => {
     // The argument is still honoured so an older cached page, or anything else calling this
     // directly, keeps working.
     const config = passed || readConfig();
-    if (!config || !config.activities) {
-        return;
-    }
-
     const index = document.querySelector('.courseindex');
-    if (!index) {
+    if (cannotInitialise(config, index)) {
         return;
     }
 
@@ -816,27 +799,34 @@ export const init = async(passed) => {
     // after a network round-trip made the whole page jump once the strings landed. Nothing about the
     // class depends on them.
     document.body.classList.add('dari-player-on');
-
-    const [home, dashboard, mycourses, navlabel, progress, esttime, done, notdone, requires, closeindex]
-        = await Promise.all([
-        getString('player_home', 'format_dari'),
-        getString('player_dashboard', 'format_dari'),
-        getString('player_mycourses', 'format_dari'),
-        getString('player_navlabel', 'format_dari'),
-        getString('player_progress', 'format_dari'),
-        getString('estimatedtimefor', 'format_dari'),
-        getString('player_done', 'format_dari'),
-        getString('player_notdone', 'format_dari'),
-        getString('player_requires', 'format_dari'),
-        getString('player_closeindex', 'format_dari'),
-    ]);
-    const strings = {home, dashboard, mycourses, navlabel, progress, esttime, done, notdone, requires,
-        closeindex};
-
+    const [home, dashboard, mycourses, navlabel, progress, esttime, done, notdone, requires, closeindex] =
+        await Promise.all([
+            getString('player_home', 'format_dari'),
+            getString('player_dashboard', 'format_dari'),
+            getString('player_mycourses', 'format_dari'),
+            getString('player_navlabel', 'format_dari'),
+            getString('player_progress', 'format_dari'),
+            getString('estimatedtimefor', 'format_dari'),
+            getString('player_done', 'format_dari'),
+            getString('player_notdone', 'format_dari'),
+            getString('player_requires', 'format_dari'),
+            getString('player_closeindex', 'format_dari')
+        ]);
+    const strings = {
+        home,
+        dashboard,
+        mycourses,
+        navlabel,
+        progress,
+        esttime,
+        done,
+        notdone,
+        requires,
+        closeindex
+    };
     if (!document.getElementById(HEADER_ID)) {
         index.parentNode.insertBefore(buildHeader(config, strings), index);
     }
-
     const header = document.getElementById(HEADER_ID);
     if (header) {
         adoptDrawerControls(header, strings);
@@ -858,8 +848,12 @@ export const init = async(passed) => {
                 return null;
             }
             const r = e.getBoundingClientRect();
-            return {w: Math.round(r.width), h: Math.round(r.height),
-                l: Math.round(r.left), r: Math.round(r.right)};
+            return {
+                w: Math.round(r.width),
+                h: Math.round(r.height),
+                l: Math.round(r.left),
+                r: Math.round(r.right)
+            };
         };
         const brand = document.querySelector('.dari-player-brand');
         const logo = document.querySelector('.dari-player-logo');
@@ -867,29 +861,33 @@ export const init = async(passed) => {
         const ctl = document.querySelector('.dari-player-drawerctl');
         const hero = document.querySelector('.dari-hero-sticky-wrap');
         const page = document.getElementById('page');
-        window.console.info('[format_dari] merge:', JSON.stringify({
-            build: '2.1.163',
-            merged: document.body.classList.contains('dari-index-merged'),
-            close: !!document.querySelector('.dari-player-close'),
-            brand: box('.dari-player-brand'),
-            logo: box('.dari-player-logo'),
-            logoNatural: logo ? logo.naturalWidth + 'x' + logo.naturalHeight : null,
-            nav: box('.dari-player-nav'),
-            ctl: box('.dari-player-drawerctl'),
-            gapLogoNav: (logo && nav)
-                ? Math.round(nav.getBoundingClientRect().left - logo.getBoundingClientRect().right)
-                : null,
-            gapNavCtl: (nav && ctl)
-                ? Math.round(ctl.getBoundingClientRect().left - nav.getBoundingClientRect().right)
-                : null,
-            brandOverflow: brand ? brand.scrollWidth - brand.clientWidth : null,
-            justify: brand ? window.getComputedStyle(brand).justifyContent : null,
-            heroTop: hero ? Math.round(hero.getBoundingClientRect().top) : null,
-            pageTop: page ? Math.round(page.getBoundingClientRect().top) : null,
-            heroMarginTop: hero ? window.getComputedStyle(hero).marginBlockStart : null
-        }));
+        window.console.info(
+            '[format_dari] merge:',
+            JSON.stringify({
+                build: '2.1.163',
+                merged: document.body.classList.contains('dari-index-merged'),
+                close: !!document.querySelector('.dari-player-close'),
+                brand: box('.dari-player-brand'),
+                logo: box('.dari-player-logo'),
+                logoNatural: logo ? logo.naturalWidth + 'x' + logo.naturalHeight : null,
+                nav: box('.dari-player-nav'),
+                ctl: box('.dari-player-drawerctl'),
+                gapLogoNav:
+                    logo && nav
+                        ? Math.round(nav.getBoundingClientRect().left - logo.getBoundingClientRect().right)
+                        : null,
+                gapNavCtl:
+                    nav && ctl
+                        ? Math.round(ctl.getBoundingClientRect().left - nav.getBoundingClientRect().right)
+                        : null,
+                brandOverflow: brand ? brand.scrollWidth - brand.clientWidth : null,
+                justify: brand ? window.getComputedStyle(brand).justifyContent : null,
+                heroTop: hero ? Math.round(hero.getBoundingClientRect().top) : null,
+                pageTop: page ? Math.round(page.getBoundingClientRect().top) : null,
+                heroMarginTop: hero ? window.getComputedStyle(hero).marginBlockStart : null
+            })
+        );
     }
-
     decorate(config, strings);
 
     // Core rebuilds parts of the index as sections collapse, activities are edited, or completion
@@ -898,21 +896,32 @@ export const init = async(passed) => {
     // a rebuild of one section does not re-walk the whole tree.
     if (typeof window.MutationObserver === 'function') {
         const observer = new window.MutationObserver(() => decorate(config, strings));
-        observer.observe(index, {childList: true, subtree: true});
+        observer.observe(index, {
+            childList: true,
+            subtree: true
+        });
     }
 
     // The tooltip is anchored to a fixed position, so anything that moves its tick underneath it
     // has to close it rather than leave it pointing at empty space. Passive listeners: neither
     // handler can cancel the scroll it is reacting to.
     // Any tap outside a tick dismisses the panel — the touch equivalent of the pointer leaving.
-    document.addEventListener('pointerdown', (e) => {
-        if (e.pointerType !== 'mouse' && !(e.target.closest && e.target.closest('.dari-player-tick'))) {
-            hideTip();
-        }
-    }, true);
-
-    window.addEventListener('scroll', hideTip, {passive: true, capture: true});
-    window.addEventListener('resize', hideTip, {passive: true});
+    document.addEventListener(
+        'pointerdown',
+        (e) => {
+            if (e.pointerType !== 'mouse' && !(e.target.closest && e.target.closest('.dari-player-tick'))) {
+                hideTip();
+            }
+        },
+        true
+    );
+    window.addEventListener('scroll', hideTip, {
+        passive: true,
+        capture: true
+    });
+    window.addEventListener('resize', hideTip, {
+        passive: true
+    });
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             hideTip();

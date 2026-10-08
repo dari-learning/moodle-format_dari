@@ -34,6 +34,7 @@ global $CFG;
 require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testcase.php');
 require_once($CFG->dirroot . '/mod/quiz/locallib.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\ai_chat::class)]
 /**
  * Tests for the format_dari_ai_chat external function.
  *
@@ -46,7 +47,6 @@ require_once($CFG->dirroot . '/mod/quiz/locallib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\external\ai_chat
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\ai_chat::class)]
 final class ai_chat_test extends external_testcase {
     /**
      * Create an assignment in the fixture course and mark it submitted for the student.
@@ -166,10 +166,16 @@ final class ai_chat_test extends external_testcase {
         $this->assertFalse($result['truncated']);
         $this->assertSame([], $result['warnings']);
         $this->assertCount(1, $this->aiactions);
-        $this->assertInstanceOf(\core_ai\aiactions\generate_text::class, $this->aiactions[0]);
+        $actiontype = \format_dari\local\ai::subsystem_present()
+            ? \core_ai\aiactions\generate_text::class : \format_dari\test\direct_action::class;
+        $this->assertInstanceOf($actiontype, $this->aiactions[0]);
         // Asked in the activity's context, for the user who asked.
-        $this->assertSame(\context_module::instance($page->cmid)->id, $this->aiactions[0]->get_configuration('contextid'));
-        $this->assertSame((int) $this->student->id, $this->aiactions[0]->get_configuration('userid'));
+        if (\format_dari\local\ai::subsystem_present()) {
+            $this->assertSame(\context_module::instance($page->cmid)->id, $this->aiactions[0]->get_configuration('contextid'));
+        }
+        if (\format_dari\local\ai::subsystem_present()) {
+            $this->assertSame((int) $this->student->id, $this->aiactions[0]->get_configuration('userid'));
+        }
 
         $logged = $DB->get_record('format_dari_chats', ['id' => $result['chatid']], '*', MUST_EXIST);
         $this->assertEquals(1, $logged->refused);
@@ -428,8 +434,13 @@ final class ai_chat_test extends external_testcase {
      */
     public function test_tagged_activity_locks_the_tutor(): void {
         $page = $this->getDataGenerator()->create_module('page', ['course' => $this->course->id, 'section' => 1]);
-        \core_tag_tag::set_item_tags('core', 'course_modules', $page->cmid,
-            \context_module::instance($page->cmid), [ai_chat::TAG_OFF]);
+        \core_tag_tag::set_item_tags(
+            'core',
+            'course_modules',
+            $page->cmid,
+            \context_module::instance($page->cmid),
+            [ai_chat::TAG_OFF]
+        );
         $this->setUser($this->student);
 
         $result = $this->ask('Help', (int) $page->cmid);
@@ -443,8 +454,13 @@ final class ai_chat_test extends external_testcase {
     public function test_teacher_is_not_locked_out_of_an_assessment(): void {
         $quiz = $this->create_quiz(10);
         $this->add_attempt($quiz, (int) $this->teacher->id);
-        \core_tag_tag::set_item_tags('core', 'course_modules', $quiz->cmid,
-            \context_module::instance($quiz->cmid), [ai_chat::TAG_OFF]);
+        \core_tag_tag::set_item_tags(
+            'core',
+            'course_modules',
+            $quiz->cmid,
+            \context_module::instance($quiz->cmid),
+            [ai_chat::TAG_OFF]
+        );
         $this->setUser($this->teacher);
 
         $result = $this->ask('Is question 1 fair?', (int) $quiz->cmid);
@@ -521,7 +537,7 @@ final class ai_chat_test extends external_testcase {
         $this->stub_ai(false, true);
         $this->setUser($this->student);
 
-        $this->assert_throws_errorcode('error_ai_notextprovider', function (): void {
+        $this->assert_throws_errorcode($this->no_provider_error(), function (): void {
             ai_chat::execute($this->course->id, 'What is a hazard?');
         });
         $this->assertCount(0, $this->aiactions);
@@ -557,7 +573,7 @@ final class ai_chat_test extends external_testcase {
                 ai_chat::execute($this->course->id, 'Question ' . $i);
                 $this->fail('Expected the availability check to reject this call.');
             } catch (\moodle_exception $e) {
-                $this->assertSame('error_ai_notextprovider', $e->errorcode);
+                $this->assertSame($this->no_provider_error(), $e->errorcode);
             }
         }
 

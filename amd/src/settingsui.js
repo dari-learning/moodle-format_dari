@@ -47,64 +47,122 @@ import {buildSettingPreview} from 'format_dari/local/settingspreview';
  */
 const CATEGORIES = [
     {
-        id: 'time', order: 6, label: 'Estimated time', icon: 'time',
+        id: 'time',
+        order: 6,
+        label: 'Estimated time',
+        icon: 'time',
         desc: 'How long each activity is assumed to take, and which of the four places show the clock badges.',
-        match: [/minutes/, /timing/, /hidetime/],
+        match: [/minutes/, /timing/, /hidetime/]
     },
     {
-        id: 'tutor', order: 8, label: 'Ask Dari and AI images', icon: 'tutor',
-        desc: 'Ask Dari and AI images. Both use your site\'s own AI provider (Site administration > '
-            + 'General > AI); here you choose what course content is sent and how images look.',
-        match: [/tutor/, /assessmentanswers/, /aiassistant/, /externalservice/, /aistatus/,
-            /maxcontextchars/, /^direct/, /directheading/, /supportcontacts/, /sendfirstname/, /imagequality/, /imagestyle/, /aiscenewriter/, /adminreportlink/],
+        id: 'tutor',
+        order: 8,
+        label: 'Ask Dari and AI images',
+        icon: 'tutor',
+        desc:
+            "Ask Dari and AI images. Both use your site's own AI provider (Site administration > " +
+            'General > AI); here you choose what course content is sent and how images look.',
+        match: [
+            /tutor/,
+            /assessmentanswers/,
+            /aiassistant/,
+            /externalservice/,
+            /aistatus/,
+            /maxcontextchars/,
+            /^direct/,
+            /directheading/,
+            /supportcontacts/,
+            /sendfirstname/,
+            /imagequality/,
+            /imagestyle/,
+            /aiscenewriter/,
+            /adminreportlink/
+        ]
     },
     {
-        id: 'tour', order: 9, label: 'First-visit tour', icon: 'tour',
+        id: 'tour',
+        order: 9,
+        label: 'First-visit tour',
+        icon: 'tour',
         desc: 'The walkthrough someone sees the first time they open a course, and whether it is read aloud.',
-        match: [/tour/],
+        match: [/tour/]
     },
     {
-        id: 'colour', order: 1, label: 'Look and colour', icon: 'colour',
-        desc: 'The accent and every colour the format paints (headings, icons, cards, the side menu), '
-            + 'plus your logo and light or dark mode.',
-        match: [/colour/, /opacity/, /scrim/, /fade/, /overlay/, /playerlogo/, /colourmode/, /fontfamily/],
+        id: 'colour',
+        order: 1,
+        label: 'Look and colour',
+        icon: 'colour',
+        desc:
+            'The accent and every colour the format paints (headings, icons, cards, the side menu), ' +
+            'plus your logo and light or dark mode.',
+        match: [/colour/, /opacity/, /scrim/, /fade/, /overlay/, /playerlogo/, /colourmode/, /fontfamily/]
     },
     {
-        id: 'index', order: 5, label: 'Course index', icon: 'index',
-        desc: 'The side menu listing every section and activity: where it shows, how it opens, '
-            + 'and whether it becomes a progress tracker.',
-        match: [/playerindex/, /indexstate/, /playerheader/, /showcourseindex/, /^index/,
-            /forceindex/, /defaultindex/, /hidegeneral/],
+        id: 'index',
+        order: 5,
+        label: 'Course index',
+        icon: 'index',
+        desc:
+            'The side menu listing every section and activity: where it shows, how it opens, ' +
+            'and whether it becomes a progress tracker.',
+        match: [
+            /playerindex/,
+            /indexstate/,
+            /playerheader/,
+            /showcourseindex/,
+            /^index/,
+            /forceindex/,
+            /defaultindex/,
+            /hidegeneral/
+        ]
     },
     {
-        id: 'banner', order: 2, label: 'Course banner', icon: 'banner',
-        desc: 'The strip across the top of a course with its name and the learner\'s progress: '
-            + 'whether it shows, its picture, and where it sits.',
-        match: [/herobanner/, /heroattop/, /heroimage/, /herosticky/, /showherobanner/, /hero/],
+        id: 'banner',
+        order: 2,
+        label: 'Course banner',
+        icon: 'banner',
+        desc:
+            "The strip across the top of a course with its name and the learner's progress: " +
+            'whether it shows, its picture, and where it sits.',
+        match: [/herobanner/, /heroattop/, /heroimage/, /herosticky/, /showherobanner/, /hero/]
     },
     {
-        id: 'cards', order: 3, label: 'Section cards', icon: 'cards',
-        desc: 'The tiles on the course home page, one per section: grid or list, title size, '
-            + 'and which activities they list.',
-        match: [/displayascards/, /cardlayout/, /cardtitlesize/, /cardactivitylimit/,
-            /showactivities/, /card/],
+        id: 'cards',
+        order: 3,
+        label: 'Section cards',
+        icon: 'cards',
+        desc:
+            'The tiles on the course home page, one per section: grid or list, title size, ' +
+            'and which activities they list.',
+        match: [/displayascards/, /cardlayout/, /cardtitlesize/, /cardactivitylimit/, /showactivities/, /card/]
     },
     {
-        id: 'activity', order: 4, label: 'Inside a section', icon: 'activity',
-        desc: 'How the activities on a section page are laid out, and the arrows that move a learner '
-            + 'from one to the next.',
-        match: [/activitydisplaymode/, /navchevrons/],
+        id: 'activity',
+        order: 4,
+        label: 'Inside a section',
+        icon: 'activity',
+        desc:
+            'How the activities on a section page are laid out, and the arrows that move a learner ' +
+            'from one to the next.',
+        match: [/activitydisplaymode/, /navchevrons/]
     },
     {
-        id: 'nav', order: 7, label: 'Page furniture', icon: 'nav',
-        desc: 'Moodle\'s own furniture around a course: the tabs, the breadcrumb trail, the footer '
-            + 'and the site logo band.',
-        match: [/secondarynav/, /coursenavplace/, /immersive/, /hidefooter/, /hidebreadcrumb/],
+        id: 'nav',
+        order: 7,
+        label: 'Page furniture',
+        icon: 'nav',
+        desc:
+            "Moodle's own furniture around a course: the tabs, the breadcrumb trail, the footer " +
+            'and the site logo band.',
+        match: [/secondarynav/, /coursenavplace/, /immersive/, /hidefooter/, /hidebreadcrumb/]
     },
     {
-        id: 'other', order: 10, label: 'Everything else', icon: 'other',
+        id: 'other',
+        order: 10,
+        label: 'Everything else',
+        icon: 'other',
         desc: 'Settings not claimed by an area above.',
-        match: [],
+        match: []
     }
 ];
 
@@ -134,24 +192,31 @@ const categoryOf = (name) => {
    -------------------------------------------------------------------------- */
 const ICONS = {
     about: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5h.01"/>',
-    colour: '<path d="M12 3c3.5 4 6 7.2 6 10.2A6 6 0 0 1 6 13.2C6 10.2 8.5 7 12 3z"/>'
-        + '<path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2"/>',
-    banner: '<rect x="3" y="5" width="18" height="9" rx="2"/><path d="M6 18h8"/><path d="M6 21h5"/>'
-        + '<circle cx="17" cy="9.5" r="2"/>',
-    cards: '<rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/>'
-        + '<rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/>',
-    activity: '<rect x="3.5" y="4" width="17" height="6" rx="2"/><rect x="3.5" y="14" width="17" height="6" rx="2"/>'
-        + '<path d="m14 7 2 0"/><path d="m14 17 2 0"/>',
-    index: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/><path d="M12.5 9h5"/>'
-        + '<path d="M12.5 13h5"/><path d="M5.5 8h1"/><path d="M5.5 12h1"/>',
+    colour:
+        '<path d="M12 3c3.5 4 6 7.2 6 10.2A6 6 0 0 1 6 13.2C6 10.2 8.5 7 12 3z"/>' +
+        '<path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2"/>',
+    banner:
+        '<rect x="3" y="5" width="18" height="9" rx="2"/><path d="M6 18h8"/><path d="M6 21h5"/>' +
+        '<circle cx="17" cy="9.5" r="2"/>',
+    cards:
+        '<rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/>' +
+        '<rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/>',
+    activity:
+        '<rect x="3.5" y="4" width="17" height="6" rx="2"/><rect x="3.5" y="14" width="17" height="6" rx="2"/>' +
+        '<path d="m14 7 2 0"/><path d="m14 17 2 0"/>',
+    index:
+        '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/><path d="M12.5 9h5"/>' +
+        '<path d="M12.5 13h5"/><path d="M5.5 8h1"/><path d="M5.5 12h1"/>',
     time: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M10 2.5h4"/>',
-    nav: '<rect x="3" y="3.5" width="18" height="17" rx="2.5"/><path d="M3 8.5h18"/><path d="M6 6h.01"/>'
-        + '<path d="M8.5 6h.01"/><path d="M3 16.5h18"/>',
+    nav:
+        '<rect x="3" y="3.5" width="18" height="17" rx="2.5"/><path d="M3 8.5h18"/><path d="M6 6h.01"/>' +
+        '<path d="M8.5 6h.01"/><path d="M3 16.5h18"/>',
     tutor: '<path d="M12 3c.5 4.6 3.9 8 8.5 8.5-4.6.5-8 3.9-8.5 8.5-.5-4.6-3.9-8-8.5-8.5C8.1 11 11.5 7.6 12 3z"/>',
     tour: '<path d="M5 21V4"/><path d="M5 4h11l-2 3.5 2 3.5H5"/>',
-    other: '<path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h4"/>'
-        + '<path d="M12 17h8"/><circle cx="10" cy="17" r="2"/>',
-    search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+    other:
+        '<path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h4"/>' +
+        '<path d="M12 17h8"/><circle cx="10" cy="17" r="2"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>'
 };
 
 /**
@@ -165,9 +230,12 @@ const ICONS = {
  * @returns {String} Markup.
  */
 const icon = (key, cls) =>
-    '<svg class="' + cls + '" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" '
-    + 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
-    + (ICONS[key] || ICONS.other) + '</svg>';
+    '<svg class="' +
+    cls +
+    '" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" ' +
+    'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    (ICONS[key] || ICONS.other) +
+    '</svg>';
 
 /**
  * Read a per-viewer value without letting blocked storage break the page.
@@ -204,17 +272,20 @@ const remember = (value) => {
  */
 export const init = (strings) => {
     // English defaults so a stale language cache costs a word rather than the page.
-    const t = Object.assign({
-        search: 'Search settings…',
-        nomatches: 'No settings match that search.',
-        settings: 'settings',
-        setting: 'setting',
-        about: 'About this plugin',
-        course: 'Course',
-        appliestoall: 'Applies to every course that already exists',
-        allcourses: 'All courses',
-        current: 'Current'
-    }, strings || {});
+    const t = Object.assign(
+        {
+            search: 'Search settings…',
+            nomatches: 'No settings match that search.',
+            settings: 'settings',
+            setting: 'setting',
+            about: 'About this plugin',
+            course: 'Course',
+            appliestoall: 'Applies to every course that already exists',
+            allcourses: 'All courses',
+            current: 'Current'
+        },
+        strings || {}
+    );
 
     // Only ever touch THIS plugin's settings page. `#adminsettings` exists on every admin settings
     // page, and settings.php is included while Moodle builds the whole admin tree, so the module
@@ -239,8 +310,7 @@ export const init = (strings) => {
         if (name === '') {
             return;
         }
-        settings.push({item, name, cat: categoryOf(name),
-            text: (name + ' ' + item.textContent).toLowerCase()});
+        settings.push({item, name, cat: categoryOf(name), text: (name + ' ' + item.textContent).toLowerCase()});
     });
 
     if (settings.length < 4) {
@@ -265,10 +335,12 @@ export const init = (strings) => {
             if (holders.has(el) || settings.some((s) => s.item === el)) {
                 return;
             }
-            if (el.matches('input, script, style, .clearer, fieldset > legend')
-                || el.querySelector('input[type="submit"], button[type="submit"]')
-                || el.matches('h2') && el.parentElement && el.parentElement.classList.contains('settingsform')
-                || el.textContent.trim() === '') {
+            if (
+                el.matches('input, script, style, .clearer, fieldset > legend') ||
+                el.querySelector('input[type="submit"], button[type="submit"]') ||
+                (el.matches('h2') && el.parentElement && el.parentElement.classList.contains('settingsform')) ||
+                el.textContent.trim() === ''
+            ) {
                 return;
             }
             notes.push(el);
@@ -291,8 +363,9 @@ export const init = (strings) => {
         // Moodle 5 renders description rows without an id. A description row explains the
         // settings that follow it, so it joins the area of the next real setting on the page.
         if (!cat && el.classList.contains('form-item')) {
-            const next = settings.find((s) =>
-                el.compareDocumentPosition(s.item) & Node.DOCUMENT_POSITION_FOLLOWING);
+            const next = settings.find((s) => [Node.DOCUMENT_POSITION_FOLLOWING,
+                    Node.DOCUMENT_POSITION_FOLLOWING + Node.DOCUMENT_POSITION_CONTAINED_BY]
+                    .includes(el.compareDocumentPosition(s.item)));
             cat = next ? next.cat : null;
         }
         if (cat && cat.id !== 'other') {
@@ -360,8 +433,9 @@ export const init = (strings) => {
         tab.setAttribute('aria-selected', 'false');
         tab.setAttribute('aria-controls', 'dset-pane-' + area.id);
         tab.tabIndex = -1;
-        tab.innerHTML = icon(area.icon, 'dset-tab-icon')
-            + '<span class="dset-tab-label"></span><span class="dset-tab-count"></span>';
+        tab.innerHTML =
+            icon(area.icon, 'dset-tab-icon') +
+            '<span class="dset-tab-label"></span><span class="dset-tab-count"></span>';
         tab.querySelector('.dset-tab-label').textContent = area.label;
         const count = tab.querySelector('.dset-tab-count');
         if (area.rows.length) {
@@ -378,9 +452,14 @@ export const init = (strings) => {
 
         const head = document.createElement('header');
         head.className = 'dset-pane-head';
-        head.innerHTML = '<span class="dset-pane-mark">' + icon(area.icon, 'dset-pane-icon') + '</span>'
-            + '<div class="dset-pane-text"><h2 class="dset-pane-title" id="dset-title-' + area.id + '"></h2>'
-            + '<p class="dset-pane-desc"></p></div>';
+        head.innerHTML =
+            '<span class="dset-pane-mark">' +
+            icon(area.icon, 'dset-pane-icon') +
+            '</span>' +
+            '<div class="dset-pane-text"><h2 class="dset-pane-title" id="dset-title-' +
+            area.id +
+            '"></h2>' +
+            '<p class="dset-pane-desc"></p></div>';
         head.querySelector('.dset-pane-title').textContent = area.label;
         const desc = head.querySelector('.dset-pane-desc');
         if (area.desc) {
@@ -464,8 +543,10 @@ export const init = (strings) => {
             const keys = {ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1};
             let next = null;
             if (keys[e.key]) {
-                const dir = (e.key === 'ArrowRight' || e.key === 'ArrowLeft')
-                    && document.dir === 'rtl' ? -keys[e.key] : keys[e.key];
+                const dir =
+                    (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && document.dir === 'rtl'
+                        ? -keys[e.key]
+                        : keys[e.key];
                 next = areas[(i + dir + areas.length) % areas.length];
             } else if (e.key === 'Home') {
                 next = areas[0];
@@ -560,8 +641,7 @@ export const init = (strings) => {
     // then the one this person had open, then the first area that holds settings.
     const witherror = areas.find((a) => a.pane.querySelector('.error, .alert-danger, .is-invalid'));
     const stored = recall();
-    select(witherror || areas.find((a) => a.id === stored)
-        || areas.find((a) => a.rows.length) || areas[0], false);
+    select(witherror || areas.find((a) => a.id === stored) || areas.find((a) => a.rows.length) || areas[0], false);
     if (window.location.hash) {
         window.setTimeout(jump, 60);
     }

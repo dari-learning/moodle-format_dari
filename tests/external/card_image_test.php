@@ -35,6 +35,13 @@ global $CFG;
 require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testcase.php');
 require_once($CFG->dirroot . '/course/format/dari/tests/local/cardimage_test.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\upload_card_image::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\delete_card_image::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\set_card_colour::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\generate_card_image::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\get_card_image_status::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\generate_all_card_images::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\task\generate_card_image::class)]
 /**
  * Tests for the card image and card colour external functions.
  *
@@ -53,13 +60,6 @@ require_once($CFG->dirroot . '/course/format/dari/tests/local/cardimage_test.php
  * @covers     \format_dari\external\generate_all_card_images
  * @covers     \format_dari\task\generate_card_image
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\upload_card_image::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\delete_card_image::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\set_card_colour::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\generate_card_image::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\get_card_image_status::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\generate_all_card_images::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\task\generate_card_image::class)]
 final class card_image_test extends external_testcase {
     /** @var \stdClass A page in section 1. */
     private $page;
@@ -208,10 +208,10 @@ final class card_image_test extends external_testcase {
     public function test_generate_requires_an_image_provider(): void {
         $this->stub_ai(true, false);
         $this->setUser($this->teacher);
-        $this->assert_throws_errorcode('error_ai_noimageprovider', function (): void {
+        $this->assert_throws_errorcode($this->no_provider_error(true), function (): void {
             generate_card_image::execute($this->course->id, 'cm', (int) $this->page->cmid, '');
         });
-        $this->assert_throws_errorcode('error_ai_noimageprovider', function (): void {
+        $this->assert_throws_errorcode($this->no_provider_error(true), function (): void {
             generate_all_card_images::execute($this->course->id, 'all', true, false);
         });
         $this->assertCount(0, \core\task\manager::get_adhoc_tasks('\\format_dari\\task\\generate_card_image'));
@@ -300,7 +300,9 @@ final class card_image_test extends external_testcase {
         $this->assertCount(2, $this->actions_of(\core_ai\aiactions\generate_text::class));
         $images = $this->actions_of(\core_ai\aiactions\generate_image::class);
         $this->assertCount(1, $images);
-        $this->assertEquals($this->teacher->id, $images[0]->get_configuration('userid'));
+        if (\format_dari\local\ai::subsystem_present()) {
+            $this->assertEquals($this->teacher->id, $images[0]->get_configuration('userid'));
+        }
         $this->assertStringStartsWith('An apprentice chef in crisp whites', $images[0]->get_configuration('prompttext'));
         $this->assertSame('done', $status['stage']);
 

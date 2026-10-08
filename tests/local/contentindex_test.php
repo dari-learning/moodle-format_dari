@@ -25,6 +25,7 @@
 
 namespace format_dari\local;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\contentindex::class)]
 /**
  * Tests for Ask Dari course content index.
  *
@@ -37,7 +38,6 @@ namespace format_dari\local;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\contentindex
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\contentindex::class)]
 final class contentindex_test extends \advanced_testcase {
     /**
      * Empty the in-request index cache before every test.

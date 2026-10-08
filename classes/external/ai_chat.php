@@ -621,7 +621,6 @@ class ai_chat extends external_api {
             if ($questiontext !== '') {
                 $text .= 'Question topic/context: ' . $questiontext . "\n";
             }
-
         }
 
         return $text;
@@ -882,7 +881,8 @@ class ai_chat extends external_api {
         try {
             $rows = $DB->get_records_select(
                 'format_dari_chats',
-                'courseid = :courseid AND activityid = :activityid AND ' . $DB->sql_isnotempty('format_dari_chats', 'correction', true, true),
+                'courseid = :courseid AND activityid = :activityid AND ' .
+                    $DB->sql_isnotempty('format_dari_chats', 'correction', true, true),
                 ['courseid' => $courseid, 'activityid' => $activityid],
                 'timecorrected DESC, id DESC',
                 'id, question, correction',
@@ -991,8 +991,12 @@ class ai_chat extends external_api {
      * @param string $audience adult, secondary or primary.
      * @return string The guidelines.
      */
-    protected static function get_pedagogical_guidelines(bool $shareanswers = false, bool $isteacher = false,
-            string $support = '', string $audience = 'adult'): string {
+    protected static function get_pedagogical_guidelines(
+        bool $shareanswers = false,
+        bool $isteacher = false,
+        string $support = '',
+        string $audience = 'adult'
+    ): string {
         $support = trim($support) !== '' ? trim($support) : 'their teacher or trainer, or a trusted adult';
         $lines = [
             'TUTOR RULES (highest priority first):',

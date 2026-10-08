@@ -16,6 +16,7 @@
 
 namespace format_dari\local;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\cardprompt::class)]
 /**
  * Tests for the plugin-written card image prompt.
  *
@@ -25,7 +26,6 @@ namespace format_dari\local;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\cardprompt
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\cardprompt::class)]
 final class cardprompt_test extends \advanced_testcase {
     /**
      * Card images and colours are cached per request; each test starts clean.

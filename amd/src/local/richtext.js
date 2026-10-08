@@ -80,10 +80,12 @@ const OPTION = /^\s*(?:[-*+]\s+)?(?:\*\*)?\(?([A-Ha-h])(?:\)|\.)(?:\*\*)?\s+(.+)
  *
  * @type {RegExp}
  */
-const ANSWERLINE = new RegExp('^\\s*(?:[*_]{1,2})?\\s*(?:the\\s+)?(?:correct\\s+)?answer\\s*(?:[*_]{1,2})?\\s*'
-    + '(?:is\\b\\s*:?|[:\\-\\u2013])\\s*(?:[*_]{1,2})?\\s*(?:option\\s+)?\\(?([A-Ha-h])'
-    + '(?=[).:]|\\s*[-\\u2013\\u2014]|\\s*(?:[*_]{1,2})?\\s*$)\\)?(.*)$', 'i');
-
+const ANSWERLINE = new RegExp(
+    '^\\s*(?:[*_]{1,2})?\\s*(?:the\\s+)?(?:correct\\s+)?answer\\s*(?:[*_]{1,2})?\\s*' +
+        '(?:is\\b\\s*:?|[:\\-\\u2013])\\s*(?:[*_]{1,2})?\\s*(?:option\\s+)?\\(?([A-Ha-h])' +
+        '(?=[).:]|\\s*[-\\u2013\\u2014]|\\s*(?:[*_]{1,2})?\\s*$)\\)?(.*)$',
+    'i'
+);
 
 /** @type {RegExp} The explanation line that may follow the answer line. */
 const EXPLAINLINE = /^\s*(?:[*_]{1,2})?\s*(?:explanation|rationale)\s*[:\-–]\s*(?:[*_]{1,2})?\s*(.*)$/i;
@@ -95,10 +97,13 @@ const EXPLAINLINE = /^\s*(?:[*_]{1,2})?\s*(?:explanation|rationale)\s*[:\-–]\s
  *
  * @type {RegExp}
  */
-const QUIZCUE = new RegExp('\\b(?:practi[cs]e (?:questions?|quiz(?:zes)?|mcqs?)|quiz(?:zes)?|multiple[- ]choice|mcqs?'
-    + '|test (?:you|your|yourself)|check (?:your|yourself)|quick (?:check|quiz)|knowledge check|true or false'
-    + '|which (?:of the following|option|one of these|statement|answer)|choose (?:the|one|an?)|select (?:the|one|an?)'
-    + '|pick (?:the|one)|correct (?:answer|option))\\b', 'i');
+const QUIZCUE = new RegExp(
+    '\\b(?:practi[cs]e (?:questions?|quiz(?:zes)?|mcqs?)|quiz(?:zes)?|multiple[- ]choice|mcqs?' +
+        '|test (?:you|your|yourself)|check (?:your|yourself)|quick (?:check|quiz)|knowledge check|true or false' +
+        '|which (?:of the following|option|one of these|statement|answer)|choose (?:the|one|an?)|select (?:the|one|an?)' +
+        '|pick (?:the|one)|correct (?:answer|option))\\b',
+    'i'
+);
 
 /** @type {Number} An option longer than this is an explanation, not a choice. */
 const OPTION_MAX = 160;
@@ -107,21 +112,36 @@ const OPTION_MAX = 160;
 const TABLEDELIM = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 
 /** @type {String} Words that introduce a callout. */
-const CALLOUTWORDS = 'tip|hint|remember|key point|key idea|key|important|note|warning|caution|careful|example|scenario'
-    + '|try this|summary';
+const CALLOUTWORDS =
+    'tip|hint|remember|key point|key idea|key|important|note|warning|caution|careful|example|scenario' +
+    '|try this|summary';
 
 /** @type {RegExp} "**Tip:** ..." or "**Tip**: ..." - a bold label. */
-const CALLOUTBOLD = new RegExp('^(?:\\*\\*|__)\\s*(' + CALLOUTWORDS + ')\\b'
-    + '\\s*[:!\\-\\u2013]?\\s*(?:\\*\\*|__)\\s*[:\\-\\u2013]?\\s*', 'i');
+const CALLOUTBOLD = new RegExp(
+    '^(?:\\*\\*|__)\\s*(' + CALLOUTWORDS + ')\\b' + '\\s*[:!\\-\\u2013]?\\s*(?:\\*\\*|__)\\s*[:\\-\\u2013]?\\s*',
+    'i'
+);
 
 /** @type {RegExp} "Tip: ..." - a plain label, which must be followed by a colon or dash. */
 const CALLOUTPLAIN = new RegExp('^(' + CALLOUTWORDS + ')\\s*[:\\-\\u2013]\\s+', 'i');
 
 /** @type {Object} Callout tones keyed by the word that introduces them. */
 const CALLOUTS = {
-    tip: 'tip', hint: 'tip', remember: 'key', key: 'key', important: 'key', note: 'note',
-    warning: 'warning', caution: 'warning', careful: 'warning', example: 'example',
-    scenario: 'example', 'try this': 'tip', summary: 'key', 'key point': 'key', 'key idea': 'key',
+    tip: 'tip',
+    hint: 'tip',
+    remember: 'key',
+    key: 'key',
+    important: 'key',
+    note: 'note',
+    warning: 'warning',
+    caution: 'warning',
+    careful: 'warning',
+    example: 'example',
+    scenario: 'example',
+    'try this': 'tip',
+    summary: 'key',
+    'key point': 'key',
+    'key idea': 'key'
 };
 
 /**
@@ -155,14 +175,36 @@ const safeUrl = (url) => /^(https?:\/\/|mailto:)/i.test(url.trim());
  * @type {Array}
  */
 const INLINE = [
-    {type: 'code', re: /`([^`\n]+)`/g},
-    {type: 'link', re: /\[([^\]\n]+)\]\(([^()\s]*(?:\([^()\s]*\)[^()\s]*)*)\)/g},
-    {type: 'strong', re: /\*\*(?=\S)([^\n]{0,500}?\S)\*\*/g},
-    {type: 'strong', re: /__(?=\S)([^\n]{0,500}?\S)__(?!\w)/g},
-    {type: 'strike', re: /~~(?=\S)([^\n]{0,500}?\S)~~/g},
+    {
+        type: 'code',
+        re: /`([^`\n]+)`/g
+    },
+    {
+        type: 'link',
+        re: /\[([^\]\n]+)\]\(([^()\s]*(?:\([^()\s]*\)[^()\s]*)*)\)/g
+    },
+    {
+        type: 'strong',
+        re: /\*\*(?=\S)([^\n]{0,500}?\S)\*\*/g
+    },
+    {
+        type: 'strong',
+        re: /__(?=\S)([^\n]{0,500}?\S)__(?!\w)/g
+    },
+    {
+        type: 'strike',
+        re: /~~(?=\S)([^\n]{0,500}?\S)~~/g
+    },
     // Not inside a word: "2*3*4" stays arithmetic.
-    {type: 'em', re: /\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![\w*])/g, wordstart: true},
-    {type: 'url', re: /\bhttps?:\/\/[^\s<>()]+[^\s<>().,;:!?'"]/g},
+    {
+        type: 'em',
+        re: /\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![\w*])/g,
+        wordstart: true
+    },
+    {
+        type: 'url',
+        re: /\bhttps?:\/\/[^\s<>()]+[^\s<>().,;:!?'"]/g
+    }
 ];
 
 /**
@@ -178,7 +220,6 @@ export const appendInline = (parent, text, inlink) => {
     const patterns = INLINE.filter((pattern) => !inlink || (pattern.type !== 'link' && pattern.type !== 'url'));
     const cache = patterns.map(() => null);
     let pos = 0;
-
     const find = (index) => {
         const cached = cache[index];
         if (cached && (cached.none || cached.index >= pos)) {
@@ -191,10 +232,11 @@ export const appendInline = (parent, text, inlink) => {
             pattern.re.lastIndex = match.index + 1;
             match = pattern.re.exec(source);
         }
-        cache[index] = match || {none: true};
+        cache[index] = match || {
+            none: true
+        };
         return cache[index];
     };
-
     while (pos < source.length) {
         let best = null;
         let besttype = '';
@@ -250,12 +292,14 @@ export const appendInline = (parent, text, inlink) => {
  * @returns {Node} The parent.
  */
 const appendLines = (parent, text) => {
-    String(text).split('\n').forEach((line, index) => {
-        if (index > 0) {
-            parent.appendChild(el('br'));
-        }
-        appendInline(parent, line);
-    });
+    String(text)
+        .split('\n')
+        .forEach((line, index) => {
+            if (index > 0) {
+                parent.appendChild(el('br'));
+            }
+            appendInline(parent, line);
+        });
     return parent;
 };
 
@@ -265,12 +309,13 @@ const appendLines = (parent, text) => {
  * @param {String} text Inline Markdown.
  * @returns {String} Plain text.
  */
-export const plain = (text) => String(text || '')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/(\*\*|__|~~|`)/g, '')
-    .replace(/(^|\s)[*_](\S[^*_]*\S|\S)[*_](?=\s|$|[.,;:!?])/g, '$1$2')
-    .replace(/\s+/g, ' ')
-    .trim();
+export const plain = (text) =>
+    String(text || '')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/(\*\*|__|~~|`)/g, '')
+        .replace(/(^|\s)[*_](\S[^*_]*\S|\S)[*_](?=\s|$|[.,;:!?])/g, '$1$2')
+        .replace(/\s+/g, ' ')
+        .trim();
 
 /**
  * Normalise a quiz object from whatever shape the model produced.
@@ -286,43 +331,68 @@ const normaliseQuiz = (raw) => {
     if (typeof raw.question === 'object' && raw.question !== null) {
         return null;
     }
-    let options = raw.options || raw.choices || raw.answers || [];
-    if (!Array.isArray(options)) {
-        // A keyed object ({"A": "...", "B": "..."}) is usable; a string or a number is not.
-        options = options && typeof options === 'object'
-            ? Object.keys(options).sort().map((key) => options[key])
-            : [];
-    }
-    options = options.map((option) => {
-        const text = typeof option === 'object' && option !== null
-            ? (option.text || option.label || option.value || '')
-            : option;
-        // Drop a leading "A) " the model may have added itself.
-        return String(text).replace(/^\s*\(?[A-Ha-h][).:]\s+/, '').trim();
-    }).filter((text) => text !== '');
+    const normaliseOptions = () => {
+        let options = raw.options || raw.choices || raw.answers || [];
+        if (!Array.isArray(options)) {
+            // A keyed object ({"A": "...", "B": "..."}) is usable; a string or a number is not.
+            options =
+                options && typeof options === 'object'
+                    ? Object.keys(options)
+                          .sort()
+                          .map((key) => options[key])
+                    : [];
+        }
+        options = options
+            .map((option) => {
+                const text =
+                    typeof option === 'object' && option !== null
+                        ? option.text || option.label || option.value || ''
+                        : option;
+                // Drop a leading "A) " the model may have added itself.
+                return String(text)
+                    .replace(/^\s*\(?[A-Ha-h][).:]\s+/, '')
+                    .trim();
+            })
+            .filter((text) => text !== '');
+        return {
+            options
+        };
+    };
+    const {options} = normaliseOptions();
     if (!question || options.length < 2 || options.length > MAX_OPTIONS) {
         return null;
     }
-    let answer = raw.answer !== undefined ? raw.answer : (raw.correct !== undefined ? raw.correct : raw.correctIndex);
-    if (typeof answer === 'string') {
-        const trimmed = answer.trim();
-        if (/^[A-Ha-h]$/.test(trimmed)) {
-            answer = LETTERS.indexOf(trimmed.toUpperCase());
-        } else if (/^\d+$/.test(trimmed)) {
-            answer = parseInt(trimmed, 10);
-        } else {
-            answer = options.findIndex((option) => option.toLowerCase() === trimmed.toLowerCase());
+    const normaliseAnswer = () => {
+        let answer = (() => {
+            if (raw.answer !== undefined) {
+                return raw.answer;
+            }
+            return raw.correct !== undefined ? raw.correct : raw.correctIndex;
+        })();
+        if (typeof answer === 'string') {
+            const trimmed = answer.trim();
+            if (/^[A-Ha-h]$/.test(trimmed)) {
+                answer = LETTERS.indexOf(trimmed.toUpperCase());
+            } else if (/^\d+$/.test(trimmed)) {
+                answer = parseInt(trimmed, 10);
+            } else {
+                answer = options.findIndex((option) => option.toLowerCase() === trimmed.toLowerCase());
+            }
         }
-    }
-    if (!Number.isInteger(answer) || answer < 0 || answer >= options.length) {
-        answer = -1;
-    }
+        if (!Number.isInteger(answer) || answer < 0 || answer >= options.length) {
+            answer = -1;
+        }
+        return {
+            answer
+        };
+    };
+    const {answer} = normaliseAnswer();
     return {
         question: question,
         options: options,
         answer: answer,
         explanation: String(raw.explanation || raw.rationale || raw.feedback || '').trim(),
-        hint: String(raw.hint || '').trim(),
+        hint: String(raw.hint || '').trim()
     };
 };
 
@@ -402,6 +472,15 @@ const completeObjects = (body) => {
 };
 
 /**
+ * Whether two adjacent lines start a pipe table.
+ *
+ * @param {String} line Header line.
+ * @param {String} next Separator line.
+ * @returns {Boolean}
+ */
+const isTableHeader = (line, next) => line.indexOf('|') !== -1 && TABLEDELIM.test(next || '');
+
+/**
  * Block-level parser: turns lines into a flat list of block descriptors.
  *
  * @param {Array} lines Source lines.
@@ -410,109 +489,106 @@ const completeObjects = (body) => {
 const parseBlocks = (lines) => {
     const blocks = [];
     let i = 0;
-
     const isBlank = (line) => line === undefined || /^\s*$/.test(line);
-    const startsBlock = (line, next) => FENCE.test(line) || HEADING.test(line) || RULE.test(line)
-        || /^\s*>/.test(line) || LISTITEM.test(line) || OPTION.test(line)
-        || (line.indexOf('|') !== -1 && next !== undefined && TABLEDELIM.test(next));
-
-    while (i < lines.length) {
-        const line = lines[i];
-
-        if (isBlank(line)) {
+    const startsBlock = (line, next) =>
+        FENCE.test(line) ||
+        HEADING.test(line) ||
+        RULE.test(line) ||
+        /^\s*>/.test(line) ||
+        LISTITEM.test(line) ||
+        OPTION.test(line) ||
+        (line.indexOf('|') !== -1 && next !== undefined && TABLEDELIM.test(next));
+    const consumeFence = (line, fence) => {
+        const marker = fence[1];
+        const lang = (fence[2] || '').toLowerCase();
+        const body = [];
+        i++;
+        while (i < lines.length && !(lines[i].trim().indexOf(marker) === 0 && FENCE.test(lines[i]))) {
+            body.push(lines[i]);
             i++;
-            continue;
         }
-
-        // Fenced code, including fenced "quiz".
-        const fence = FENCE.exec(line);
-        if (fence) {
-            const marker = fence[1];
-            const lang = (fence[2] || '').toLowerCase();
-            const body = [];
-            i++;
-            while (i < lines.length && !(lines[i].trim().indexOf(marker) === 0 && FENCE.test(lines[i]))) {
-                body.push(lines[i]);
-                i++;
+        i++;
+        const text = body.join('\n');
+        const looksLikeQuiz = /"options"\s*:/.test(text) && /"question"\s*:/.test(text);
+        // An untagged or "json" block only counts when the answer is about a quiz: an ICT unit
+        // teaching JSON may well show objects with "question" and "options" keys.
+        if (lang === 'quiz' || lang === 'mcq' || ((lang === 'json' || lang === '') && looksLikeQuiz && quizcue)) {
+            const quizzes = parseQuizBlock(text);
+            quizzes.forEach((quiz) =>
+                blocks.push({
+                    type: 'quiz',
+                    quiz: quiz
+                })
+            );
+            if (quizzes.incomplete) {
+                // Never show a learner raw, broken JSON.
+                blocks.push({
+                    type: 'notice'
+                });
+                return true;
             }
-            i++;
-            const text = body.join('\n');
-            const looksLikeQuiz = /"options"\s*:/.test(text) && /"question"\s*:/.test(text);
-            // An untagged or "json" block only counts when the answer is about a quiz: an ICT unit
-            // teaching JSON may well show objects with "question" and "options" keys.
-            if (lang === 'quiz' || lang === 'mcq' || ((lang === 'json' || lang === '') && looksLikeQuiz && quizcue)) {
-                const quizzes = parseQuizBlock(text);
-                quizzes.forEach((quiz) => blocks.push({type: 'quiz', quiz: quiz}));
-                if (quizzes.incomplete) {
-                    // Never show a learner raw, broken JSON.
-                    blocks.push({type: 'notice'});
-                    continue;
-                }
-                if (quizzes.length) {
-                    continue;
-                }
+            if (quizzes.length) {
+                return true;
             }
-            blocks.push({type: 'code', lang: lang, text: text});
-            continue;
         }
-
-        const heading = HEADING.exec(line);
-        if (heading) {
-            blocks.push({type: 'heading', level: heading[1].length, text: heading[2]});
+        blocks.push({
+            type: 'code',
+            lang: lang,
+            text: text
+        });
+        return true;
+    };
+    const consumeQuote = () => {
+        const body = [];
+        while (i < lines.length && /^\s*>/.test(lines[i])) {
+            body.push(lines[i].replace(/^\s*>\s?/, ''));
             i++;
-            continue;
         }
-
-        if (RULE.test(line)) {
-            blocks.push({type: 'rule'});
+        blocks.push({
+            type: 'quote',
+            lines: body
+        });
+        return true;
+    };
+    const consumeTable = (line) => {
+        const split = (row) =>
+            row
+                .trim()
+                .replace(/^\|/, '')
+                .replace(/\|$/, '')
+                .split('|')
+                .map((c) => c.trim());
+        const head = split(line);
+        const rows = [];
+        i += 2;
+        while (i < lines.length && lines[i].indexOf('|') !== -1 && !isBlank(lines[i])) {
+            rows.push(split(lines[i]));
             i++;
-            continue;
         }
-
-        if (/^\s*>/.test(line)) {
-            const body = [];
-            while (i < lines.length && /^\s*>/.test(lines[i])) {
-                body.push(lines[i].replace(/^\s*>\s?/, ''));
-                i++;
-            }
-            blocks.push({type: 'quote', lines: body});
-            continue;
-        }
-
-        if (line.indexOf('|') !== -1 && TABLEDELIM.test(lines[i + 1] || '')) {
-            const split = (row) => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
-            const head = split(line);
-            const rows = [];
-            i += 2;
-            while (i < lines.length && lines[i].indexOf('|') !== -1 && !isBlank(lines[i])) {
-                rows.push(split(lines[i]));
-                i++;
-            }
-            blocks.push({type: 'table', head: head, rows: rows});
-            continue;
-        }
-
-        // Plain-text options: A) .. B) .. in sequence, blank lines allowed between. They become a
-        // question card only when they really are a question: the stem ends in "?" or carries a
-        // "Question 2:" label, or an answer / explanation line follows. Otherwise ("There are two
-        // kinds of hazard: a) physical b) chemical") they are rendered as a lettered list.
-        const firstoption = OPTION.exec(line);
-        if (firstoption && firstoption[1].toUpperCase() === 'A') {
-            const options = [];
-            let j = i;
-            while (j < lines.length && options.length < MAX_OPTIONS) {
-                if (isBlank(lines[j])) {
-                    j++;
-                    continue;
-                }
-                const option = OPTION.exec(lines[j]);
-                if (!option || option[1].toUpperCase() !== LETTERS[options.length]) {
-                    break;
-                }
-                options.push(option[2].replace(/\s*(\*\*)?\s*$/, ''));
+        blocks.push({
+            type: 'table',
+            head: head,
+            rows: rows
+        });
+        return true;
+    };
+    const consumeOptions = (line, firstoption) => {
+        const options = [];
+        let j = i;
+        while (j < lines.length && options.length < MAX_OPTIONS) {
+            if (isBlank(lines[j])) {
                 j++;
+                continue;
             }
-            if (options.length >= 2) {
+            const option = OPTION.exec(lines[j]);
+            if (!option || option[1].toUpperCase() !== LETTERS[options.length]) {
+                break;
+            }
+            options.push(option[2].replace(/\s*(\*\*)?\s*$/, ''));
+            j++;
+        }
+        if (options.length >= 2) {
+            const readOptionExplanation = () => {
                 let answer = -1;
                 const explain = [];
                 let k = j;
@@ -546,10 +622,20 @@ const parseBlocks = (lines) => {
                 // Only an answer line ("Answer: B") is a key. An explanation on its own is not
                 // evidence of a quiz: "Why:" and "Explanation:" follow ordinary lists too.
                 const keyed = !!answerline;
-
-                // The stem: the paragraph or heading just before the options (from its "Question"
-                // line, or its last line, so an introduction above stays outside the card), or the
-                // last item of a list ("1. What is PPE?" followed by indented options).
+                return {
+                    answer,
+                    explain,
+                    k,
+                    answerline,
+                    explainline,
+                    keyed
+                };
+            };
+            const {answer, explain, k, answerline, explainline, keyed} = readOptionExplanation();
+            // The stem: the paragraph or heading just before the options (from its "Question"
+            // line, or its last line, so an introduction above stays outside the card), or the
+            // last item of a list ("1. What is PPE?" followed by indented options).
+            const readOptionStem = () => {
                 const previous = blocks[blocks.length - 1];
                 let stem = '';
                 let takeStem = () => null;
@@ -578,73 +664,158 @@ const parseBlocks = (lines) => {
                         }
                     };
                 }
-
-                // Without a key, a card needs every sign of a real practice question: a stem that
-                // is a paragraph or list item (not a heading) asking a question or labelled
-                // "Question 2:", at least three short options, and the answer talking about a
-                // quiz unless the stem is labelled. Anything less stays a lettered list, which is
-                // still well formatted, rather than turning an explanation into a quiz.
+                return {
+                    previous,
+                    stem,
+                    takeStem
+                };
+            };
+            const {previous, stem, takeStem} = readOptionStem();
+            // Without a key, a card needs every sign of a real practice question: a stem that
+            // is a paragraph or list item (not a heading) asking a question or labelled
+            // "Question 2:", at least three short options, and the answer talking about a
+            // quiz unless the stem is labelled. Anything less stays a lettered list, which is
+            // still well formatted, rather than turning an explanation into a quiz.
+            const classifyPracticeQuestion = () => {
                 const labelled = /^\s*(?:[*_]{1,2})?\s*question\s*\d+\s*(?:[*_]{1,2})?\s*[:.)]/i.test(stem);
                 const asks = /\?\s*(?:[*_]{1,2})?\s*$/.test(stem);
                 const short = options.every((option) => option.length <= OPTION_MAX && !/[.!?]\s+[A-Z]/.test(option));
                 const fromheading = !!previous && previous.type === 'heading';
                 // "Hazards must be reported. A) True B) False" is a statement, not a "?" question.
-                const truefalse = options.length === 2 && /^true\.?$/i.test(options[0]) && /^false\.?$/i.test(options[1]);
+                const truefalse =
+                    options.length === 2 && /^true\.?$/i.test(options[0]) && /^false\.?$/i.test(options[1]);
                 // Two options (True / False) only for a labelled question or a quiz answer.
-                const enough = options.length >= ((quizcue || (labelled && asks)) ? 2 : 3);
-                const isquiz = keyed || (!!stem && !fromheading && enough && short
-                    && (asks || labelled || truefalse) && (labelled || quizcue));
-
-                if (isquiz) {
-                    takeStem();
-                    blocks.push({type: 'quiz', quiz: {
+                const enough = options.length >= (quizcue || (labelled && asks) ? 2 : 3);
+                const isquiz =
+                    keyed ||
+                    (!!stem &&
+                        !fromheading &&
+                        enough &&
+                        short &&
+                        (asks || labelled || truefalse) &&
+                        (labelled || quizcue));
+                return {
+                    isquiz
+                };
+            };
+            const {isquiz} = classifyPracticeQuestion();
+            if (isquiz) {
+                takeStem();
+                blocks.push({
+                    type: 'quiz',
+                    quiz: {
                         question: stem,
                         options: options,
                         answer: answer >= options.length ? -1 : answer,
                         explanation: explain.join(' ').trim(),
-                        hint: '',
-                    }});
-                    i = (answerline || explainline) ? k : j;
-                } else {
-                    blocks.push({type: 'letters', upper: firstoption[1] === firstoption[1].toUpperCase(), items: options});
-                    i = j;
-                }
-                continue;
-            }
-        }
-
-        if (LISTITEM.test(line)) {
-            const items = [];
-            while (i < lines.length) {
-                const current = lines[i];
-                if (isBlank(current)) {
-                    // A blank line ends the list unless another item follows it.
-                    if (i + 1 < lines.length && LISTITEM.test(lines[i + 1])) {
-                        i++;
-                        continue;
+                        hint: ''
                     }
-                    break;
-                }
-                const item = LISTITEM.exec(current);
-                if (item) {
-                    items.push({
-                        indent: item[1].replace(/\t/g, '    ').length,
-                        ordered: /\d/.test(item[2]),
-                        start: parseInt(item[2], 10) || 1,
-                        text: item[3],
-                    });
-                    i++;
-                    continue;
-                }
-                if (/^\s+\S/.test(current) && items.length && !startsBlock(current.trim(), lines[i + 1])) {
-                    items[items.length - 1].text += '\n' + current.trim();
+                });
+                i = answerline || explainline ? k : j;
+            } else {
+                blocks.push({
+                    type: 'letters',
+                    upper: firstoption[1] === firstoption[1].toUpperCase(),
+                    items: options
+                });
+                i = j;
+            }
+            return true;
+        }
+        return false;
+    };
+    const consumeList = () => {
+        const items = [];
+        while (i < lines.length) {
+            const current = lines[i];
+            if (isBlank(current)) {
+                // A blank line ends the list unless another item follows it.
+                if (i + 1 < lines.length && LISTITEM.test(lines[i + 1])) {
                     i++;
                     continue;
                 }
                 break;
             }
-            blocks.push({type: 'list', items: items});
+            const item = LISTITEM.exec(current);
+            if (item) {
+                items.push({
+                    indent: item[1].replace(/\t/g, '    ').length,
+                    ordered: /\d/.test(item[2]),
+                    start: parseInt(item[2], 10) || 1,
+                    text: item[3]
+                });
+                i++;
+                continue;
+            }
+            if (/^\s+\S/.test(current) && items.length && !startsBlock(current.trim(), lines[i + 1])) {
+                items[items.length - 1].text += '\n' + current.trim();
+                i++;
+                continue;
+            }
+            break;
+        }
+        blocks.push({
+            type: 'list',
+            items: items
+        });
+        return true;
+    };
+    while (i < lines.length) {
+        const line = lines[i];
+        if (isBlank(line)) {
+            i++;
             continue;
+        }
+
+        // Fenced code, including fenced "quiz".
+        const fence = FENCE.exec(line);
+        if (fence) {
+            if (consumeFence(line, fence)) {
+                continue;
+            }
+        }
+        const heading = HEADING.exec(line);
+        if (heading) {
+            blocks.push({
+                type: 'heading',
+                level: heading[1].length,
+                text: heading[2]
+            });
+            i++;
+            continue;
+        }
+        if (RULE.test(line)) {
+            blocks.push({
+                type: 'rule'
+            });
+            i++;
+            continue;
+        }
+        if (/^\s*>/.test(line)) {
+            if (consumeQuote()) {
+                continue;
+            }
+        }
+        if (isTableHeader(line, lines[i + 1])) {
+            if (consumeTable(line)) {
+                continue;
+            }
+        }
+
+        // Plain-text options: A) .. B) .. in sequence, blank lines allowed between. They become a
+        // question card only when they really are a question: the stem ends in "?" or carries a
+        // "Question 2:" label, or an answer / explanation line follows. Otherwise ("There are two
+        // kinds of hazard: a) physical b) chemical") they are rendered as a lettered list.
+        const firstoption = OPTION.exec(line);
+        if (firstoption && firstoption[1].toUpperCase() === 'A') {
+            if (consumeOptions(line, firstoption)) {
+                continue;
+            }
+        }
+        if (LISTITEM.test(line)) {
+            if (consumeList()) {
+                continue;
+            }
         }
 
         // Paragraph: runs until a blank line or the start of another block.
@@ -654,9 +825,11 @@ const parseBlocks = (lines) => {
             para.push(lines[i].trim());
             i++;
         }
-        blocks.push({type: 'para', text: para.join('\n')});
+        blocks.push({
+            type: 'para',
+            text: para.join('\n')
+        });
     }
-
     return blocks;
 };
 
@@ -667,16 +840,31 @@ const parseBlocks = (lines) => {
  * @returns {Array} Tree of {ordered, start, items: [{text, children}]}.
  */
 const buildListTree = (items) => {
-    const root = {children: []};
-    const stack = [{indent: -1, node: root}];
+    const root = {
+        children: []
+    };
+    const stack = [
+        {
+            indent: -1,
+            node: root
+        }
+    ];
     items.forEach((item) => {
         while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
             stack.pop();
         }
         const parent = stack[stack.length - 1].node;
-        const node = {text: item.text, ordered: item.ordered, start: item.start, children: []};
+        const node = {
+            text: item.text,
+            ordered: item.ordered,
+            start: item.start,
+            children: []
+        };
         parent.children.push(node);
-        stack.push({indent: item.indent, node: node});
+        stack.push({
+            indent: item.indent,
+            node: node
+        });
     });
     return root.children;
 };
@@ -691,7 +879,6 @@ const buildListTree = (items) => {
 const renderList = (nodes, depth) => {
     const ordered = nodes[0].ordered;
     const tasks = nodes.every((node) => /^\[[ xX]\]\s+/.test(node.text));
-
     if (tasks) {
         const card = el('div', 'dari-ai-checklist');
         const list = el('ul', 'dari-ai-checklist-items');
@@ -723,7 +910,6 @@ const renderList = (nodes, depth) => {
         card.appendChild(list);
         return card;
     }
-
     const list = el(ordered ? 'ol' : 'ul', ordered && depth === 0 ? 'dari-ai-steps' : 'dari-ai-list');
     if (ordered && nodes[0].start > 1) {
         list.setAttribute('start', String(nodes[0].start));
@@ -784,20 +970,19 @@ const renderQuiz = (quiz, labels) => {
     const card = el('section', 'dari-ai-quiz');
     card.setAttribute('data-answer', String(quiz.answer));
     card.setAttribute('data-state', 'open');
-
     const head = el('div', 'dari-ai-quiz-head');
     const badge = el('span', 'dari-ai-quiz-badge');
     badge.textContent = labels.quizlabel || '';
     head.appendChild(badge);
     card.appendChild(head);
-
     const questionid = 'dari-ai-q-' + Math.random().toString(36).slice(2, 10);
     const question = el('div', 'dari-ai-quiz-question');
     question.id = questionid;
-    appendLines(question, quiz.question.replace(/^(?:\*\*)?\s*(?:question\s*\d*\s*[:.)-]?)\s*(?:\*\*)?\s*/i, '')
-        || quiz.question);
+    appendLines(
+        question,
+        quiz.question.replace(/^(?:\*\*)?\s*(?:question\s*\d*\s*[:.)-]?)\s*(?:\*\*)?\s*/i, '') || quiz.question
+    );
     card.appendChild(question);
-
     const group = el('div', 'dari-ai-quiz-options');
     group.setAttribute('role', 'group');
     group.setAttribute('aria-labelledby', questionid);
@@ -820,7 +1005,6 @@ const renderQuiz = (quiz, labels) => {
         group.appendChild(button);
     });
     card.appendChild(group);
-
     if (quiz.hint) {
         const hintwrap = el('div', 'dari-ai-quiz-hintwrap');
         const toggle = el('button', 'dari-ai-quiz-hintbtn');
@@ -834,7 +1018,6 @@ const renderQuiz = (quiz, labels) => {
         hintwrap.appendChild(hint);
         card.appendChild(hintwrap);
     }
-
     const feedback = el('div', 'dari-ai-quiz-feedback');
     feedback.hidden = true;
     feedback.setAttribute('role', 'status');
@@ -848,7 +1031,6 @@ const renderQuiz = (quiz, labels) => {
     const actions = el('div', 'dari-ai-quiz-actions');
     feedback.appendChild(actions);
     card.appendChild(feedback);
-
     return card;
 };
 
@@ -906,7 +1088,6 @@ const renderBlocks = (blocks) => {
     const fragment = document.createDocumentFragment();
     let quizset = null;
     let quizcount = 0;
-
     blocks.forEach((block) => {
         if (block.type !== 'quiz') {
             quizset = null;
@@ -966,7 +1147,13 @@ const renderBlocks = (blocks) => {
             case 'list': {
                 // Split the top level wherever the kind changes, so a numbered list followed by
                 // a checklist renders as two cards rather than one muddled list.
-                const kind = (node) => (/^\[[ xX]\]\s+/.test(node.text) ? 'task' : (node.ordered ? 'ol' : 'ul'));
+                const kind = (node) =>
+                    (() => {
+                        if (/^\[[ xX]\]\s+/.test(node.text)) {
+                            return 'task';
+                        }
+                        return node.ordered ? 'ol' : 'ul';
+                    })();
                 let run = [];
                 buildListTree(block.items).forEach((node) => {
                     if (run.length && kind(run[0]) !== kind(node)) {
@@ -996,7 +1183,6 @@ const renderBlocks = (blocks) => {
             }
         }
     });
-
     if (quizcount) {
         fragment.querySelectorAll('.dari-ai-quizset').forEach((set) => {
             const cards = set.querySelectorAll('.dari-ai-quiz');
@@ -1009,7 +1195,6 @@ const renderBlocks = (blocks) => {
             }
         });
     }
-
     return fragment;
 };
 
@@ -1022,7 +1207,9 @@ const renderBlocks = (blocks) => {
  */
 export const render = (text, labels) => {
     currentLabels = labels || {};
-    const source = String(text || '').replace(/\r\n?/g, '\n').replace(/\u00a0/g, ' ');
+    const source = String(text || '')
+        .replace(/\r\n?/g, '\n')
+        .replace(/\u00a0/g, ' ');
     quizcue = QUIZCUE.test(source);
     const lines = [];
     source.split('\n').forEach((line) => {
@@ -1053,11 +1240,16 @@ const splitInlineOptions = (line) => {
         const letter = match[2];
         const isupper = letter === letter.toUpperCase();
         // Next letter in sequence, in the same case as "A" was written.
-        const insequence = letter.toUpperCase() === LETTERS.charAt(found.length)
-            && (found.length === 0 || isupper === found[0].isupper);
+        const insequence =
+            letter.toUpperCase() === LETTERS.charAt(found.length) &&
+            (found.length === 0 || isupper === found[0].isupper);
         if (insequence) {
-            found.push({letter: letter, isupper: isupper, start: match.index + match[1].length,
-                end: match.index + match[0].length});
+            found.push({
+                letter: letter,
+                isupper: isupper,
+                start: match.index + match[1].length,
+                end: match.index + match[0].length
+            });
         }
         match = marker.exec(line);
     }
