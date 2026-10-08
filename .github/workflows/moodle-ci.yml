@@ -2,7 +2,7 @@ name: Moodle Plugin CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'ci/**']
   pull_request:
   workflow_dispatch:
 
@@ -70,6 +70,8 @@ jobs:
           echo "$(cd ci/vendor/bin; pwd)" >> "$GITHUB_PATH"
           sudo locale-gen en_AU.UTF-8
           echo "NVM_DIR=$HOME/.nvm" >> "$GITHUB_ENV"
+      - name: Keep the CI debug helper
+        run: cp plugin/.github/ci-annotate.sh "$GITHUB_WORKSPACE/ci-annotate.sh"
       - name: Install test environment
         run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1
         env:
@@ -82,31 +84,31 @@ jobs:
           node ../plugin/.github/check-css-grammar.cjs
       - name: PHP syntax
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phplint
+        run: bash "$GITHUB_WORKSPACE/ci-annotate.sh" 'phplint' moodle-plugin-ci phplint
       - name: Moodle coding standards
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpcs --max-warnings 0
+        run: bash "$GITHUB_WORKSPACE/ci-annotate.sh" 'phpcs' moodle-plugin-ci phpcs --max-warnings 0
       - name: PHPDoc
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpdoc --max-warnings 0
+        run: bash "$GITHUB_WORKSPACE/ci-annotate.sh" 'phpdoc' moodle-plugin-ci phpdoc --max-warnings 0
       - name: Plugin validation
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci validate
+        run: bash "$GITHUB_WORKSPACE/ci-annotate.sh" 'validate' moodle-plugin-ci validate
       - name: Upgrade savepoints
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci savepoints
+        run: bash "$GITHUB_WORKSPACE/ci-annotate.sh" 'savepoints' moodle-plugin-ci savepoints
       - name: Mustache templates
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci mustache
+        run: bash "$GITHUB_WORKSPACE/ci-annotate.sh" 'mustache' moodle-plugin-ci mustache
       - name: JavaScript checks
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci grunt --max-lint-warnings 0
+        run: bash "$GITHUB_WORKSPACE/ci-annotate.sh" 'grunt' moodle-plugin-ci grunt --max-lint-warnings 0
       - name: PHPUnit
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpunit --fail-on-warning
+        run: bash "$GITHUB_WORKSPACE/ci-annotate.sh" 'phpunit' moodle-plugin-ci phpunit --fail-on-warning
       - name: Behat browser scenarios
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci behat --profile chrome
+        run: bash "$GITHUB_WORKSPACE/ci-annotate.sh" 'behat' moodle-plugin-ci behat --profile chrome
       - name: Export exact AMD rebuild evidence after failed validation
         id: amd_reference
         if: ${{ failure() && !cancelled() }}
