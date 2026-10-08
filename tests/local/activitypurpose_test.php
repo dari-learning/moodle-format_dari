@@ -16,6 +16,7 @@
 
 namespace format_dari\local;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\activitypurpose::class)]
 /**
  * Tests for activity purpose classification.
  *
@@ -25,7 +26,6 @@ namespace format_dari\local;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\activitypurpose
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\activitypurpose::class)]
 final class activitypurpose_test extends \advanced_testcase {
     /**
      * Titles and descriptions outrank the module type.

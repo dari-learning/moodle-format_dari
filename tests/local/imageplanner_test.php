@@ -20,6 +20,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/../fixtures/ai_stub.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\imageplanner::class)]
 /**
  * Tests for the visual planning stage.
  *
@@ -29,7 +30,6 @@ require_once(__DIR__ . '/../fixtures/ai_stub.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\imageplanner
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\imageplanner::class)]
 final class imageplanner_test extends \advanced_testcase {
     use \format_dari\tests\ai_stub;
 

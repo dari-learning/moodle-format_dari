@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/../fixtures/ai_stub.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\promptwriter::class)]
 /**
  * Tests for \format_dari\local\promptwriter.
  *
@@ -41,7 +42,6 @@ require_once(__DIR__ . '/../fixtures/ai_stub.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\promptwriter
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\promptwriter::class)]
 final class promptwriter_test extends \advanced_testcase {
     use \format_dari\tests\ai_stub;
 

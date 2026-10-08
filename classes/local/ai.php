@@ -240,7 +240,15 @@ class ai {
     public static function generate_text(\context $context, int $userid, string $prompt): array {
         self::require_available(self::FEATURE_TEXT, $context);
         if (!self::subsystem_present()) {
-            return direct::generate_text($prompt);
+            // Moodle 4.4: the direct connection, timed in the image log like the core route.
+            if (imagelog::$requestid === null) {
+                return direct::generate_text($prompt);
+            }
+            return imagelog::time(
+                'text_request',
+                fn() => direct::generate_text($prompt),
+                \core_text::strlen($prompt) . ' chars sent'
+            );
         }
 
         \core_php_time_limit::raise(300);
