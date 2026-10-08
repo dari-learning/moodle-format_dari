@@ -306,6 +306,19 @@ class callbacks {
             );
         }
 
+        // The image plan preview (test mode before generating images), for people who can edit the course.
+        if ($navigation && has_capability('moodle/course:update', $context)
+                && !$navigation->find('format_dari_imageplan', \navigation_node::TYPE_SETTING)) {
+            $navigation->add(
+                get_string('imageplan', 'format_dari'),
+                new \moodle_url('/course/format/dari/imageplan.php', ['id' => $course->id]),
+                \navigation_node::TYPE_SETTING,
+                null,
+                'format_dari_imageplan',
+                new \pix_icon('i/preview', '')
+            );
+        }
+
         // Skip the main course view - format.php handles that.
         $sectionparam = optional_param('section', null, PARAM_INT);
         $sectionidparam = optional_param('id', 0, PARAM_INT);

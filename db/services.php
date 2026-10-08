@@ -168,6 +168,16 @@ $functions = [
         'capabilities' => 'moodle/course:update',
     ],
 
+    'format_dari_log_client_event' => [
+        'classname' => 'format_dari\\external\\log_client_event',
+        'methodname' => 'execute',
+        'description' => 'Record a browser error from a Dari course page in the diagnostics log.',
+        'type' => 'write',
+        'ajax' => true,
+        'capabilities' => 'moodle/course:update',
+        'readonlysession' => true,
+    ],
+
     'format_dari_generate_card_image' => [
         'classname' => 'format_dari\\external\\generate_card_image',
         'methodname' => 'execute',
@@ -211,6 +221,14 @@ $functions = [
         'methodname' => 'execute',
         'description' => 'Count, or queue, AI images for many section and activity cards at once.',
         'type' => 'write',
+        'ajax' => true,
+        'capabilities' => 'moodle/course:update',
+    ],
+    'format_dari_get_image_prompt' => [
+        'classname' => 'format_dari\\external\\get_image_prompt',
+        'methodname' => 'execute',
+        'description' => 'The prompt last sent to the image model for a card or banner.',
+        'type' => 'read',
         'ajax' => true,
         'capabilities' => 'moodle/course:update',
     ],

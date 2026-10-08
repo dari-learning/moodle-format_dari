@@ -384,16 +384,63 @@ class cardimage {
      * @param int $courseid The course.
      * @param string $type self::TYPE_SECTION or self::TYPE_CM.
      * @param int $id course_sections.id or course_modules.id.
+     * The status also carries the job's request id, its current stage (waiting, planning, prompt,
+     * generating, saving) and when it was queued, so the browser can show real progress and an
+     * older job can never overwrite a newer one.
+     *
      * @param string $state queued, running, done or failed.
      * @param string $detail The image URL when done, the reason when failed.
+     * @param array $extra requestid, stage, queued (merged with what is stored for the same request).
      * @return void
      */
-    public static function set_status(int $courseid, string $type, int $id, string $state, string $detail = ''): void {
-        set_config(
-            self::status_key($courseid, $type, $id),
-            json_encode(['state' => $state, 'detail' => $detail, 'time' => time()]),
-            'format_dari'
-        );
+    public static function set_status(int $courseid, string $type, int $id, string $state, string $detail = '',
+            array $extra = []): void {
+        $current = self::get_status($courseid, $type, $id);
+        $requestid = (string) ($extra['requestid'] ?? $current['requestid']);
+        $same = $requestid === $current['requestid'];
+        $data = [
+            'state' => $state,
+            'detail' => $detail,
+            'time' => time(),
+            'requestid' => $requestid,
+            'stage' => (string) ($extra['stage'] ?? ($state === 'queued' ? 'waiting' : ($same ? $current['stage'] : ''))),
+            'queued' => (int) ($extra['queued'] ?? ($same && $current['queued'] ? $current['queued'] : time())),
+        ];
+        set_config(self::status_key($courseid, $type, $id), json_encode($data), 'format_dari');
+    }
+
+    /**
+     * Move a running job to a new stage, only if it is still the card's current job.
+     *
+     * @param int $courseid The course.
+     * @param string $type self::TYPE_SECTION or self::TYPE_CM.
+     * @param int $id Target id.
+     * @param string $requestid The job's request id.
+     * @param string $stage Stage name.
+     * @return bool False when a newer request has replaced this job.
+     */
+    public static function set_stage(int $courseid, string $type, int $id, string $requestid, string $stage): bool {
+        if (!self::is_current($courseid, $type, $id, $requestid)) {
+            return false;
+        }
+        $current = self::get_status($courseid, $type, $id);
+        self::set_status($courseid, $type, $id, $stage === 'waiting' ? 'queued' : 'running', $current['detail'],
+            ['requestid' => $requestid, 'stage' => $stage]);
+        return true;
+    }
+
+    /**
+     * Whether a job is still the card's current one (statuses written before 2.0.4 have no request id).
+     *
+     * @param int $courseid The course.
+     * @param string $type Target type.
+     * @param int $id Target id.
+     * @param string $requestid The job's request id.
+     * @return bool
+     */
+    public static function is_current(int $courseid, string $type, int $id, string $requestid): bool {
+        $current = self::get_status($courseid, $type, $id)['requestid'];
+        return $current === '' || $requestid === '' || $current === $requestid;
     }
 
     /**
@@ -402,18 +449,21 @@ class cardimage {
      * @param int $courseid The course.
      * @param string $type self::TYPE_SECTION or self::TYPE_CM.
      * @param int $id course_sections.id or course_modules.id.
-     * @return array{state: string, detail: string, time: int}
+     * @return array{state: string, detail: string, time: int, requestid: string, stage: string, queued: int}
      */
     public static function get_status(int $courseid, string $type, int $id): array {
         $raw = get_config('format_dari', self::status_key($courseid, $type, $id));
         $decoded = ($raw === false || $raw === '') ? null : json_decode($raw, true);
         if (!is_array($decoded) || !isset($decoded['state'])) {
-            return ['state' => 'idle', 'detail' => '', 'time' => 0];
+            return ['state' => 'idle', 'detail' => '', 'time' => 0, 'requestid' => '', 'stage' => '', 'queued' => 0];
         }
         return [
             'state' => (string) $decoded['state'],
             'detail' => (string) ($decoded['detail'] ?? ''),
             'time' => (int) ($decoded['time'] ?? 0),
+            'requestid' => (string) ($decoded['requestid'] ?? ''),
+            'stage' => (string) ($decoded['stage'] ?? ''),
+            'queued' => (int) ($decoded['queued'] ?? ($decoded['time'] ?? 0)),
         ];
     }
 
@@ -609,10 +659,66 @@ class cardimage {
             "plugin = :plugin AND $like",
             ['plugin' => 'format_dari', 'name' => 'cardstatus\_' . $courseid . '\_%']
         );
+        $DB->delete_records_select(
+            'config_plugins',
+            "plugin = :plugin AND $like",
+            ['plugin' => 'format_dari', 'name' => 'imgprompt\_' . $courseid . '\_%']
+        );
         // Written behind set_config()'s back, so its cache has to be told.
         \cache_helper::invalidate_by_definition('core', 'config', [], 'format_dari');
 
         $DB->delete_records('format_dari_cardstyle', ['courseid' => $courseid]);
         self::reset_cache();
+    }
+
+    /** @var string Target type used when storing a banner's prompt. */
+    public const TYPE_BANNER = 'banner';
+
+    /**
+     * Remember the prompt last sent to the image model for a card or banner.
+     *
+     * @param int $courseid The course.
+     * @param string $type TYPE_SECTION, TYPE_CM or TYPE_BANNER.
+     * @param int $id Section or module id; for a banner the section id, or 0 for the course banner.
+     * @param string $prompt The prompt.
+     * @param string $source artdirector or template.
+     * @return void
+     */
+    public static function set_prompt(int $courseid, string $type, int $id, string $prompt, string $source): void {
+        if ($prompt === '') {
+            return;
+        }
+        set_config(self::prompt_key($courseid, $type, $id),
+            json_encode(['prompt' => $prompt, 'source' => $source, 'time' => time()]), 'format_dari');
+    }
+
+    /**
+     * The prompt last sent for a card or banner.
+     *
+     * @param int $courseid The course.
+     * @param string $type TYPE_SECTION, TYPE_CM or TYPE_BANNER.
+     * @param int $id Target id.
+     * @return array{prompt: string, source: string, time: int}
+     */
+    public static function get_prompt(int $courseid, string $type, int $id): array {
+        $data = json_decode((string) get_config('format_dari', self::prompt_key($courseid, $type, $id)), true);
+        return [
+            'prompt' => is_array($data) ? (string) ($data['prompt'] ?? '') : '',
+            'source' => is_array($data) ? (string) ($data['source'] ?? '') : '',
+            'time' => is_array($data) ? (int) ($data['time'] ?? 0) : 0,
+        ];
+    }
+
+    /**
+     * Config key for a stored prompt.
+     *
+     * @param int $courseid The course.
+     * @param string $type Target type.
+     * @param int $id Target id.
+     * @return string
+     */
+    protected static function prompt_key(int $courseid, string $type, int $id): string {
+        $letter = $type === self::TYPE_SECTION ? 's' : ($type === self::TYPE_CM ? 'c' : 'b');
+        return 'imgprompt_' . $courseid . '_' . $letter . $id;
     }
 }

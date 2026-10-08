@@ -65,10 +65,12 @@ if ($hassiteconfig) {
     // image tools will work, without opening another page.
     if (\format_dari\local\ai::subsystem_present()) {
         $textok = \format_dari\local\ai::is_available(\format_dari\local\ai::FEATURE_TEXT);
-        $imageok = \format_dari\local\ai::is_available(\format_dari\local\ai::FEATURE_IMAGE);
+        $imagereason = \format_dari\local\ai::unavailable_reason(\format_dari\local\ai::FEATURE_IMAGE);
+        $imagestatus = $imagereason === null ? 'aistatus_image_ok'
+            : ($imagereason === 'error_ai_notopimagemodel' ? 'aistatus_image_wrongmodel' : 'aistatus_image_missing');
         $status = html_writer::tag('ul',
             html_writer::tag('li', get_string($textok ? 'aistatus_text_ok' : 'aistatus_text_missing', 'format_dari')) .
-            html_writer::tag('li', get_string($imageok ? 'aistatus_image_ok' : 'aistatus_image_missing', 'format_dari')),
+            html_writer::tag('li', get_string($imagestatus, 'format_dari', \format_dari\local\imagemodel::string_params())),
             ['class' => 'mb-0']
         );
     } else {
@@ -77,7 +79,8 @@ if ($hassiteconfig) {
         $imageok = \format_dari\local\ai::is_available(\format_dari\local\ai::FEATURE_IMAGE);
         $status = html_writer::tag('ul',
             html_writer::tag('li', get_string($textok ? 'aistatus_direct_text_ok' : 'aistatus_direct_text_missing', 'format_dari')) .
-            html_writer::tag('li', get_string($imageok ? 'aistatus_direct_image_ok' : 'aistatus_direct_image_missing', 'format_dari')),
+            html_writer::tag('li', get_string($imageok ? 'aistatus_direct_image_ok' : 'aistatus_direct_image_missing', 'format_dari',
+                \format_dari\local\imagemodel::string_params())),
             ['class' => 'mb-0']
         );
     }
@@ -85,6 +88,23 @@ if ($hassiteconfig) {
         'format_dari/aistatus',
         get_string('aistatus', 'format_dari'),
         $status
+    ));
+
+    // The image engine: Dari paints every image with this engine's one top model, never another.
+    $settings->add(new admin_setting_configselect(
+        'format_dari/imageengine',
+        get_string('imageengine', 'format_dari'),
+        get_string('imageengine_desc', 'format_dari'),
+        \format_dari\local\imagemodel::DEFAULT_ENGINE,
+        \format_dari\local\imagemodel::engine_options()
+    ));
+
+    // Diagnostics: stage timings of image jobs and browser errors on Dari pages, for editors.
+    $settings->add(new admin_setting_configcheckbox(
+        'format_dari/diagnostics',
+        get_string('diagnostics', 'format_dari'),
+        get_string('diagnostics_desc', 'format_dari'),
+        1
     ));
 
     // Moodle 4.4 only: there is no AI subsystem, so the school's own OpenAI-compatible endpoint
@@ -112,15 +132,20 @@ if ($hassiteconfig) {
             'format_dari/directtextmodel',
             get_string('directtextmodel', 'format_dari'),
             get_string('directtextmodel_desc', 'format_dari'),
-            'gpt-4o-mini',
+            'gpt-6-astra',
             PARAM_TEXT
         ));
-        $settings->add(new admin_setting_configtext(
-            'format_dari/directimagemodel',
-            get_string('directimagemodel', 'format_dari'),
-            get_string('directimagemodel_desc', 'format_dari'),
-            'gpt-image-1',
-            PARAM_TEXT
+        $settings->add(new admin_setting_configcheckbox(
+            'format_dari/directimages',
+            get_string('directimages', 'format_dari'),
+            get_string('directimages_desc', 'format_dari'),
+            1
+        ));
+        $settings->add(new admin_setting_configpasswordunmask(
+            'format_dari/directimagekey',
+            get_string('directimagekey', 'format_dari'),
+            get_string('directimagekey_desc', 'format_dari'),
+            ''
         ));
     }
 
@@ -154,35 +179,6 @@ if ($hassiteconfig) {
         get_string('maxcontextchars_desc', 'format_dari'),
         40000,
         PARAM_INT
-    ));
-
-    $settings->add(new admin_setting_configselect(
-        'format_dari/imagequality',
-        get_string('imagequality', 'format_dari'),
-        get_string('imagequality_desc', 'format_dari'),
-        'standard',
-        [
-            'standard' => get_string('imagequality_standard', 'format_dari'),
-            'hd' => get_string('imagequality_hd', 'format_dari'),
-        ]
-    ));
-
-    $settings->add(new admin_setting_configselect(
-        'format_dari/imagestyle',
-        get_string('imagestyle', 'format_dari'),
-        get_string('imagestyle_desc', 'format_dari'),
-        'natural',
-        [
-            'natural' => get_string('imagestyle_natural', 'format_dari'),
-            'vivid' => get_string('imagestyle_vivid', 'format_dari'),
-        ]
-    ));
-
-    $settings->add(new admin_setting_configcheckbox(
-        'format_dari/aiscenewriter',
-        get_string('aiscenewriter', 'format_dari'),
-        get_string('aiscenewriter_desc', 'format_dari'),
-        1
     ));
 
     // Note: assessment answer keys are opt in, and default to OFF.

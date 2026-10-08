@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Tests for Dari's image art director.
+ * Tests for Dari's image prompt writer (stage 2) working from the visual plan (stage 1).
  *
  * @package    format_dari
  * @category   test
@@ -33,7 +33,7 @@ require_once(__DIR__ . '/../fixtures/ai_stub.php');
  * Tests for \format_dari\local\promptwriter.
  *
  * The site's AI manager is a mock (see \format_dari\tests\ai_stub): by default it answers the
- * art-direction request with a JSON object and the scene request with a usable paragraph.
+ * planning request with one distinct item per section and the prompt request with a paragraph.
  *
  * @package    format_dari
  * @category   test
@@ -103,271 +103,253 @@ final class promptwriter_test extends \advanced_testcase {
     }
 
     /**
-     * Clean JSON is read field by field; unknown keys are ignored and missing ones are empty.
+     * Stage 2 runs only with a text provider and a brief; otherwise the template is used, unasked.
      */
-    public function test_parse_art_clean_json(): void {
-        $art = promptwriter::parse_art('{"world": "A busy kitchen", "people": "Chefs", "light": "Morning", '
-            . '"extra": "ignored"}');
-        $this->assertSame(['world', 'people', 'places', 'props', 'palette', 'light', 'mood', 'avoid'], array_keys($art));
-        $this->assertSame('A busy kitchen', $art['world']);
-        $this->assertSame('Chefs', $art['people']);
-        $this->assertSame('Morning', $art['light']);
-        $this->assertSame('', $art['places']);
-        $this->assertArrayNotHasKey('extra', $art);
-    }
-
-    /**
-     * JSON wrapped in chatter or a code fence is still found.
-     */
-    public function test_parse_art_tolerates_prose_and_fences(): void {
-        $fence = str_repeat(chr(96), 3);
-        $reply = "Sure! Here is the art direction you asked for:\n{$fence}json\n"
-            . "{\"world\": \"A **hospital** ward\", \"mood\": \"Reassuring\"}\n{$fence}\nLet me know if you need more.";
-        $art = promptwriter::parse_art($reply);
-        $this->assertSame('A hospital ward', $art['world']);
-        $this->assertSame('Reassuring', $art['mood']);
-    }
-
-    /**
-     * A reply that is not JSON becomes the description of the world.
-     */
-    public function test_parse_art_non_json_fallback(): void {
-        $art = promptwriter::parse_art("  A rural farm at dawn,\n with  tractors and sheep.  ");
-        $this->assertSame('A rural farm at dawn, with tractors and sheep.', $art['world']);
-        $this->assertSame('', $art['people']);
-        $this->assertSame('', $art['avoid']);
-    }
-
-    /**
-     * List values are joined into one phrase.
-     */
-    public function test_parse_art_joins_array_values(): void {
-        $art = promptwriter::parse_art('{"places": ["Cool room", "Prep bench", "Loading dock"], "props": ["Probe"]}');
-        $this->assertSame('Cool room, Prep bench, Loading dock', $art['places']);
-        $this->assertSame('Probe', $art['props']);
-    }
-
-    /**
-     * The art director is on unless switched off, and needs a text provider.
-     */
-    public function test_enabled(): void {
-        unset_config('aiscenewriter', 'format_dari');
-        $this->assertTrue(promptwriter::enabled($this->context), 'Unset counts as on');
-
-        set_config('aiscenewriter', '', 'format_dari');
-        $this->assertTrue(promptwriter::enabled($this->context));
-
-        set_config('aiscenewriter', '0', 'format_dari');
-        $this->assertFalse(promptwriter::enabled($this->context));
-
-        set_config('aiscenewriter', '1', 'format_dari');
-        $this->assertTrue(promptwriter::enabled($this->context));
-
-        $this->stub_ai(false, true);
-        $this->assertFalse(promptwriter::enabled($this->context), 'No text provider');
-    }
-
-    /**
-     * Switched off, or with no brief, the template is returned and nothing is asked.
-     */
-    public function test_write_returns_the_template_when_not_enabled(): void {
+    public function test_write_returns_the_template_without_a_text_model(): void {
         $composed = $this->composed();
-        set_config('aiscenewriter', 0, 'format_dari');
+        $this->stub_ai(false, true);
         $this->assertSame($composed['prompt'], promptwriter::write($composed, $this->context, $this->userid));
 
-        set_config('aiscenewriter', 1, 'format_dari');
+        $this->stub_ai();
         unset($composed['brief']);
         $this->assertSame($composed['prompt'], promptwriter::write($composed, $this->context, $this->userid));
         $this->assertCount(0, $this->aiactions);
     }
 
     /**
-     * The art direction is written once per course, cached, and rewritten when the course changes.
+     * The first image: one course plan request, then one request that writes the prompt from the
+     * plan; the prompt is stored and an attempt is counted.
      */
-    public function test_art_direction_is_cached_and_refreshed(): void {
-        global $DB;
-        $first = promptwriter::write($this->composed(1), $this->context, $this->userid);
-        $this->assertStringStartsWith('An apprentice chef in crisp whites', $first);
-        $this->assertCount(1, $this->prompts_starting('You are the art director'));
-        $this->assertStringContainsString('- Course: Kitchen operations', $this->prompts_starting('You are the art director')[0]);
+    public function test_first_image_plans_the_course_then_writes_the_prompt(): void {
+        $composed = $this->composed(1);
+        $prompt = promptwriter::write($composed, $this->context, $this->userid);
 
-        $cached = json_decode(get_config('format_dari', 'artdirection_' . $this->course->id), true);
-        $this->assertSame('A busy, well-run commercial kitchen', $cached['art']['world']);
-        $this->assertNotEmpty($cached['hash']);
-
-        // A second image in the same course reuses it: one more scene, no more art direction.
-        promptwriter::write($this->composed(2), $this->context, $this->userid);
-        $this->assertCount(1, $this->prompts_starting('You are the art director'));
-        $this->assertCount(2, $this->prompts_starting('You write prompts for an AI image generator'));
-
-        // The course summary changes: the art direction is written again, from the new facts.
-        $DB->set_field('course', 'summary', 'Run a bakery production line.', ['id' => $this->course->id]);
-        rebuild_course_cache($this->course->id, true);
-        promptwriter::write($this->composed(1), $this->context, $this->userid);
-        $art = $this->prompts_starting('You are the art director');
-        $this->assertCount(2, $art);
-        $this->assertStringContainsString('Run a bakery production line.', $art[1]);
-    }
-
-    /**
-     * A reply that is not JSON is used for this image but not cached, so the next image asks again.
-     */
-    public function test_non_json_art_direction_is_not_cached(): void {
-        $this->queue_text_reply("I'm sorry, I can't help with that request.");
-        $prompt = promptwriter::write($this->composed(1), $this->context, $this->userid);
+        $key = 'section:' . get_fast_modinfo($this->course->id)->get_section_info(1)->id;
         $this->assertStringStartsWith('An apprentice chef in crisp whites', $prompt);
-        $this->assertFalse(get_config('format_dari', 'artdirection_' . $this->course->id));
-        $this->assertStringContainsString("- World: I'm sorry, I can't help with that request.",
-            $this->prompts_starting('You write prompts for an AI image generator')[0]);
+        $this->assertStringEndsWith("\n\n" . $composed['promptTail'], $prompt);
+        $this->assertCount(1, $this->prompts_starting(imageplanner::COURSE_OPENING));
+        $requests = $this->prompts_starting(promptwriter::SCENE_OPENING);
+        $this->assertCount(1, $requests);
+        $this->assertStringContainsString('- Concept: A distinct kitchen scene for ' . $key, $requests[0]);
+        $this->assertStringContainsString('- Colour treatment: Steel and fresh greens', $requests[0]);
+        $this->assertStringContainsString('60 to 130 words', $requests[0]);
+        $this->assertSame('written', promptwriter::$last['source']);
 
-        promptwriter::write($this->composed(2), $this->context, $this->userid);
-        $this->assertCount(2, $this->prompts_starting('You are the art director'));
-        $this->assertNotFalse(get_config('format_dari', 'artdirection_' . $this->course->id));
+        $row = imageplanner::get_row((int) $this->course->id, $key);
+        $this->assertSame(1, (int) $row->attempts);
+        $this->assertSame(0, (int) $row->successes);
+        $this->assertStringStartsWith('An apprentice chef in crisp whites', (string) $row->prompt);
     }
 
     /**
-     * After the first image, the scene request lists the scenes the course already shows.
+     * When the prompt cannot be written, the card's own plan is still used, built into a prompt,
+     * and the fallback is recorded.
      */
-    public function test_scene_request_lists_previous_scenes(): void {
-        $this->queue_text_reply('{"world": "A kitchen"}');
-        $this->queue_text_reply('A pastry cook pipes cream onto a tray of eclairs. Ovens glow behind her as an '
-            . 'apprentice weighs flour.');
+    public function test_prompt_writing_failure_uses_the_plan(): void {
+        $composed = $this->composed(1);
+        imageplanner::plan_for(get_course($this->course->id), $composed['brief'], $this->context, $this->userid);
+        $this->queue_text_reply('Too short.');
+        $this->queue_text_reply('Still too short.');
+        $prompt = promptwriter::write($composed, $this->context, $this->userid);
+        $this->assertStringStartsWith('A distinct kitchen scene for section:', $prompt);
+        $this->assertSame('plan', promptwriter::$last['source']);
+        $this->assertStringContainsString('prompt writing failed', promptwriter::$last['reason']);
+    }
+
+    /**
+     * A second card in the same course reuses the plan: only its own prompt is written.
+     */
+    public function test_second_card_reuses_the_course_plan(): void {
         promptwriter::write($this->composed(1), $this->context, $this->userid);
-        $scenes = $this->prompts_starting('You write prompts for an AI image generator');
-        $this->assertStringNotContainsString('ALREADY SHOW', $scenes[0]);
-        $this->assertStringContainsString('- World: A kitchen', $scenes[0]);
-        $this->assertStringContainsString('the image for one section', $scenes[0]);
-
-        $this->assertSame(['A pastry cook pipes cream onto a tray of eclairs.'],
-            promptwriter::recent_scenes((int) $this->course->id));
-
         promptwriter::write($this->composed(2), $this->context, $this->userid);
-        $scenes = $this->prompts_starting('You write prompts for an AI image generator');
-        $this->assertCount(2, $scenes);
-        $this->assertStringContainsString("ALREADY SHOW (choose a clearly different moment, place or angle):\n"
-            . '- A pastry cook pipes cream onto a tray of eclairs.', $scenes[1]);
-        $this->assertCount(2, promptwriter::recent_scenes((int) $this->course->id));
+        $this->assertCount(1, $this->prompts_starting(imageplanner::COURSE_OPENING));
+        $this->assertCount(2, $this->prompts_starting(promptwriter::SCENE_OPENING));
     }
 
     /**
-     * assemble(): scene, then the look, then the medium, then the people line, then the tail,
-     * then "Keep out".
+     * The preview plans and writes prompts without counting attempts; the first real image then
+     * uses the previewed prompt without another request.
      */
-    public function test_assemble_order_and_contents(): void {
-        $art = promptwriter::parse_art('{"light": "Soft morning light.", "palette": "Steel and green", '
-            . '"mood": "Calm", "avoid": "Bare hands on raw food"}');
-        $prompt = promptwriter::assemble('A chef plates a dish at the pass.', $art, ['style' => 'illustration'],
-            "Style: tail.\nNo visible text.");
+    public function test_preview_prompt_is_the_painted_prompt(): void {
+        $rows = promptwriter::preview(get_course($this->course->id), $this->context, $this->userid);
+        $this->assertCount(3, $rows, 'Two sections and the course banner');
+        $this->assertSame('banner', $rows[2]['key']);
+        foreach ($rows as $row) {
+            $this->assertNotSame('', $row['entry']['concept']);
+            $this->assertStringStartsWith('An apprentice chef in crisp whites', $row['prompt']);
+        }
+        $key = $rows[0]['key'];
+        $this->assertSame(0, (int) imageplanner::get_row((int) $this->course->id, $key)->attempts);
+        $before = count($this->aiactions);
 
-        $parts = explode("\n\n", $prompt);
-        $this->assertCount(6, $parts);
-        $this->assertSame('A chef plates a dish at the pass.', $parts[0]);
-        $this->assertSame('Lighting: Soft morning light. Palette: Steel and green. Mood: Calm.', $parts[1]);
-        $this->assertStringContainsString('modern editorial illustration', $parts[2]);
-        $this->assertStringStartsWith('People look natural and unposed', $parts[3]);
-        $this->assertSame("Style: tail.\nNo visible text.", $parts[4]);
-        $this->assertSame('Keep out: Bare hands on raw food.', $parts[5]);
-
-        // Empty fields add nothing; an unknown style uses the photographic medium.
-        $prompt = promptwriter::assemble('A chef plates a dish at the pass.', promptwriter::parse_art('{}'),
-            ['style' => 'unknown'], '');
-        $parts = explode("\n\n", $prompt);
-        $this->assertCount(3, $parts);
-        $this->assertStringContainsString('editorial photograph', $parts[1]);
-        $this->assertStringNotContainsString('Keep out', $prompt);
-        $this->assertStringNotContainsString('Lighting:', $prompt);
+        $prompt = promptwriter::write($this->composed(1), $this->context, $this->userid);
+        $this->assertCount($before, $this->aiactions, 'No new request: the previewed prompt is used');
+        $this->assertSame($rows[0]['prompt'], $prompt);
     }
 
     /**
-     * However long the model's writing, the plugin's own fixed rules survive whole.
+     * The preview can plan every activity card too, each with its purpose.
+     */
+    public function test_preview_with_activities(): void {
+        $this->getDataGenerator()->create_module('quiz', ['course' => $this->course->id, 'section' => 1,
+            'name' => 'Knowledge check']);
+        $rows = promptwriter::preview(get_course($this->course->id), $this->context, $this->userid, false, true);
+        $this->assertCount(4, $rows, 'Two sections, one activity and the course banner');
+        $this->assertStringStartsWith('cm:', $rows[1]['key']);
+        $this->assertStringContainsString('purpose: practice (judged from its title)',
+            $this->prompts_starting(imageplanner::ITEM_OPENING)[0]);
+    }
+
+    /**
+     * Retry reuses the stored prompt with no request; a failed image does not change the concept;
+     * New concept replans only that item, with the earlier concept rejected.
+     */
+    public function test_retry_and_new_concept(): void {
+        $first = promptwriter::write($this->composed(1), $this->context, $this->userid);
+        $key = 'section:' . get_fast_modinfo($this->course->id)->get_section_info(1)->id;
+        imageplanner::record_result((int) $this->course->id, $key, false);
+
+        $retry = $this->composed(1);
+        $retry['brief']['mode'] = imageplanner::MODE_RETRY;
+        $this->assertSame($first, promptwriter::write($retry, $this->context, $this->userid));
+        $this->assertSame($first, promptwriter::write($this->composed(1), $this->context, $this->userid),
+            'After a failure the next automatic attempt keeps the same concept');
+        $this->assertCount(2, $this->aiactions, 'Course plan and one prompt; retries made no request');
+
+        $new = $this->composed(1);
+        $new['brief']['mode'] = imageplanner::MODE_NEW;
+        $second = promptwriter::write($new, $this->context, $this->userid);
+        $items = $this->prompts_starting(imageplanner::ITEM_OPENING);
+        $this->assertCount(1, $items);
+        $this->assertStringContainsString('this one is rejected: A distinct kitchen scene for ' . $key, $items[0]);
+        $this->assertStringContainsString('OTHER IMAGES IN THIS COURSE', $items[0]);
+        $this->assertSame($first, $second, 'The stub writes the same paragraph; the plan is what changed');
+        $row = imageplanner::get_row((int) $this->course->id, $key);
+        $this->assertSame(4, (int) $row->attempts);
+        $this->assertSame(1, (int) $row->failures);
+    }
+
+    /**
+     * A teacher's description replans that card with the description as the top priority and
+     * appears in the prompt; the regenerated card keeps it.
+     */
+    public function test_teacher_direction(): void {
+        $course = get_course($this->course->id);
+        $section = get_fast_modinfo($course)->get_section_info(1);
+        promptwriter::write($this->composed(1), $this->context, $this->userid);
+        $composed = cardprompt::compose($course, cardimage::TYPE_SECTION, $section, 'golden hour, no people');
+        $prompt = promptwriter::write($composed, $this->context, $this->userid);
+        $items = $this->prompts_starting(imageplanner::ITEM_OPENING);
+        $this->assertCount(1, $items);
+        $this->assertStringContainsString('THE TEACHER ASKS FOR (highest priority', $items[0]);
+        $this->assertStringContainsString('golden hour, no people', $items[0]);
+        $this->assertStringContainsString('- The teacher asks for (must be honoured): golden hour, no people',
+            $this->last_prompt());
+        $this->assertNotEmpty($prompt);
+
+        // The same description again: no new request.
+        promptwriter::write($composed, $this->context, $this->userid);
+        $this->assertCount(1, $this->prompts_starting(imageplanner::ITEM_OPENING));
+
+        // Regenerating without a description (Generate all, New concept) keeps it in the plan and prompt.
+        $new = $this->composed(1);
+        $new['brief']['mode'] = imageplanner::MODE_NEW;
+        $regenerated = promptwriter::write($new, $this->context, $this->userid);
+        // (The stub plans the same concept again, so the planner asks once more for a different one.)
+        $items = $this->prompts_starting(imageplanner::ITEM_OPENING);
+        $this->assertCount(3, $items);
+        $this->assertStringContainsString('golden hour, no people', $items[1]);
+        $this->assertStringContainsString('Your first plan repeated the rejected concept', $items[2]);
+        $this->assertStringContainsString('- The teacher asks for (must be honoured): golden hour, no people',
+            $this->last_prompt());
+        $this->assertNotEmpty($regenerated);
+    }
+
+    /**
+     * parse_prompt(): labels, quotes and the old house opening are removed; short replies are refused.
+     */
+    public function test_parse_prompt(): void {
+        $this->assertSame(self::$defaultscene, promptwriter::parse_prompt(self::$defaultscene));
+        $this->assertSame(self::$defaultscene, promptwriter::parse_prompt("**PROMPT:**\n\"" . self::$defaultscene . '"'));
+        $this->assertSame(self::$defaultscene, promptwriter::parse_prompt('Create an image of '
+            . lcfirst(self::$defaultscene)));
+        $this->assertSame('', promptwriter::parse_prompt('A chef cooking.'));
+    }
+
+    /**
+     * However long the paragraph, the tail survives whole and the prompt stays within the limit.
      */
     public function test_assemble_keeps_the_tail_within_the_limit(): void {
         $composed = $this->composed();
-        $long = str_repeat('word ', 300);
-        $art = array_fill_keys(['world', 'people', 'places', 'props', 'palette', 'light', 'mood', 'avoid'],
-            trim(substr($long, 0, 240)));
-        $prompt = promptwriter::assemble(trim(substr(str_repeat($long, 2), 0, 1200)), $art, $composed['brief'],
-            $composed['promptTail']);
-
+        $prompt = promptwriter::assemble(str_repeat('word ', 1000), $composed['promptTail']);
         $this->assertLessThanOrEqual(3600, \core_text::strlen($prompt));
-        $this->assertStringContainsString(trim($composed['promptTail']), $prompt);
+        $this->assertStringEndsWith("\n\n" . $composed['promptTail'], $prompt);
     }
 
     /**
-     * A text failure falls back to the template prompt and tells developers.
+     * A planning failure falls back to the template; the plan is not stored.
      */
-    public function test_text_failure_falls_back_to_the_template(): void {
+    public function test_planning_failure_uses_the_template(): void {
         $composed = $this->composed();
-        $this->queue_failure(500, 'Model overloaded');
+        $this->queue_text_reply('I cannot help with that.');
         $this->assertSame($composed['prompt'], promptwriter::write($composed, $this->context, $this->userid));
-        $this->assertDebuggingCalledCount(2); // The core_ai failure, then the art director's fallback.
-        $this->assertFalse(get_config('format_dari', 'artdirection_' . $this->course->id), 'A failure is not cached');
-
-        // The scene request failing falls back too.
-        $this->queue_text_reply('{"world": "A kitchen"}');
-        $this->queue_failure(500, 'Model overloaded');
-        $this->assertSame($composed['prompt'], promptwriter::write($composed, $this->context, $this->userid));
-        $this->assertDebuggingCalledCount(2);
-        $this->assertSame([], promptwriter::recent_scenes((int) $this->course->id));
+        $this->assertDebuggingCalled();
+        $this->assertSame([], imageplanner::get_rows((int) $this->course->id));
     }
 
     /**
-     * A scene reply too short to be a scene falls back to the template, quietly.
+     * forget() clears the plan; deleting the course does too.
      */
-    public function test_short_scene_falls_back_to_the_template(): void {
-        $composed = $this->composed();
-        $this->queue_text_reply('{"world": "A kitchen"}');
-        $this->queue_text_reply('Scene: A chef cooking.');
-        $this->assertSame($composed['prompt'], promptwriter::write($composed, $this->context, $this->userid));
-        $this->assertSame([], promptwriter::recent_scenes((int) $this->course->id));
-    }
-
-    /**
-     * forget() clears the art direction and the scene memory; deleting the course does too.
-     */
-    public function test_forget_clears_both_keys(): void {
+    public function test_forget(): void {
         $courseid = (int) $this->course->id;
         promptwriter::write($this->composed(), $this->context, $this->userid);
-        $this->assertNotFalse(get_config('format_dari', 'artdirection_' . $courseid));
-        $this->assertNotFalse(get_config('format_dari', 'artscenes_' . $courseid));
-
+        $this->assertNotEmpty(imageplanner::get_rows($courseid));
         promptwriter::forget($courseid);
-        $this->assertFalse(get_config('format_dari', 'artdirection_' . $courseid));
-        $this->assertFalse(get_config('format_dari', 'artscenes_' . $courseid));
+        $this->assertEmpty(imageplanner::get_rows($courseid));
 
         promptwriter::write($this->composed(), $this->context, $this->userid);
-        $this->assertNotFalse(get_config('format_dari', 'artscenes_' . $courseid));
         delete_course($courseid, false);
-        $this->assertFalse(get_config('format_dari', 'artdirection_' . $courseid));
-        $this->assertFalse(get_config('format_dari', 'artscenes_' . $courseid));
+        $this->assertEmpty(imageplanner::get_rows($courseid));
     }
 
     /**
-     * The 2026100805 upgrade step switches the art director on where it was off, and leaves
-     * any other value alone.
+     * The 2026100901 to 2026100904 upgrade steps remove the image model, quality, style and art-director settings,
+     * keep a 4.4 site's "no AI images" choice, forget old scenes, set the Google image engine and
+     * create the image plan table.
      */
-    public function test_upgrade_step_switches_the_art_director_on(): void {
+    public function test_upgrade_step_single_image_model(): void {
         global $CFG;
         require_once($CFG->libdir . '/upgradelib.php');
         require_once($CFG->dirroot . '/course/format/dari/db/upgrade.php');
 
-        foreach (['0' => '1', '1' => '1'] as $before => $after) {
-            set_config('aiscenewriter', $before, 'format_dari');
-            set_config('version', 2026100800, 'format_dari');
-            $this->assertTrue(xmldb_format_dari_upgrade(2026100800));
-            $this->assertSame($after, get_config('format_dari', 'aiscenewriter'));
-            $this->assertEquals(2026100805, get_config('format_dari', 'version'));
-        }
-
-        // Unset stays unset (which already counts as on).
-        unset_config('aiscenewriter', 'format_dari');
-        set_config('version', 2026100800, 'format_dari');
-        xmldb_format_dari_upgrade(2026100800);
-        $this->assertFalse(get_config('format_dari', 'aiscenewriter'));
-
-        // A site already past the step is not touched.
+        set_config('directimagemodel', '', 'format_dari');
+        set_config('imagequality', 'standard', 'format_dari');
+        set_config('imagestyle', 'vivid', 'format_dari');
         set_config('aiscenewriter', '0', 'format_dari');
-        xmldb_format_dari_upgrade(2026100805);
-        $this->assertSame('0', get_config('format_dari', 'aiscenewriter'));
+        set_config('artscenes_' . $this->course->id, '["A person at a desk"]', 'format_dari');
+        // 2026100903 creates the plan table; drop it so the step can run again here.
+        $dbman = $GLOBALS['DB']->get_manager();
+        $dbman->drop_table(new \xmldb_table('format_dari_imageplan'));
+        $dbman->drop_table(new \xmldb_table('format_dari_imagelog'));
+        set_config('artdirection_' . $this->course->id, '{}', 'format_dari');
+        set_config('promptmode', 'assembled', 'format_dari');
+        set_config('version', 2026100900, 'format_dari');
+
+        $this->assertTrue(xmldb_format_dari_upgrade(2026100900));
+        foreach (['directimagemodel', 'imagequality', 'imagestyle', 'aiscenewriter',
+                'artscenes_' . $this->course->id, 'artdirection_' . $this->course->id] as $name) {
+            $this->assertFalse(get_config('format_dari', $name), $name);
+        }
+        $this->assertSame('0', get_config('format_dari', 'directimages'));
+        $this->assertEquals(2026100905, get_config('format_dari', 'version'));
+        $this->assertFalse(get_config('format_dari', 'promptmode'), 'The 2.0.4 prompt choice is removed');
+        $this->assertSame('google', get_config('format_dari', 'imageengine'));
+        $this->assertTrue($dbman->table_exists('format_dari_imageplan'));
+        $this->assertTrue($dbman->table_exists('format_dari_imagelog'));
+        $columns = $GLOBALS['DB']->get_columns('format_dari_imageplan', false);
+        foreach (['teacherhash', 'attempts', 'successes', 'failures', 'lastresult'] as $field) {
+            $this->assertArrayHasKey($field, $columns, $field);
+        }
+        $this->assertArrayNotHasKey('generations', $columns);
     }
 }

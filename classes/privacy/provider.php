@@ -148,6 +148,20 @@ class provider implements
             'privacy:metadata:format_dari_cardstyle'
         );
 
+        // The image diagnostics log: who started each image job or reported a browser error,
+        // and its messages. Kept for 30 days.
+        $collection->add_database_table(
+            'format_dari_imagelog',
+            [
+                'courseid' => 'privacy:metadata:format_dari_imagelog:courseid',
+                'stage' => 'privacy:metadata:format_dari_imagelog:stage',
+                'message' => 'privacy:metadata:format_dari_imagelog:message',
+                'userid' => 'privacy:metadata:format_dari_imagelog:userid',
+                'timecreated' => 'privacy:metadata:format_dari_imagelog:timecreated',
+            ],
+            'privacy:metadata:format_dari_imagelog'
+        );
+
         // AI requests go through Moodle's AI subsystem to the site's own provider. core_ai
         // declares, stores and exports what it sends and logs; this links to it.
         if (\format_dari\local\ai::subsystem_present()) {
@@ -205,6 +219,18 @@ class provider implements
             'userid' => $userid,
         ]);
 
+        // Image jobs and browser errors recorded for the user.
+        $sql = "SELECT ctx.id
+                  FROM {format_dari_imagelog} l
+                  JOIN {context} ctx
+                    ON ctx.instanceid = l.courseid
+                   AND ctx.contextlevel = :contextcourse
+                 WHERE l.userid = :userid";
+        $contextlist->add_from_sql($sql, [
+            'contextcourse' => CONTEXT_COURSE,
+            'userid' => $userid,
+        ]);
+
         return $contextlist;
     }
 
@@ -245,6 +271,15 @@ class provider implements
             "SELECT m.userid
                                              FROM {format_dari_ai_memory} m
                                             WHERE m.courseid = :courseid",
+            $params
+        );
+
+        $userlist->add_from_sql(
+            'userid',
+            "SELECT l.userid
+               FROM {format_dari_imagelog} l
+              WHERE l.courseid = :courseid
+                AND l.userid > 0",
             $params
         );
     }
@@ -339,6 +374,29 @@ class provider implements
                 ];
             }
         );
+
+        // Export the image diagnostics log entries recorded for this user.
+        $params = array_merge($inparams, ['userid' => $userid]);
+        $logs = $DB->get_recordset_select(
+            'format_dari_imagelog',
+            "courseid {$insql} AND userid = :userid",
+            $params,
+            'courseid, timecreated, id'
+        );
+        static::export_grouped_by_course(
+            $logs,
+            [get_string('privacy:path:imagelog', 'format_dari')],
+            'imagelog',
+            function ($record) {
+                return (object) [
+                    'item' => $record->itemkey,
+                    'stage' => $record->stage,
+                    'status' => $record->status,
+                    'message' => $record->message,
+                    'timecreated' => transform::datetime($record->timecreated),
+                ];
+            }
+        );
     }
 
     /**
@@ -357,6 +415,7 @@ class provider implements
 
         $DB->delete_records('format_dari_chats', ['courseid' => $courseid]);
         $DB->delete_records('format_dari_ai_memory', ['courseid' => $courseid]);
+        $DB->delete_records('format_dari_imagelog', ['courseid' => $courseid]);
     }
 
     /**
@@ -384,6 +443,7 @@ class provider implements
         $params = array_merge($inparams, ['userid' => $userid]);
         $DB->delete_records_select('format_dari_chats', "courseid {$insql} AND userid = :userid", $params);
         $DB->delete_records_select('format_dari_ai_memory', "courseid {$insql} AND userid = :userid", $params);
+        $DB->delete_records_select('format_dari_imagelog', "courseid {$insql} AND userid = :userid", $params);
 
         static::unset_correction_attribution($insql, $inparams, [$userid]);
     }
@@ -420,6 +480,11 @@ class provider implements
         );
         $DB->delete_records_select(
             'format_dari_ai_memory',
+            "courseid = :courseid AND userid {$userinsql}",
+            $params
+        );
+        $DB->delete_records_select(
+            'format_dari_imagelog',
             "courseid = :courseid AND userid {$userinsql}",
             $params
         );

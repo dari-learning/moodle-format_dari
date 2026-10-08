@@ -76,10 +76,16 @@ class get_card_image_status extends external_api {
                 : (string) cardimage::get_url((int) $course->id, $params['targettype'], (int) $target->id);
         }
 
+        // How long the job has been going, and how long ago cron last started, so the browser can
+        // say "waiting for Moodle's task runner" rather than leave the teacher guessing.
+        $lastcron = (int) get_config('tool_task', 'lastcronstart');
         return [
             'status' => $status['state'],
             'imageurl' => $imageurl,
             'message' => $status['state'] === 'failed' ? $status['detail'] : '',
+            'stage' => $status['stage'],
+            'elapsed' => $status['queued'] > 0 ? max(0, time() - $status['queued']) : 0,
+            'cronago' => $lastcron > 0 ? max(0, time() - $lastcron) : -1,
         ];
     }
 
@@ -93,6 +99,10 @@ class get_card_image_status extends external_api {
             'status' => new external_value(PARAM_ALPHA, 'idle, queued, running, done or failed'),
             'imageurl' => new external_value(PARAM_URL, 'The image URL once done', VALUE_DEFAULT, ''),
             'message' => new external_value(PARAM_TEXT, 'Failure reason when failed', VALUE_DEFAULT, ''),
+            'stage' => new external_value(PARAM_ALPHA, 'waiting, planning, generating, saving, done or failed', VALUE_DEFAULT,
+                ''),
+            'elapsed' => new external_value(PARAM_INT, 'Seconds since the job was queued', VALUE_DEFAULT, 0),
+            'cronago' => new external_value(PARAM_INT, 'Seconds since Moodle cron last started, or -1', VALUE_DEFAULT, -1),
         ]);
     }
 }

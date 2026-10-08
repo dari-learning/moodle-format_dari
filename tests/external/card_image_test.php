@@ -26,6 +26,7 @@
 namespace format_dari\external;
 
 use format_dari\local\cardimage;
+use format_dari\local\imagelog;
 use format_dari\local\cardimage_test;
 
 defined('MOODLE_INTERNAL') || die();
@@ -261,8 +262,9 @@ final class card_image_test extends external_testcase {
         $this->assertSame('Recognition that works', $payload['activityName']);
         $this->assertSame('page', $payload['activityType']);
         $this->assertSame('warm light', $payload['extraDetail']);
-        $this->assertStringContainsString('representing Recognition that works', $payload['prompt']);
-        $this->assertStringContainsString('The teacher asks for: warm light.', $payload['prompt']);
+        $this->assertStringContainsString('a lesson on Recognition that works', $payload['prompt']);
+        $this->assertStringContainsString('Warm light.', $payload['prompt']);
+        $this->assertStringStartsWith('Modern editorial illustration', $payload['promptTail']);
         $this->assertStringEndsWith($payload['promptTail'], $payload['prompt']);
         $this->assertSame('Recognition that works', $payload['brief']['topic']);
         $this->assertSame(\format_dari\local\cardprompt::VERSION, $payload['promptVersion']);
@@ -293,13 +295,96 @@ final class card_image_test extends external_testcase {
         $this->assertStringContainsString('/sectioncardimage/' . $this->section->id . '/ai_card_', $status['imageurl']);
         // Core wrote the image to the teacher's draft area; the plugin read it and removed it.
         $this->assertSame(0, $this->count_draft_files((int) $this->teacher->id));
-        // The art director wrote the prompt (two text calls), then one image was generated, all
-        // as the teacher.
+        // The course was planned and the card's prompt written from its plan (two text calls), then one
+        // image was generated, all as the teacher.
         $this->assertCount(2, $this->actions_of(\core_ai\aiactions\generate_text::class));
         $images = $this->actions_of(\core_ai\aiactions\generate_image::class);
         $this->assertCount(1, $images);
         $this->assertEquals($this->teacher->id, $images[0]->get_configuration('userid'));
         $this->assertStringStartsWith('An apprentice chef in crisp whites', $images[0]->get_configuration('prompttext'));
+        $this->assertSame('done', $status['stage']);
+
+        // Every stage is in the log, with the job's request id.
+        $stages = array_map(fn($r) => $r->stage, array_reverse(imagelog::recent((int) $this->course->id)));
+        foreach (['queued', 'started', 'text_request', 'course_plan', 'image_request', 'save', 'done'] as $stage) {
+            $this->assertContains($stage, $stages);
+        }
+        $row = \format_dari\local\imageplanner::get_row((int) $this->course->id, 'section:' . $this->section->id);
+        $this->assertSame(1, (int) $row->attempts);
+        $this->assertSame(1, (int) $row->successes);
+    }
+
+    /**
+     * The teacher's description is kept with the card and returned to the dialog for editing; the
+     * dialog's empty description (replaceprompt) clears it.
+     */
+    public function test_teacher_description_is_kept(): void {
+        $this->setUser($this->teacher);
+        generate_card_image::execute($this->course->id, 'cm', (int) $this->page->cmid, 'Two colleagues at a whiteboard');
+        $this->expectOutputRegex('/.*/');
+        $this->runAdhocTasks('\\format_dari\\task\\generate_card_image');
+        $this->setUser($this->teacher);
+        $result = get_image_prompt::execute($this->course->id, 'cm', (int) $this->page->cmid);
+        $this->assertSame('Two colleagues at a whiteboard', $result['teacherprompt']);
+        $this->assertStringContainsString('- The teacher asks for (must be honoured): Two colleagues at a whiteboard',
+            $this->last_prompt());
+
+        \cache::make('format_dari', 'ajaxratelimit')->purge();
+        generate_card_image::execute($this->course->id, 'cm', (int) $this->page->cmid, '', 'new', true);
+        $this->runAdhocTasks('\\format_dari\\task\\generate_card_image');
+        $this->setUser($this->teacher);
+        $result = get_image_prompt::execute($this->course->id, 'cm', (int) $this->page->cmid);
+        $this->assertSame('', $result['teacherprompt']);
+        $this->assertStringNotContainsString('whiteboard', $result['prompt']);
+        $this->assertStringNotContainsString('whiteboard', $this->last_prompt());
+    }
+
+    /**
+     * A newer request for the same card supersedes an older queued one: the older job makes no
+     * request and cannot overwrite the card.
+     */
+    public function test_newer_request_supersedes_older(): void {
+        $this->setUser($this->teacher);
+        generate_card_image::execute($this->course->id, 'section', (int) $this->section->id, '');
+        $second = generate_card_image::execute($this->course->id, 'section', (int) $this->section->id, '', 'new');
+        $this->assertCount(2, \core\task\manager::get_adhoc_tasks('\\format_dari\\task\\generate_card_image'));
+
+        $this->expectOutputRegex('/.*/');
+        $this->runAdhocTasks('\\format_dari\\task\\generate_card_image');
+        $this->assertCount(1, $this->actions_of(\core_ai\aiactions\generate_image::class));
+        $status = cardimage::get_status((int) $this->course->id, 'section', (int) $this->section->id);
+        $this->assertSame('done', $status['state']);
+        $this->assertContains('superseded', array_map(fn($r) => $r->stage, imagelog::recent((int) $this->course->id)));
+        $this->assertNotEmpty($second);
+    }
+
+    /**
+     * When another worker holds the course's planning lock, the job is queued again for later as
+     * the same request, without a request to any provider and without failing the card.
+     */
+    public function test_busy_planning_requeues_without_failing(): void {
+        global $CFG;
+        $CFG->lock_factory = '\core\lock\file_lock_factory';
+        $this->setUser($this->teacher);
+        generate_card_image::execute($this->course->id, 'section', (int) $this->section->id, '');
+        $requestid = cardimage::get_status((int) $this->course->id, 'section', (int) $this->section->id)['requestid'];
+
+        $lock = \core\lock\lock_config::get_lock_factory('format_dari_imageplan')->get_lock('course' . $this->course->id, 0);
+        $this->expectOutputRegex('/.*/');
+        try {
+            $this->runAdhocTasks('\\format_dari\\task\\generate_card_image');
+        } finally {
+            $lock->release();
+        }
+        $this->assertCount(0, $this->aiactions);
+        $status = cardimage::get_status((int) $this->course->id, 'section', (int) $this->section->id);
+        $this->assertSame('queued', $status['state']);
+        $this->assertSame('waiting', $status['stage']);
+        $tasks = \core\task\manager::get_adhoc_tasks('\\format_dari\\task\\generate_card_image');
+        $this->assertCount(1, $tasks);
+        $task = reset($tasks);
+        $this->assertSame($requestid, $task->get_custom_data()->requestid);
+        $this->assertGreaterThan(time(), $task->get_next_run_time());
     }
 
     /**
@@ -319,6 +404,11 @@ final class card_image_test extends external_testcase {
         $this->assertStringContainsString('Provider quota exhausted', $status['message']);
         $this->assertCount(0, \core\task\manager::get_adhoc_tasks('\\format_dari\\task\\generate_card_image'));
         $this->assertNull(cardimage::get_url((int) $this->course->id, 'cm', (int) $this->page->cmid));
+        $row = \format_dari\local\imageplanner::get_row((int) $this->course->id, 'cm:' . $this->page->cmid);
+        $this->assertSame(1, (int) $row->attempts);
+        $this->assertSame(1, (int) $row->failures);
+        $this->assertSame('failure', $row->lastresult);
+        $this->assertContains('failed', array_map(fn($r) => $r->stage, imagelog::recent((int) $this->course->id)));
     }
 
     /**

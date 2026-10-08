@@ -147,19 +147,7 @@ class generate_all_card_images extends external_api {
         \format_dari\local\ai::require_policy((int) $USER->id);
 
         foreach ($targets as [$type, $id]) {
-            $task = new \format_dari\task\generate_card_image();
-            $task->set_custom_data([
-                'courseid' => (int) $course->id,
-                'targettype' => $type,
-                'targetid' => $id,
-                'prompt' => '',
-                'requestid' => \core\uuid::generate(),
-                'userid' => (int) $USER->id,
-            ]);
-            $task->set_component('format_dari');
-            $task->set_userid((int) $USER->id);
-            cardimage::set_status((int) $course->id, $type, $id, 'queued');
-            \core\task\manager::queue_adhoc_task($task);
+            generate_card_image::queue((int) $course->id, $type, (int) $id, '', 'auto', (int) $USER->id);
             $result['targets'][] = ['type' => $type, 'id' => $id];
         }
         $result['queued'] = true;

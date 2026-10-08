@@ -117,13 +117,21 @@ final class generate_banner_image_test extends external_testcase {
         $this->assertSame('landscape', $action->get_configuration('aspectratio'));
         $this->assertSame($this->context->id, $action->get_configuration('contextid'));
         $prompt = $action->get_configuration('prompttext');
-        // The art director wrote it: its scene first, its "Keep out" line, then core's Avoid line.
+        // The banner was planned with the teacher's direction first, its prompt written from that
+        // plan, and the banner's fixed tail follows it unchanged.
         $this->assertStringStartsWith('An apprentice chef in crisp whites', $prompt);
-        $this->assertStringContainsString('Keep out: Bare hands on raw food.', $prompt);
-        $this->assertStringContainsString("\nAvoid: ", $prompt);
-        // The teacher's direction reached the scene request.
-        $this->assertStringContainsString('- The teacher asks for: warm light', $this->last_prompt());
-        $this->assertStringContainsString('the wide banner for the whole course', $this->last_prompt());
+        $this->assertStringContainsString('left third calm and simple', $prompt);
+        $this->assertStringContainsString('minimal, clean lettering; no captions, logos or watermarks', $prompt);
+        // The teacher's direction reached the planning request as its top priority, and the prompt
+        // writer was told to honour it.
+        $texts = array_map(fn($a) => (string) $a->get_configuration('prompttext'),
+            $this->actions_of(\core_ai\aiactions\generate_text::class));
+        $plan = array_values(array_filter($texts, fn($t) => str_starts_with($t, \format_dari\local\imageplanner::ITEM_OPENING)));
+        $this->assertCount(1, $plan);
+        $this->assertStringContainsString('THE TEACHER ASKS FOR (highest priority', $plan[0]);
+        $this->assertStringContainsString('warm light', $plan[0]);
+        $this->assertStringContainsString('the left third stays calm for the title overlay', $plan[0]);
+        $this->assertStringContainsString('- The teacher asks for (must be honoured): warm light', $this->last_prompt());
     }
 
     /**

@@ -14,23 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace format_dari\local;
+
 /**
- * Version details for the Dari course format.
+ * Another process is planning this course's images right now; try again shortly.
+ *
+ * Thrown before any request is made, so retrying costs nothing.
  *
  * @package    format_dari
  * @copyright  2026 Dari Learning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->component    = 'format_dari';
-$plugin->version      = 2026100905;
-// Supports Moodle 4.4 to 5.3. Moodle 4.4 is the minimum: the hero banner and Ask Dari are injected
-// through the footer hook added in 4.4. On 4.5 and later all AI goes through Moodle's AI subsystem;
-// on 4.4, which has none, Dari uses the school's own OpenAI-compatible connection set in its settings.
-$plugin->requires     = 2024042200;
-$plugin->supported    = [404, 503];
-$plugin->maturity     = MATURITY_STABLE;
-$plugin->release      = '2.0.5';
-$plugin->dependencies = [];
+class planning_busy_exception extends \moodle_exception {
+    /**
+     * Constructor.
+     */
+    public function __construct() {
+        parent::__construct('error_imageplan_busy', 'format_dari');
+    }
+}

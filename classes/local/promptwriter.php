@@ -17,70 +17,54 @@
 namespace format_dari\local;
 
 /**
- * Dari's art director: writes the image prompt for every banner and card with the site's own AI.
+ * Stage 2 of AI images: the final image prompt, built from the visual plan.
  *
- * Image models draw what they are told, literally. A template ("an illustration representing
- * Hazard identification") gives them nothing to draw, so they produce one object on an empty
- * background. A good prompt names who is in the picture, where they are, what they are doing,
- * what surrounds them, the light, the camera or medium, and where the empty space goes.
+ * The text model turns the card's plan into one clear prose paragraph (one request per image), in
+ * the order image models follow best: subject, action, signature element, environment, composition,
+ * lighting and style. If that request fails twice, the prompt is built directly from the plan's
+ * fields instead, and the fallback and its reason are logged.
  *
- * This class gets the site's text model to write that prompt, in two steps:
- *
- *  1. Art direction, once per course. A short visual guide -- the world the course lives in,
- *     the people, the places, the props, palette, light and mood -- so every banner and card in
- *     a course looks like one commissioned set rather than a pile of unrelated stock images.
- *     It is cached per course and rewritten only when the course name, summary, image style or
- *     accent colour changes.
- *  2. The scene, once per image. A specific, believable moment for that section or activity,
- *     written with the art direction in hand and told which scenes the course already has, so
- *     the cards do not all show the same thing.
- *
- * The plugin's own fixed rules (style, colour, composition, no text) are appended unchanged, so
- * the model's writing can make a picture better but never break the set's consistency or put
- * words on an image. Any failure at any step falls back to the template prompt from
- * \format_dari\local\cardprompt, so generation never fails because the text model did.
- *
- * Works with any provider: hosted (OpenAI, Gemini, Claude, Azure) and small local models alike.
- * Every instruction asks for plain text or a tiny JSON object and every reply is validated.
+ * The prompt for a card is stored with its plan, so the preview shows exactly what is painted and
+ * a retry reuses it. If planning fails, the template prompt from cardprompt is used and the
+ * fallback and its reason are recorded, never silently.
  *
  * @package    format_dari
  * @copyright  2026 Dari Learning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class promptwriter {
-    /** @var int Bumped whenever the art-direction instruction changes, so caches refresh. */
-    public const ART_VERSION = 2;
+    /** @var int Fewest words a written prompt has. */
+    protected const PROMPT_MIN_WORDS = 40;
 
-    /** @var int Most recent scenes remembered per course, to keep the set varied. */
-    protected const SCENE_MEMORY = 14;
+    /** @var int Longest scene part kept. */
+    protected const SCENE_MAX = 1600;
 
-    /** @var int Longest prompt sent to an image model (DALL·E 3 allows 4,000 characters). */
+    /** @var int Longest prompt sent to the image model. */
     protected const PROMPT_MAX = 3600;
 
-    /** @var string[] Camera or medium language per course image style. */
+    /** @var string Opening words of the prompt-writing request. */
+    public const SCENE_OPENING = 'You write image-generation prompts for an online course, working from a creative '
+        . 'director\'s plan.';
+
+    /** @var string[] The medium per course style, for the prompt writer. */
     protected const MEDIUM = [
-        'photo' => 'Shot like an editorial photograph on a full-frame camera with a 35mm lens at eye level, '
-            . 'natural window or site light, true-to-life skin tones, crisp focus on the main subject and a softly '
-            . 'detailed background.',
-        'illustration' => 'Drawn as a modern editorial illustration: confident shapes, soft gradients, subtle paper '
-            . 'texture, consistent line weight and a clear focal point.',
-        'render3d' => 'Rendered as a polished 3D scene: soft studio lighting, smooth matte materials, appealing '
-            . 'stylised people with natural proportions, gentle shadows and depth of field.',
-        'flat' => 'Drawn as a flat vector illustration: bold clean geometric shapes, a harmonious limited palette, '
-            . 'crisp edges and a clear visual hierarchy, with a complete scene rather than a lone icon.',
+        'photo' => 'photorealistic documentary and editorial photography',
+        'illustration' => 'modern editorial illustration',
+        'render3d' => 'polished 3D render',
+        'flat' => 'flat vector illustration',
     ];
 
+    /** @var array Where the last prompt came from: source (plan, written, template, fallback) and reason. */
+    public static array $last = ['source' => '', 'reason' => ''];
+
     /**
-     * Whether the art director should run: the setting is on and the site can generate text.
+     * Whether planning runs: whenever the site can generate text.
      *
      * @param \context $context The course context.
      * @return bool
      */
     public static function enabled(\context $context): bool {
-        $setting = get_config('format_dari', 'aiscenewriter');
-        // On unless an administrator has switched it off.
-        $on = ($setting === false || $setting === '' || !empty($setting));
-        return $on && ai::is_available(ai::FEATURE_TEXT, $context);
+        return ai::is_available(ai::FEATURE_TEXT, $context);
     }
 
     /**
@@ -90,278 +74,318 @@ class promptwriter {
      * @param \context $context The course context.
      * @param int $userid The teacher the request is made for.
      * @return string The prompt for the image model.
+     * @throws planning_busy_exception When another worker is planning the course (retry later).
      */
     public static function write(array $composed, \context $context, int $userid): string {
         $template = (string) ($composed['prompt'] ?? '');
         $brief = (array) ($composed['brief'] ?? []);
+        $tail = (string) ($composed['promptTail'] ?? '');
         if ($brief === [] || !self::enabled($context)) {
+            self::$last = ['source' => 'template', 'reason' => $brief === [] ? 'no brief' : 'no text model'];
             return $template;
         }
-
         try {
-            $courseid = (int) $context->instanceid;
-            $art = self::art_direction($courseid, $brief, $context, $userid);
-            $scene = self::scene($courseid, $brief, $art, $context, $userid);
-            if ($scene === '') {
-                return $template;
-            }
-            self::remember_scene($courseid, $scene);
-            return self::assemble($scene, $art, $brief, (string) ($composed['promptTail'] ?? ''));
+            $course = get_course((int) $context->instanceid);
+            $result = self::prompt_for($course, $brief, $context, $userid, true);
+            return self::assemble($result['prompt'], $tail);
+        } catch (planning_busy_exception $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            debugging('format_dari art director failed, using the template prompt: ' . $e->getMessage(), DEBUG_DEVELOPER);
+            self::$last = ['source' => 'fallback', 'reason' => $e->getMessage()];
+            imagelog::add('fallback', 'fail', 0, 'Planning or prompt writing failed; the template prompt was used: '
+                . $e->getMessage());
+            debugging('format_dari image planning failed; template prompt used: ' . $e->getMessage(), DEBUG_DEVELOPER);
             return $template;
         }
     }
 
     /**
-     * The course's art direction, from cache or freshly written.
+     * Plan (if needed) and build the prompt for one image.
      *
-     * @param int $courseid The course.
-     * @param array $brief The image brief (course facts are read from it).
+     * @param \stdClass $course The course.
+     * @param array $brief The image brief (mode and teacherDirection are read from it).
      * @param \context $context The course context.
-     * @param int $userid The teacher.
-     * @return array{world: string, people: string, places: string, props: string, palette: string, light: string, mood: string, avoid: string}
+     * @param int $userid The user.
+     * @param bool $generating True when an image is about to be requested (counts an attempt).
+     * @return array{prompt: string, entry: array, course: array, key: string}
      */
-    public static function art_direction(int $courseid, array $brief, \context $context, int $userid): array {
-        $facts = [
-            'course' => (string) ($brief['courseName'] ?? ''),
-            'topic' => (string) ($brief['courseTopic'] ?? ''),
-            'category' => (string) ($brief['courseCategory'] ?? ''),
-            'summary' => (string) ($brief['courseSummary'] ?? ''),
-            'audience' => (string) ($brief['audience'] ?? ''),
-            'style' => (string) ($brief['style'] ?? ''),
-            'colour' => trim(($brief['colourName'] ?? '') . ' ' . ($brief['colourHex'] ?? '')),
-        ];
-        $hash = sha1(self::ART_VERSION . '|' . json_encode($facts));
-        $key = 'artdirection_' . $courseid;
-        $cached = json_decode((string) get_config('format_dari', $key), true);
-        if (is_array($cached) && ($cached['hash'] ?? '') === $hash && is_array($cached['art'] ?? null)) {
-            return $cached['art'];
+    public static function prompt_for(\stdClass $course, array $brief, \context $context, int $userid,
+            bool $generating): array {
+        $key = imageplanner::item_key($brief);
+        $iscard = ($brief['imageKind'] ?? '') !== cardprompt::KIND_BANNER;
+        // Cards and the course banner keep their own prompt; a section banner borrows its card's plan.
+        $tracked = $iscard || $key === imageplanner::BANNER_KEY;
+        $teacher = trim((string) ($brief['teacherDirection'] ?? ''));
+        $mode = (string) ($brief['mode'] ?? imageplanner::MODE_AUTO);
+        if (!$tracked && $mode === imageplanner::MODE_NEW) {
+            $mode = imageplanner::MODE_AUTO;
         }
 
-        $ask = implode("\n", [
-            'You are the art director for an online course. Plan the visual world for a matching set of course '
-                . 'images (a wide banner plus one image per section and activity).',
-            '',
-            'COURSE FACTS:',
-            '- Course: ' . $facts['course'],
-            '- Subject: ' . $facts['topic'],
-            $facts['category'] !== '' ? '- Category: ' . $facts['category'] : '',
-            $facts['summary'] !== '' ? '- Summary: ' . \core_text::substr($facts['summary'], 0, 500) : '',
-            '- Learners: ' . ($facts['audience'] ?: 'adult learners'),
-            '- Image style: ' . ($facts['style'] ?: 'photo'),
-            $facts['colour'] !== '' ? '- Brand accent colour: ' . $facts['colour'] : '',
-            '',
-            'Think about the REAL workplaces, places, people, tools and equipment of this subject, as someone who '
-                . 'works in it would know them. Be specific and accurate (correct safety gear, real equipment, real '
-                . 'settings), and avoid generic office or stock-photo clichés unless the subject really is office work.',
-            '',
-            'Reply with ONLY a JSON object, no other text, with these keys, each a short phrase or sentence:',
-            '{"world": "the overall setting the images live in",',
-            ' "people": "who appears: roles, ages, clothing, diversity, how they behave",',
-            ' "places": "three to five specific locations to rotate through",',
-            ' "props": "the specific tools, equipment and objects that belong in this world",',
-            ' "palette": "a colour palette that suits the subject and works with the accent colour",',
-            ' "light": "lighting and time of day",',
-            ' "mood": "the feeling of the set",',
-            ' "avoid": "clichés or inaccuracies to keep out of this subject\'s images"}',
-        ]);
-        $reply = ai::generate_text($context, $userid, $ask)['text'];
-        $art = self::parse_art($reply);
-
-        // Only a real JSON answer is cached. A non-JSON reply (a refusal, an apology, a model
-        // that ignored the format) is still used for this image, as the world description, but
-        // caching it would pin that reply as the course's art direction for every later image
-        // until the course itself changed.
-        if (preg_match('~\{.*\}~s', $reply, $m) && is_array(json_decode($m[0], true))) {
-            set_config($key, json_encode(['hash' => $hash, 'art' => $art, 'time' => time()]), 'format_dari');
+        $plan = imageplanner::plan_for($course, $brief, $context, $userid, $mode, $tracked ? $teacher : '',
+            $tracked && !empty($brief['replaceTeacher']));
+        if ($tracked) {
+            // The stored description, when this request did not give one, is part of the prompt too.
+            $brief['teacherDirection'] = $plan['teacher'];
         }
-        return $art;
-    }
-
-    /**
-     * Pull the art-direction fields out of a model reply, tolerating chatter and code fences.
-     *
-     * @param string $reply The model's reply.
-     * @return array
-     */
-    public static function parse_art(string $reply): array {
-        $keys = ['world', 'people', 'places', 'props', 'palette', 'light', 'mood', 'avoid'];
-        $art = array_fill_keys($keys, '');
-        $data = null;
-        if (preg_match('~\{.*\}~s', $reply, $m)) {
-            $data = json_decode($m[0], true);
-        }
-        if (is_array($data)) {
-            foreach ($keys as $key) {
-                $value = $data[$key] ?? '';
-                if (is_array($value)) {
-                    $value = implode(', ', array_map('strval', $value));
-                }
-                $art[$key] = self::clean((string) $value, 240);
+        $row = $plan['row'];
+        $stored = trim((string) ($row->prompt ?? ''));
+        if ($tracked && !$plan['planned'] && $stored !== '') {
+            $prompt = $stored;
+            self::$last = ['source' => 'plan', 'reason' => 'stored prompt reused'];
+        } else {
+            try {
+                $prompt = imagelog::time('prompt_written', fn() => self::write_prompt($brief, $plan['entry'],
+                    $plan['course'], $context, $userid));
+                self::$last = ['source' => 'written', 'reason' => ''];
+            } catch (planning_busy_exception $e) {
+                throw $e;
+            } catch (\Throwable $e) {
+                // Still the card's own plan, just not rewritten as prose.
+                $prompt = self::assembled_prompt($plan['entry'], $plan['course'], $brief);
+                self::$last = ['source' => 'plan', 'reason' => 'prompt writing failed: ' . $e->getMessage()];
+                imagelog::add('fallback', 'fail', 0, 'The prompt could not be written; it was built from the plan: '
+                    . $e->getMessage());
+            }
+            if ($tracked) {
+                imageplanner::set_prompt($row, $prompt);
             }
         }
-        if (implode('', $art) === '') {
-            // Not JSON: keep the reply as a single description of the world.
-            $art['world'] = self::clean($reply, 400);
+        if ($generating && $tracked) {
+            imageplanner::record_attempt((int) $course->id, $key);
         }
-        return $art;
+        return ['prompt' => $prompt, 'entry' => $plan['entry'], 'course' => $plan['course'], 'key' => $key];
     }
 
     /**
-     * Write the scene for one image.
+     * The prompt built from the plan's fields, in the order an image model reads best: subject and
+     * action, signature element, environment, people, composition, lighting, colour. No request.
      *
-     * @param int $courseid The course.
+     * @param array $entry The plan item.
+     * @param array $coursedata The course-level plan.
      * @param array $brief The image brief.
-     * @param array $art The course's art direction.
-     * @param \context $context The course context.
-     * @param int $userid The teacher.
-     * @return string One paragraph, or '' when the reply was unusable.
-     */
-    protected static function scene(int $courseid, array $brief, array $art, \context $context, int $userid): string {
-        $isbanner = ($brief['imageKind'] ?? '') === cardprompt::KIND_BANNER;
-        $target = (string) ($brief['target'] ?? 'section');
-        $used = self::recent_scenes($courseid);
-
-        $lines = [
-            'You write prompts for an AI image generator. Write the SCENE for one image in a matching set of '
-                . 'course images.',
-            '',
-            'THE COURSE\'S VISUAL WORLD (keep to it):',
-        ];
-        foreach ($art as $key => $value) {
-            if ($value !== '') {
-                $lines[] = '- ' . ucfirst($key) . ': ' . $value;
-            }
-        }
-        $lines[] = '';
-        $lines[] = 'THIS IMAGE:';
-        $lines[] = '- It is ' . ($isbanner ? 'the wide banner for the whole course' : 'the image for one ' . $target) . '.';
-        foreach ([
-            'topic' => 'Topic',
-            'title' => 'Title',
-            'detail' => 'What it covers',
-            'partName' => 'Part of',
-            'activityType' => 'Activity type',
-            'teacherDirection' => 'The teacher asks for',
-            'sceneIdea' => 'A starting idea you may improve on',
-        ] as $key => $label) {
-            $value = trim((string) ($brief[$key] ?? ''));
-            if ($value !== '') {
-                $lines[] = '- ' . $label . ': ' . \core_text::substr($value, 0, 400);
-            }
-        }
-        if ($used) {
-            $lines[] = '';
-            $lines[] = 'SCENES OTHER IMAGES IN THIS COURSE ALREADY SHOW (choose a clearly different moment, place or '
-                . 'angle):';
-            foreach ($used as $prior) {
-                $lines[] = '- ' . $prior;
-            }
-        }
-        $lines[] = '';
-        $lines[] = 'WRITE ONE PARAGRAPH OF 60 TO 110 WORDS that describes a single, specific, believable moment:';
-        $lines[] = '- who is in it (role, age, clothing, expression, what their hands are doing),';
-        $lines[] = '- what they are doing, shown through action rather than a symbol for the idea,';
-        $lines[] = '- where they are and the specific objects, tools or equipment around them,';
-        $lines[] = '- foreground, middle ground and background, so the picture has depth.';
-        $lines[] = 'Show the topic concretely: a real task, place or situation from the subject, never an abstract '
-            . 'metaphor (no lightbulbs, puzzle pieces, handshakes, thumbs up, floating icons or people pointing at '
-            . 'screens).';
-        if (($brief['audience'] ?? '') === 'school students') {
-            $lines[] = 'The learners are school students: keep everyone age-appropriate and the setting school-safe.';
-        }
-        if ($isbanner) {
-            $lines[] = 'Banner: keep the main subject in the right half and the left third calm and simple, because '
-                . 'the course title is printed over it.';
-        }
-        $lines[] = 'Do NOT mention art style, medium, camera, colours, text, words, signs, logos, brand names or the '
-            . 'course title. Do not use quotation marks. Reply with the paragraph only.';
-
-        $reply = ai::generate_text($context, $userid, implode("\n", $lines))['text'];
-        $scene = self::clean($reply, 1200);
-        // Drop a leading label some models add ("Scene:", "Prompt:").
-        $scene = preg_replace('~^(scene|prompt|image|description)\s*:\s*~i', '', $scene);
-        return \core_text::strlen($scene) >= 40 ? $scene : '';
-    }
-
-    /**
-     * Put the final prompt together: subject first, then the course's look, then the fixed rules.
-     *
-     * @param string $scene The scene paragraph.
-     * @param array $art The art direction.
-     * @param array $brief The image brief.
-     * @param string $tail cardprompt's fixed style, colour, composition and no-text rules.
      * @return string
      */
-    public static function assemble(string $scene, array $art, array $brief, string $tail): string {
-        $style = (string) ($brief['style'] ?? 'photo');
-        $parts = [$scene];
-        $look = [];
-        if (($art['light'] ?? '') !== '') {
-            $look[] = 'Lighting: ' . rtrim($art['light'], '.') . '.';
-        }
-        if (($art['palette'] ?? '') !== '') {
-            $look[] = 'Palette: ' . rtrim($art['palette'], '.') . '.';
-        }
-        if (($art['mood'] ?? '') !== '') {
-            $look[] = 'Mood: ' . rtrim($art['mood'], '.') . '.';
-        }
-        if ($look) {
-            $parts[] = implode(' ', $look);
-        }
-        $parts[] = self::MEDIUM[$style] ?? self::MEDIUM['photo'];
-        $parts[] = 'People look natural and unposed, with realistic hands and faces, and reflect a diverse mix of '
-            . 'ages and backgrounds that fits the setting. Equipment, clothing and safety gear are accurate for the '
-            . 'real-world task.';
-        if ($tail !== '') {
-            $parts[] = trim($tail);
-        }
-        if (($art['avoid'] ?? '') !== '') {
-            $parts[] = 'Keep out: ' . rtrim($art['avoid'], '.') . '.';
-        }
-        $prompt = implode("\n\n", $parts);
-        if (\core_text::strlen($prompt) > self::PROMPT_MAX) {
-            $prompt = \core_text::substr($prompt, 0, self::PROMPT_MAX);
-        }
-        return $prompt;
+    public static function assembled_prompt(array $entry, array $coursedata, array $brief): string {
+        $teacher = trim((string) ($brief['teacherDirection'] ?? ''));
+        $parts = [
+            self::sentence((string) ($entry['concept'] ?? '')),
+            self::labelled('Key detail', (string) ($entry['signature_element'] ?? '')),
+            self::labelled('Setting', (string) ($entry['environment'] ?? '')),
+            self::people_line((string) ($entry['people'] ?? '')),
+            self::labelled('Camera', (string) ($entry['perspective'] ?? '')),
+            self::labelled('Lighting', (string) ($entry['lighting'] ?? '')),
+            self::labelled('Colour', (string) ($coursedata['colour_treatment'] ?? '')),
+            $teacher !== '' ? self::labelled('Also', $teacher) : '',
+        ];
+        return trim(implode(' ', array_filter($parts)));
     }
 
     /**
-     * Short summaries of the scenes this course's images already show, oldest first.
+     * Ask the text model to write the prompt from the plan, twice at most.
      *
-     * @param int $courseid The course.
-     * @return string[]
+     * @param array $brief The image brief.
+     * @param array $entry The plan item.
+     * @param array $coursedata The course-level plan.
+     * @param \context $context The course context.
+     * @param int $userid The user.
+     * @return string
+     * @throws \moodle_exception When no usable prompt came back.
      */
-    public static function recent_scenes(int $courseid): array {
-        $list = json_decode((string) get_config('format_dari', 'artscenes_' . $courseid), true);
-        return is_array($list) ? array_values(array_filter(array_map('strval', $list))) : [];
+    protected static function write_prompt(array $brief, array $entry, array $coursedata, \context $context,
+            int $userid): string {
+        $request = self::scene_request($brief, $entry, $coursedata);
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $prompt = self::parse_prompt(ai::generate_text($context, $userid, $request)['text']);
+            if ($prompt !== '') {
+                return $prompt;
+            }
+        }
+        throw new \moodle_exception('error_ai_textfailed', 'format_dari');
     }
 
     /**
-     * Remember a scene's opening words so later images in the course choose something different.
+     * The request that turns one plan item into a prose prompt (written mode).
      *
-     * @param int $courseid The course.
-     * @param string $scene The scene paragraph.
-     * @return void
+     * @param array $brief The image brief.
+     * @param array $entry The plan item.
+     * @param array $coursedata The course-level plan.
+     * @return string
      */
-    protected static function remember_scene(int $courseid, string $scene): void {
-        $first = preg_split('~(?<=[.!?])\s~', $scene, 2)[0] ?? $scene;
-        $list = self::recent_scenes($courseid);
-        $list[] = \core_text::substr($first, 0, 160);
-        $list = array_slice($list, -self::SCENE_MEMORY);
-        set_config('artscenes_' . $courseid, json_encode($list), 'format_dari');
+    public static function scene_request(array $brief, array $entry, array $coursedata): string {
+        $isbanner = ($brief['imageKind'] ?? '') === cardprompt::KIND_BANNER;
+        $medium = self::MEDIUM[(string) ($brief['style'] ?? 'photo')] ?? self::MEDIUM['photo'];
+        $teacher = trim((string) ($brief['teacherDirection'] ?? ''));
+        $lines = [
+            self::SCENE_OPENING . ' The plan already decides what the image shows. Describe it so an image model renders '
+                . 'it exactly.',
+            '',
+            'THE PLAN:',
+            '- Concept: ' . ($entry['concept'] ?? ''),
+            '- Signature element: ' . ($entry['signature_element'] ?? ''),
+            '- Environment: ' . ($entry['environment'] ?? ''),
+            '- People: ' . (($entry['people'] ?? '') !== '' ? $entry['people'] : 'none'),
+            '- Camera: ' . ($entry['perspective'] ?? ''),
+            '- Lighting: ' . ($entry['lighting'] ?? ''),
+        ];
+        if (($coursedata['colour_treatment'] ?? '') !== '') {
+            $lines[] = '- Colour treatment: ' . $coursedata['colour_treatment'];
+        }
+        $lines[] = '- Medium: ' . $medium;
+        $lines[] = '- Format: ' . ($isbanner ? 'a wide course banner' : 'a 16:9 course card, also seen as a small thumbnail');
+        if ($teacher !== '') {
+            $lines[] = '- The teacher asks for (must be honoured): ' . $teacher;
+        }
+        $lines[] = '';
+        $lines[] = 'Write one clear paragraph, usually 60 to 130 words, in this order: the main subject; the action or '
+            . 'visual concept; the signature element; the environment; the composition; the lighting and style. Use '
+            . 'positive, concrete description of what is visible. Do not add props to fill space. Begin with the subject. '
+            . 'Never name the course, a title or an exam code, and never put words in quotation marks.';
+        $lines[] = '';
+        $lines[] = 'Reply with the paragraph only.';
+        return implode("\n", $lines);
     }
 
     /**
-     * Forget a course's art direction and scene memory (course reset or deletion).
+     * The test mode: plan every section card and the course banner and build their prompts,
+     * without generating any image. Stored prompts are what each card's first image uses.
+     *
+     * @param \stdClass $course The course.
+     * @param \context $context The course context.
+     * @param int $userid The user.
+     * @param bool $replan Plan the course again from scratch.
+     * @param bool $activities Also plan every activity card.
+     * @return array[] One row per image: title, key, entry, prompt (with the tail).
+     */
+    public static function preview(\stdClass $course, \context $context, int $userid, bool $replan = false,
+            bool $activities = false): array {
+        $modinfo = get_fast_modinfo($course);
+        $targets = [];
+        foreach ($modinfo->get_section_info_all() as $section) {
+            if ((int) $section->section === 0 || !empty($section->component)) {
+                continue;
+            }
+            $targets[] = [get_section_name($course, $section),
+                cardprompt::compose($course, cardimage::TYPE_SECTION, $section, '')];
+            if ($activities) {
+                foreach ($modinfo->sections[$section->section] ?? [] as $cmid) {
+                    $cm = $modinfo->get_cm($cmid);
+                    if ($cm->deletioninprogress || in_array($cm->modname, ['label', 'subsection'], true)) {
+                        continue;
+                    }
+                    $targets[] = [$cm->get_formatted_name(), cardprompt::compose($course, cardimage::TYPE_CM, $cm, '')];
+                }
+            }
+        }
+        $targets[] = [get_string('imageplan_banner', 'format_dari'), cardprompt::compose_banner($course, null, '')];
+
+        if ($replan) {
+            imageplanner::course_plan($course, $targets[0][1]['brief'], $context, $userid, true);
+        }
+        $rows = [];
+        foreach ($targets as [$title, $composed]) {
+            $result = self::prompt_for($course, $composed['brief'], $context, $userid, false);
+            $rows[] = [
+                'title' => $title,
+                'key' => $result['key'],
+                'entry' => $result['entry'],
+                'course' => $result['course'],
+                'prompt' => self::assemble($result['prompt'], (string) $composed['promptTail']),
+            ];
+        }
+        return $rows;
+    }
+
+    /**
+     * The prompt paragraph out of a reply; '' when unusable.
+     *
+     * @param string $reply The model's reply.
+     * @return string
+     */
+    public static function parse_prompt(string $reply): string {
+        $reply = str_replace(['**', '__', '```'], '', $reply);
+        if (preg_match('~PROMPT\s*:\s*(.+)$~is', $reply, $m)) {
+            $reply = $m[1];
+        }
+        $prompt = self::clean($reply, self::SCENE_MAX);
+        $prompt = (string) preg_replace('~^((image )?(generation )?prompt|paragraph|scene)\s*:\s*~i', '', $prompt);
+        $prompt = (string) preg_replace('~^(Create|Generate)\s+an?\s+[^.]*?\b(image|photo|photograph)\s+(of|showing)\s+~i',
+            '', $prompt);
+        $prompt = trim($prompt);
+        if ($prompt !== '' && preg_match('~^[a-z]~', $prompt)) {
+            $prompt = \core_text::strtoupper(\core_text::substr($prompt, 0, 1)) . \core_text::substr($prompt, 1);
+        }
+        return str_word_count($prompt) >= self::PROMPT_MIN_WORDS ? $prompt : '';
+    }
+
+    /**
+     * The final prompt: the scene, then the plugin's fixed tail, within the limit.
+     *
+     * @param string $scene The scene.
+     * @param string $tail The fixed tail from cardprompt.
+     * @return string
+     */
+    public static function assemble(string $scene, string $tail): string {
+        $tail = trim($tail);
+        $room = self::PROMPT_MAX - ($tail === '' ? 0 : \core_text::strlen($tail) + 2);
+        $scene = \core_text::substr(trim($scene), 0, max(200, $room));
+        return $tail === '' ? $scene : $scene . "\n\n" . $tail;
+    }
+
+    /**
+     * Forget a course's visual plan, prompts and the art direction stored by earlier versions.
      *
      * @param int $courseid The course.
      * @return void
      */
     public static function forget(int $courseid): void {
+        imageplanner::forget($courseid);
+        imagelog::forget($courseid);
         unset_config('artdirection_' . $courseid, 'format_dari');
         unset_config('artscenes_' . $courseid, 'format_dari');
+    }
+
+    /**
+     * Text as a sentence: capital first letter, full stop at the end.
+     *
+     * @param string $text Text.
+     * @return string
+     */
+    protected static function sentence(string $text): string {
+        $text = trim($text);
+        if ($text === '') {
+            return '';
+        }
+        $text = \core_text::strtoupper(\core_text::substr($text, 0, 1)) . \core_text::substr($text, 1);
+        return preg_match('~[.!?]$~u', $text) ? $text : $text . '.';
+    }
+
+    /**
+     * "Label: text." or ''.
+     *
+     * @param string $label Label.
+     * @param string $text Text.
+     * @return string
+     */
+    protected static function labelled(string $label, string $text): string {
+        $text = trim($text);
+        if ($text === '') {
+            return '';
+        }
+        return $label . ': ' . rtrim($text, '.') . '.';
+    }
+
+    /**
+     * The people line, or a clear "no people" when the plan has none.
+     *
+     * @param string $people Plan people field.
+     * @return string
+     */
+    protected static function people_line(string $people): string {
+        $people = trim($people);
+        if ($people === '' || preg_match('~^(none|no people|nobody)\b~i', $people)) {
+            return 'No people in the frame.';
+        }
+        return self::labelled('People', $people);
     }
 
     /**
@@ -372,12 +396,9 @@ class promptwriter {
      * @return string
      */
     protected static function clean(string $text, int $max): string {
-        $text = preg_replace('~```[a-z]*~i', '', $text);
         $text = strip_tags($text);
-        $text = str_replace(['**', '__'], '', $text);
-        // Markdown heading marks only; a hex colour such as #0F766E keeps its '#'.
-        $text = preg_replace('~(^|\n)\s*#{1,6}\s+~', '$1', $text);
-        $text = trim(preg_replace('/\s+/', ' ', $text), " \t\n\r\0\x0B\"'“”‘’");
+        $text = (string) preg_replace('~(^|\n)\s*#{1,6}\s+~', '$1', $text);
+        $text = trim((string) preg_replace('/\s+/', ' ', $text), " \t\n\r\0\x0B\"'“”‘’<>");
         return \core_text::substr($text, 0, $max);
     }
 }

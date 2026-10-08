@@ -827,7 +827,7 @@ const FLOW = (o) => {
         + T(179, 114, 'answer or image', 'x8 k2', 'm');
     if (o.direct) {
         const rows = [['endpoint', 'Endpoint', 'https://ai.school.edu/v1'], ['secret', 'API key', '•••••••• 4f2a'],
-            ['textmodel', 'Text model', 'gpt-4o-mini'], ['imagemodel', 'Image model', 'gpt-image-1']];
+            ['textmodel', 'Text model', 'gpt-6-astra'], ['imagemodel', 'Image model', 'gpt-image-2.5-sunburst']];
         rows.forEach((r, i) => {
             const ry = 140 + i * 17;
             s += T(150, ry + 9, r[1], 'x8 k2', 'e') + R(156, ry, 160, 13, 'p-chip', 3) + T(161, ry + 9.5, r[2], 'x8');
@@ -1199,8 +1199,8 @@ const draw = (base) => {
         case 'directtextmodel':
             return {cap: 'Moodle 4.4: the model that writes Ask Dari\'s answers.',
                 svg: R(0, 0, W, H, 'p-page') + FLOW({direct: true, mark: 'textmodel'})};
-        case 'directimagemodel':
-            return {cap: 'Moodle 4.4: the model that draws banners and card images.',
+        case 'directimages':
+            return {cap: 'Moodle 4.4: banners and card images, always drawn with GPT Image 2.5 Sunburst.',
                 svg: R(0, 0, W, H, 'p-page') + FLOW({direct: true, mark: 'imagemodel'})};
         // ---- First-visit tour ----------------------------------------------------------------------
         case 'tourvoiceover':

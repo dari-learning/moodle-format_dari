@@ -19,40 +19,35 @@ namespace format_dari\local;
 /**
  * Writes the image prompt for a card or a banner, and the brief behind it.
  *
- * The 3.0.0 prompt produced plain images. It handed the image model an abstract label
- * ("Subject: Student Instructions.") and asked it to invent "one concrete scene or object". Image
- * models do not plan scenes, so they drew one object on an empty background. Every other line then
- * pushed further towards empty: laptops, screens, charts and books were banned, and the
- * composition asked for "a single focal point" on a "calm uncluttered background" with shallow
- * depth of field.
+ * The prompt has two parts:
  *
- * The prompt is now a described scene, written as prose, in two parts:
- *
- *  - The scene: who is in the picture, where they are, what they are doing and what is around
- *    them. It comes from the first of these that applies:
- *      1. a scene for a common section or activity title (Welcome, Student Instructions,
- *         Assessment, Resources, Forum, Quiz, Certificate…);
+ *  - The scene: one specific person doing one specific, visible thing in the real place that work
+ *    happens, with two or three real objects. On sites with a text model the AI art director
+ *    (\format_dari\local\promptwriter) writes it from `brief`, which carries every fact used here.
+ *    Without a text model the scene comes from the first of these that applies:
+ *      1. a scene for a common section or activity title (Welcome, Assessment, Forum, Quiz…);
  *      2. a scene for the activity type (quiz, assignment, forum, Zoom…);
- *      3. a general scene built from the topic itself.
- *    The teacher's own words follow the scene.
- *  - The tail: style, colour, composition and the no-text rule. It is the same for every image in
- *    a course, so the images look like one set.
+ *      3. a scene from the course's field (\format_dari\local\imagefields);
+ *      4. a general scene built from the topic itself.
+ *  - The tail (`promptTail`): medium, colour, 16:9 composition and the no-text rule. It is the same
+ *    for every image in a course, so the images look like one set, and nothing the art director
+ *    writes can change it.
  *
- * The scene is the part a language model writes far better than any template. When the
- * "Write image scenes with AI" setting is on, \format_dari\local\ai::image_prompt() has the text
- * model rewrite the scene from `brief` (every fact the plugin used) and appends `promptTail`;
- * otherwise `prompt` is sent as it is.
+ * On sites with a text model this class only gathers the facts (`brief`) and the tail: what an
+ * image shows is decided by \format_dari\local\imageplanner, and the prompt is written by
+ * \format_dari\local\promptwriter. The tail sets only the medium, the accent, the framing and the
+ * quality safeguards, so lighting, palette and perspective can vary from image to image.
  *
  * @package    format_dari
  * @copyright  2026 Dari Learning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class cardprompt {
-    /** @var string Identifies the card recipe in the service's logs. */
-    public const VERSION = 'card-2';
+    /** @var string Identifies the card recipe in logs. */
+    public const VERSION = 'card-5';
 
-    /** @var string Identifies the banner recipe in the service's logs. */
-    public const BANNER_VERSION = 'banner-1';
+    /** @var string Identifies the banner recipe in logs. */
+    public const BANNER_VERSION = 'banner-4';
 
     /** @var string Image kind for a section or activity card. */
     public const KIND_CARD = 'card';
@@ -60,7 +55,7 @@ class cardprompt {
     /** @var string Image kind for a course or section banner. */
     public const KIND_BANNER = 'banner';
 
-    /** @var int Longest prompt sent, in characters; agreed with the image service. */
+    /** @var int Longest template scene part, in characters. */
     public const PROMPT_MAX = 2000;
 
     /** @var int Longest summary or description excerpt used as detail. */
@@ -69,42 +64,38 @@ class cardprompt {
     /** @var int Longest topic, when a summary has to stand in for a missing title. */
     private const TOPIC_MAX = 120;
 
-    /** @var string[] How each style's prompt opens. */
-    private const STYLE_LEAD = [
-        'photo' => 'A realistic professional photograph',
-        'illustration' => 'A modern editorial illustration',
-        'render3d' => 'A polished 3D render',
-        'flat' => 'A flat vector illustration',
+    /** @var string[] The medium, per course style; the first part of the tail. No fixed lighting or palette. */
+    private const MEDIUM = [
+        'photo' => 'Photorealistic, high-end documentary and editorial photography: real materials and textures, '
+            . 'natural skin tones, professional lighting that suits the scene, crisp focus on the focal point.',
+        'illustration' => 'Modern editorial illustration: confident shapes, rich considered colour, subtle texture, '
+            . 'natural proportions.',
+        'render3d' => 'Polished 3D render: realistic materials, considered lighting, natural proportions, depth of '
+            . 'field.',
+        'flat' => 'Flat vector illustration: bold clean shapes, a limited harmonious palette, crisp edges, a complete '
+            . 'scene rather than a lone icon.',
     ];
 
-    /** @var string[] Art direction for each value of cardimage::STYLES. */
-    private const STYLE_DIRECTION = [
-        'photo' => 'realistic professional photography, natural light, true-to-life colour, sharp focus on '
-            . 'the main subject with a softly detailed background, a clean, modern training or workplace look. '
-            . 'Not a cartoon, illustration or 3D render',
-        'illustration' => 'modern editorial illustration, richly detailed, layered shapes with soft gradients '
-            . 'and subtle texture, warm and inviting, consistent line weight',
-        'render3d' => 'polished 3D render, soft studio lighting, appealing stylised people and props in smooth '
-            . 'matte materials, a complete small scene with depth and gentle shadows',
-        'flat' => 'flat vector illustration, bold clean geometric shapes, a harmonious palette of five or six '
-            . 'colours, crisp edges, a complete scene with several supporting elements and a clear visual '
-            . 'hierarchy',
-    ];
-
-    /** @var string[] Composition for each image kind. */
+    /** @var string[] Composition for each image kind: framing only, so perspectives can vary. */
     private const COMPOSITION = [
-        self::KIND_CARD => 'Wide 16:9 composition, rich but not cluttered: a clear main subject slightly off '
-            . 'centre with supporting details around it and depth from foreground to background. Keep faces '
-            . 'and key objects away from the very top and bottom edges, which may be cropped.',
-        self::KIND_BANNER => 'Wide panoramic banner composition with depth from foreground to background. '
-            . 'Place the main subject in the right half of the frame and keep the left third quieter and '
-            . 'less detailed, because the title is overlaid there. Keep faces and key objects away from the '
-            . 'very top and bottom edges, which may be cropped.',
+        self::KIND_CARD => 'Wide 16:9 landscape frame; keep the focal point and any faces well inside it, away from '
+            . 'the top and bottom edges.',
+        self::KIND_BANNER => 'Wide panoramic 16:9 frame: the focal point in the right half and the left third calm and '
+            . 'simple, because the course title is overlaid there; keep faces away from the top and bottom edges.',
     ];
 
-    /** @var string The rule against text, written so screens and papers can still appear. */
-    private const NO_TEXT = 'No visible text, letters, numbers or logos anywhere; screens, documents and '
-        . 'signs show only abstract shapes and soft blurred lines.';
+    /**
+     * @var string Quality safeguards, written positively (image models follow concrete description better than
+     * long lists of bans). Charts, figures and documents are welcome where they matter; captions, logos and
+     * watermarks are not. The main subject must survive being shown as a small card.
+     */
+    private const NO_TEXT = 'Natural faces, hands and anatomy; accurate real equipment; an uncluttered frame whose main '
+        . 'subject is large and clear enough to recognise as a small thumbnail. Charts, tables, figures, screens and '
+        . 'documents appear as realistic graphical detail with minimal, clean lettering; no captions, logos or '
+        . 'watermarks.';
+
+    /** @var string The closing line of every prompt. */
+    private const FINISH = 'Premium educational publication quality.';
 
     /** @var array Hue upper bounds, in degrees, and the colour word for each band. */
     private const HUES = [
@@ -113,11 +104,11 @@ class cardprompt {
     ];
 
     /**
-     * @var string What must never appear. Short on purpose: 3.0.0 also banned laptops, screens,
-     * charts and books, which ruled out almost every believable learning scene.
+     * @var string What must never appear. Only the legacy service payload carries it: Moodle's image
+     * providers (OpenAI, Gemini) have no negative-prompt parameter, so it is never sent to them.
      */
-    public const NEGATIVE = 'text, letters, words, numbers, captions, logos, watermarks, signatures, borders, '
-        . 'frames, collage, split panels, distorted faces, distorted hands, extra fingers, blurry, low resolution';
+    public const NEGATIVE = 'captions, logos, watermarks, garbled lettering, signatures, borders, frames, collage, '
+        . 'split panels, distorted faces, distorted hands, extra fingers, blurry, low resolution';
 
     /** @var string Added to the negative prompt for the photographic style. */
     private const NEGATIVE_PHOTO = ', cartoon, illustration, 3D render, plastic skin';
@@ -125,62 +116,60 @@ class cardprompt {
     /**
      * @var array Scenes for common titles, as [title pattern, scene]. Checked in order. The patterns
      * stick to the words courses use for their own housekeeping (welcome, instructions, quiz,
-     * resources), not words a topic might contain: "Construction materials" must not become a study
-     * corner. {one} is one learner and {many} is several.
+     * resources), not words a topic might contain: "Construction materials" must not become a
+     * library. {one} is one learner and {many} is several. Every scene shows people doing something
+     * with their hands in a real place; none is a person looking at a laptop.
      */
     private const SCENES = [
         'instructions' => [
             '~\b(instructions?|how to (use|navigate|study|get started)|student (guide|handbook|information)|'
                 . 'course (guide|handbook|information|requirements)|important information|read (me|this) first|'
                 . 'before you (start|begin)|navigating (this|the) course)\b~i',
-            '{one} seated at a clean desk using a laptop that shows a well-organised online learning platform, '
-                . 'with a printed checklist with several steps ticked off, a course handbook, a simple progress '
-                . 'pathway sketched on a notepad and a pen beside them; they look focused, confident and ready to '
-                . 'begin',
+            'a friendly trainer standing beside {one} at a large wall planner of colour-coded blocks, pointing to '
+                . 'the first step of a simple pathway while the learner follows with a pen and notebook, in a bright '
+                . 'training room',
         ],
         'welcome' => [
             '~\b(welcome|introduction|getting started|get started|orientation|start here|about this '
                 . '(course|unit|module)|(course|unit|module) overview|induction)\b~i',
-            '{one} settling in at the start of a new course, opening a laptop that shows a bright, '
-                . 'well-organised learning dashboard, with a welcome pack, a notebook and pen, a coffee cup and a '
-                . 'plant on the desk and soft morning light — an inviting sense of a fresh start',
+            'a smiling trainer greeting {one} at the door of a bright, modern training room, handing over a welcome '
+                . 'pack, with other learners settling in softly out of focus behind',
         ],
         'certificate' => [
             '~\b(certificates?|course completion|completion|congratulations|well done|next steps|conclusion|'
                 . 'wrap[ -]?up|course summary|graduation|final steps|course close)\b~i',
-            '{one} proudly holding a framed certificate in a bright, modern space while colleagues applaud in '
-                . 'the softly lit background — a strong sense of achievement and momentum',
+            '{one} proudly holding a framed certificate in a bright, modern space while two colleagues applaud in '
+                . 'the softly lit background',
         ],
         'policy' => [
             '~\b(student polic(y|ies)|policies and procedures|code of conduct|academic integrity|plagiarism|'
                 . 'terms and conditions|rights and responsibilities|complaints|appeals|privacy policy)\b~i',
-            '{one} reviewing a neatly bound policy folder at a desk beside a laptop, with a tidy stack of '
-                . 'signed forms, a small balance-scale ornament and a shield-shaped paperweight — trustworthy, '
-                . 'calm and professional',
+            'a student adviser and {one} talking across a small round table in a calm office, the adviser resting a '
+                . 'hand on a closed, bound handbook between them, both attentive and at ease',
         ],
         'schedule' => [
             '~\b(timetable|course schedule|study schedule|calendar|key dates|due dates|study plan|planner|'
                 . 'weekly plan)\b~i',
-            '{one} planning their study week at a tidy desk, pen in hand, with a large wall calendar of '
-                . 'colour-coded blocks, a weekly planner, sticky notes and an open laptop',
+            '{one} standing at a large wall planner of colour-coded blocks, placing a coloured magnet, a backpack '
+                . 'over one shoulder',
         ],
         'support' => [
             '~(^(support|help)$|\b(student support|learner support|getting help|help ?desk|need help|contact '
                 . '(us|your trainer|details)|faqs?|frequently asked|technical (help|support)|student services|'
                 . 'wellbeing)\b)~i',
-            'a friendly support person wearing a headset helping {one} over a video call; both are smiling, '
-                . 'with a laptop, handwritten notes and a warm, approachable workspace',
+            'a warm student adviser sitting beside {one} on a sofa in a welcoming student lounge, listening closely '
+                . 'and gesturing reassuringly',
         ],
         'live' => [
             '~\b(live sessions?|webinars?|zoom|teams meeting|virtual class(room)?|online class(es)?|tutorial '
                 . 'sessions?|drop[ -]?in)\b~i',
-            '{one} at home joining a live online class on a laptop, the screen showing a grid of video '
-                . 'participants and a presenter, headphones on and notebook open, smiling as they take part',
+            'an energetic trainer teaching a live online class from a small, bright studio, leaning toward a camera '
+                . 'on a tripod with one hand raised mid-explanation, a ring light and a microphone in the foreground',
         ],
         'video' => [
             '~\b(videos?|lectures?|recorded|watch|screencasts?|podcasts?)\b~i',
-            '{one} watching a recorded lecture on a large laptop screen, headphones on, taking notes in a '
-                . 'notebook, with a cup of tea and warm desk lighting',
+            'a presenter recording a lesson in a small studio, speaking to a camera on a tripod, with soft lights '
+                . 'and a microphone boom in the foreground',
         ],
         'workplace' => [
             '~\b(workplace (assessments?|observations?|tasks?|components?|activit(y|ies)|evidence)|work '
@@ -193,71 +182,65 @@ class cardprompt {
         'quiz' => [
             '~\b(quiz(zes)?|knowledge (check|test|questions)|self[ -]?(check|test|assessment)|test your|test|'
                 . 'exam|review questions|practice questions|check your understanding)\b~i',
-            '{one} thoughtfully answering multiple-choice questions on a tablet, pen poised over a notepad of '
-                . 'working, with a cup of tea and a small timer on the desk, in soft daylight and a quiet, focused '
-                . 'atmosphere',
+            'three {many} around a bright study table playing a quick-fire review game, one raising a coloured '
+                . 'answer card and laughing while the others think',
         ],
         'assessment' => [
             '~\b(assessments?|assignments?|submissions?|submit|task \d|portfolio|evidence|written questions|'
                 . 'essay|resubmission)\b~i',
-            '{one} concentrating on completing a written assessment at a tidy workspace, laptop open beside '
-                . 'neatly organised reference notes, a highlighted marking checklist and a desk calendar with a '
-                . 'date circled — capable and in control',
+            'an assessor and {one} sitting side by side at a table, the assessor pointing to a page of the '
+                . 'learner\'s work while the learner nods, focused and confident',
         ],
         'casestudy' => [
             '~\b(case stud(y|ies)|scenarios?|role[ -]?plays?|simulations?)\b~i',
-            '{many} gathered around a table working through a real-world case, with printed documents, '
-                . 'sticky notes and a whiteboard of boxes and arrows, one person pointing as the group discusses '
-                . 'it',
+            '{many} gathered around a table working through a real-world case, one person pointing to a printed '
+                . 'photo while the others lean in and discuss it',
         ],
         'forum' => [
             '~\b(forums?|discussions?|learning community|group work|networking|peer|chat|q ?& ?a|introduce '
                 . 'yourself|meet your)\b~i',
-            'a small, diverse group of {many} in a relaxed discussion around a shared table with laptops, '
-                . 'notebooks and coffee, one person speaking while the others listen and lean in — '
-                . 'collaborative, friendly and engaged',
+            'a small, diverse group of {many} in a relaxed discussion around a café table, one person speaking with '
+                . 'open hands while the others listen and lean in, coffee cups between them',
         ],
         'announcements' => [
             '~\b(announcements?|course news|latest news|news forum|notice ?board|notices)\b~i',
-            '{one} pausing at a modern noticeboard in a bright training space, covered with pinned cards and '
-                . 'colour-coded notes, a phone in hand showing a new notification',
+            'a trainer pinning a bright coloured card to a cork noticeboard in a modern training space as two '
+                . '{many} stop to look',
         ],
         'feedback' => [
             '~\b(feedback|surveys?|course evaluation|questionnaires?|have your say|tell us what you think)\b~i',
-            '{one} giving feedback on a tablet using a simple star-rating form, with a speech-bubble shaped '
-                . 'sticky note and a cup of coffee on the desk, relaxed and thoughtful',
+            'a trainer and {one} in relaxed conversation in a bright lounge, the trainer listening intently and '
+                . 'making a note while the learner explains with open hands',
         ],
         'reflection' => [
             '~\b(reflect\w*|journal|learning log|diary)\b~i',
-            '{one} writing in a reflective journal by a large window, a closed laptop to one side, warm light '
-                . 'and a plant nearby, calm and thoughtful',
+            '{one} writing by hand in a journal by a large window, warm light and a plant nearby, calm and '
+                . 'thoughtful',
         ],
         'glossary' => [
             '~\b(glossary|terminology|key terms|vocabulary|definitions|acronyms)\b~i',
-            'an open reference book with coloured index tabs, flash cards fanned across a desk, a highlighter '
-                . 'and a tablet, neatly arranged and inviting, with {one} reaching for a card',
+            'two {many} quizzing each other with a fan of flash cards across a library table, one holding up a '
+                . 'card, both smiling',
         ],
         'resources' => [
             '~\b(resources?|readings?|(learning|course|reading|study) materials|library|references|downloads|'
                 . 'further reading|toolkit|templates|handouts|learner guide|study guide)\b~i',
-            'a well-organised study corner with open reference books, printed guides with coloured tabs, a '
-                . 'tablet showing a document library, a reading lamp and a mug, with {one} selecting a guide '
-                . 'from the shelf',
+            '{one} pulling a reference book from a shelf in a light-filled library, two tabbed guides tucked under '
+                . 'their other arm',
         ],
     ];
 
     /** @var string[] Extra scenes reached only through the activity type. */
     private const MOD_ONLY_SCENES = [
-        'page' => '{one} reading an engaging lesson on a tablet in a comfortable, light-filled space, with a '
-            . 'notebook, a pen and a cup of coffee beside them',
-        'link' => '{one} exploring a trusted website on a laptop, leaning in with interest, with a notebook of '
-            . 'jotted ideas and a coffee nearby',
-        'lesson' => '{one} working step by step through an interactive lesson on a laptop, a progress pathway '
-            . 'of simple shapes on the screen, focused and making steady progress',
-        'interactive' => '{one} engaged with an interactive e-learning module on a laptop, tapping through a '
-            . 'scenario of simple shapes and illustrations, absorbed and curious',
+        'page' => '{one} reading a printed guide in a comfortable armchair by a window, a pen in hand and a '
+            . 'notebook on the armrest',
+        'link' => '{one} reading on a tablet on a sofa in a bright lounge, sitting forward with interest',
+        'lesson' => 'a trainer walking {one} through a practical demonstration step by step at a workbench, both '
+            . 'focused on the task in the trainer\'s hands',
+        'interactive' => '{one} trying a hands-on practice activity with a trainer guiding from beside them, both '
+            . 'absorbed and smiling',
         'peerreview' => 'two learners side by side reviewing each other\'s work, one pointing at a printed page '
-            . 'with sticky notes while the other listens, supportive and constructive',
+            . 'while the other listens, supportive and constructive',
     ];
 
     /** @var string[] Scene for each activity type, by key of SCENES or MOD_ONLY_SCENES. */
@@ -322,15 +305,21 @@ class cardprompt {
             $colour = cardimage::get_colour((int) $course->id, cardimage::TYPE_SECTION, (int) $target->id);
         }
 
+        $contents = $type === cardimage::TYPE_CM
+            ? self::section_contents($course, (int) $target->sectionnum, (int) $target->id)
+            : self::section_contents($course, (int) $target->section);
+
         return self::build(self::KIND_CARD, $course, [
             'title' => $title,
             'detail' => $detail,
+            'contents' => $contents,
             'kind' => $kind,
             'modname' => $modname,
             'partname' => $partname,
             'colour' => $colour !== '' ? $colour : self::course_accent($options),
             'style' => cardimage::clean_style($options['cardimagestyle'] ?? ''),
             'teacher' => $teacher,
+            'targetKey' => ($type === cardimage::TYPE_CM ? 'cm:' : 'section:') . (int) $target->id,
         ]);
     }
 
@@ -363,15 +352,21 @@ class cardprompt {
             $colour = '';
         }
 
+        $contents = $section
+            ? self::section_contents($course, (int) $section->section)
+            : self::course_section_names($course);
+
         return self::build(self::KIND_BANNER, $course, [
             'title' => $title,
             'detail' => $detail,
+            'contents' => $contents,
             'kind' => $kind,
             'modname' => '',
             'partname' => '',
             'colour' => $colour !== '' ? $colour : self::course_accent($options),
             'style' => cardimage::clean_style($options['cardimagestyle'] ?? ''),
             'teacher' => $teacher,
+            'targetKey' => $section ? 'section:' . (int) $section->id : 'banner',
         ]);
     }
 
@@ -396,64 +391,81 @@ class cardprompt {
         // What the picture is about. A title that is only a number says nothing, so the summary, then
         // the course, stands in for it.
         $title = $in['title'];
+        $untitled = false;
         if (!$iscourse && ($title === '' || self::is_numbered_only($title))) {
             if ($detail !== '') {
                 $title = self::first_sentence($detail);
                 $detail = $title === $detail ? '' : $detail;
             } else {
+                // Nothing to go on but the course; its name must not be read as a housekeeping title
+                // ("US CPA Exam Preparation" is not a quiz).
                 $title = $coursetopic;
+                $untitled = true;
             }
         }
         $topic = $iscourse ? $coursetopic : self::strip_number_prefix($title);
 
-        [$scenekey, $scene] = self::scene($iscourse ? '' : $topic, $in['modname'], $school);
-        if ($scenekey === 'general') {
+        $contents = array_values(array_filter(array_map(
+            fn($c) => self::strip_number_prefix(self::clean((string) $c)),
+            (array) ($in['contents'] ?? [])
+        )));
+        $coursesummary = self::excerpt(self::html_plain((string) ($course->summary ?? '')));
+
+        // The course's field (safety, finance, nursing...) gives a real person, place, task and props.
+        // Without one an image model is left to picture "work in <title>", which is what makes a
+        // generic stock image.
+        $field = imagefields::course_field($coursename . ' ' . $category, $coursesummary);
+        $props = [];
+        $fieldname = '';
+        [$scenekey, $scene] = self::scene($iscourse || $untitled ? '' : $topic, $in['modname'], $school);
+        if ($scenekey === 'general' && $field !== null) {
+            $seed = $course->id . '|' . $topic . '|' . $in['modname'] . '|' . $in['partname'];
+            $picked = imagefields::scene($field, $iscourse ? '' : $topic . ' ' . $detail . ' ' . implode(' ', $contents),
+                $imagekind === self::KIND_BANNER, $school, $seed);
+            $scenekey = 'field:' . $field;
+            $scene = $picked['scene'];
+            $props = $picked['props'];
+            $fieldname = $picked['name'];
+        } else if ($scenekey === 'general') {
             $scene = $iscourse
                 ? self::general_course_scene($coursetopic, $school)
                 : self::general_scene($topic, $coursetopic, $school);
-        }
-
-        // Part 1: the scene. Titles are never put in quotes: image models tend to letter quoted words
-        // into the picture.
-        $lead = self::STYLE_LEAD[$style];
-        if ($iscourse) {
-            $head = $lead . ' for the banner of an online course in ' . $coursetopic . '.';
-        } else {
-            $part = $in['partname'] !== '' ? ', within ' . self::strip_number_prefix($in['partname']) : '';
-            $head = $topic === $coursetopic
-                // Nothing but the course to go on: say so once, not twice.
-                ? $lead . ' for ' . self::article($in['kind']) . ' ' . $in['kind'] . ' of an online course in '
-                    . $coursetopic . $part . '.'
-                : $lead . ' representing ' . $topic . ', ' . self::article($in['kind']) . ' ' . $in['kind']
-                    . ' in an online course in ' . $coursetopic . $part . '.';
-        }
-        $head .= ' It shows ' . $scene . '.';
-        if ($detail !== '') {
-            $head .= ' The ' . ($iscourse ? 'course' : 'topic') . ' covers: ' . self::sentence($detail);
+        } else if ($field !== null) {
+            $fieldname = imagefields::scene($field, '', false, $school, '')['name'];
         }
         $teacher = self::clean($in['teacher']);
-        if ($teacher !== '') {
-            $head .= ' The teacher asks for: ' . self::sentence($teacher);
-        }
-
-        // Part 2: the tail, the same for every image in the course.
         $colourhex = $in['colour'] !== '' ? strtoupper($in['colour']) : '';
         $colourname = $colourhex !== '' ? self::colour_name($colourhex) : '';
-        $tail = 'Style: ' . self::STYLE_DIRECTION[$style] . '.' . "\n";
-        $tail .= $colourhex !== ''
-            ? 'Colour: ' . $colourname . ' (' . $colourhex . ') as the signature accent, in clothing, objects or '
-                . 'light, set against fresh, bright natural tones.' . "\n"
-            : 'Colour: fresh, natural, well-balanced colour with bright highlights.' . "\n";
-        $tail .= self::COMPOSITION[$imagekind] . "\n";
-        $tail .= self::NO_TEXT;
+        $audience = $school ? 'school students' : 'adult learners';
 
-        // Only the scene part can be long (titles and descriptions are the teacher's), so it is the
-        // part shortened; the tail always survives whole.
-        $over = \core_text::strlen($head) + 2 + \core_text::strlen($tail) - self::PROMPT_MAX;
-        if ($over > 0) {
-            $keep = max(80, \core_text::strlen($head) - $over - 1);
-            $head = rtrim(\core_text::substr($head, 0, $keep)) . '…';
+        // The template scene, for sites without a text model: the scene first (who, doing what, where),
+        // two or three real objects, the teacher's words, then one line of context so the model knows
+        // what the picture is for. No title is quoted: image models paint quoted names as lettering.
+        $sentences = [];
+        $sentences[] = self::sentence(self::capitalise(self::scene_sentence($scene)));
+        if ($props) {
+            $sentences[] = 'Around them: ' . self::human_list(array_slice($props, 0, 3)) . '.';
         }
+        if ($teacher !== '') {
+            $sentences[] = self::sentence(self::capitalise($teacher));
+        }
+        if ($iscourse) {
+            $purpose = 'a ' . ($fieldname !== '' ? $fieldname : $coursetopic) . ' course';
+        } else if (!$untitled && self::scene($topic, '', $school)[0] !== 'general') {
+            // A housekeeping title (Welcome, Quiz, Forum): say what kind of course it is part of.
+            $purpose = 'part of a ' . $coursetopic . ' course';
+        } else {
+            $purpose = 'a lesson on ' . $topic . ($topic === $coursetopic ? '' : ' in a ' . $coursetopic . ' course');
+        }
+        $sentences[] = 'The image introduces ' . $purpose . ' for ' . $audience
+            . ', shown through the real work, not through words or symbols.';
+
+        $head = implode(' ', $sentences);
+        if (\core_text::strlen($head) > self::PROMPT_MAX) {
+            $head = \core_text::substr($head, 0, self::PROMPT_MAX);
+        }
+        $tail = self::tail($imagekind, $style, $colourname);
+        $courses = $iscourse ? $contents : self::course_section_names($course);
 
         return [
             'prompt' => $head . "\n\n" . $tail,
@@ -462,16 +474,20 @@ class cardprompt {
             'promptVersion' => $imagekind === self::KIND_BANNER ? self::BANNER_VERSION : self::VERSION,
             'brief' => [
                 'imageKind' => $imagekind,
+                'targetKey' => (string) ($in['targetKey'] ?? ''),
                 'target' => $in['kind'],
                 'title' => $in['title'],
                 'topic' => $topic,
                 'detail' => $detail,
+                'contents' => $contents,
+                'courseSections' => array_values(array_filter($courses, fn($c) => $c !== $topic)),
                 'activityType' => $in['modname'],
                 'partName' => $in['partname'],
                 'courseName' => $coursename,
                 'courseTopic' => $coursetopic,
                 'courseCategory' => $category,
-                'courseSummary' => $iscourse ? $detail : self::excerpt(self::html_plain((string) ($course->summary ?? ''))),
+                'courseSummary' => $iscourse ? $detail : $coursesummary,
+                'field' => $fieldname,
                 'audience' => $school ? 'school students' : 'adult learners',
                 'sceneKey' => $scenekey,
                 'sceneIdea' => $scene,
@@ -481,6 +497,34 @@ class cardprompt {
                 'teacherDirection' => $teacher,
             ],
         ];
+    }
+
+    /**
+     * The fixed tail of every prompt: medium, colour, composition, no text.
+     *
+     * @param string $imagekind self::KIND_CARD or self::KIND_BANNER.
+     * @param string $style A value of cardimage::STYLES.
+     * @param string $colourname The accent colour in words, or ''.
+     * @return string
+     */
+    public static function tail(string $imagekind, string $style, string $colourname): string {
+        return implode(' ', array_filter([
+            self::MEDIUM[$style] ?? self::MEDIUM['photo'],
+            $colourname !== '' ? 'Where it suits the scene, ' . $colourname . ' appears as a subtle accent.' : '',
+            self::COMPOSITION[$imagekind] ?? self::COMPOSITION[self::KIND_CARD],
+            self::NO_TEXT,
+            self::FINISH,
+        ]));
+    }
+
+    /**
+     * Text with its first letter in capitals.
+     *
+     * @param string $text Text.
+     * @return string
+     */
+    private static function capitalise(string $text): string {
+        return \core_text::strtoupper(\core_text::substr($text, 0, 1)) . \core_text::substr($text, 1);
     }
 
     /**
@@ -522,9 +566,8 @@ class cardprompt {
     private static function general_scene(string $topic, string $coursetopic, bool $school): string {
         $within = $topic === $coursetopic ? '' : ' (part of ' . $coursetopic . ')';
         return self::people(
-            '{one} actively engaged in ' . $topic . $within . ' in a realistic, modern '
-                . 'setting that clearly belongs to this subject, surrounded by the tools, materials and details someone '
-                . 'working on it would really use; focused, capable and absorbed in the task',
+            '{pro} doing real, hands-on work in ' . $topic . $within . ', in the kind of place this work really '
+                . 'happens, with the equipment, documents and materials of the job around them',
             $school
         );
     }
@@ -538,11 +581,98 @@ class cardprompt {
      */
     private static function general_course_scene(string $coursetopic, bool $school): string {
         return self::people(
-            '{many} putting what they learn in ' . $coursetopic . ' into practice in a '
-                . 'realistic, modern setting that clearly belongs to this field, with the tools, equipment and details '
-                . 'of the subject around them, one of them in the foreground engaged and confident',
+            '{pros} at work in ' . $coursetopic . ', in the kind of place this work really happens, with the '
+                . 'equipment and materials of the field around them and one of them in the foreground, engaged and '
+                . 'confident',
             $school
         );
+    }
+
+    /**
+     * A scene fragment as the object of "Show ...".
+     *
+     * @param string $scene Scene text, possibly starting with a capital or ending with a full stop.
+     * @return string
+     */
+    private static function scene_sentence(string $scene): string {
+        $scene = rtrim(trim($scene), '.');
+        return \core_text::strtolower(\core_text::substr($scene, 0, 1)) . \core_text::substr($scene, 1);
+    }
+
+    /**
+     * "a, b and c".
+     *
+     * @param string[] $items Items.
+     * @return string
+     */
+    private static function human_list(array $items): string {
+        $items = array_values(array_unique(array_map(fn($i) => rtrim($i, '.'), $items)));
+        if (count($items) < 2) {
+            return (string) ($items[0] ?? '');
+        }
+        $last = array_pop($items);
+        return implode(', ', $items) . ' and ' . $last;
+    }
+
+    /**
+     * Names of the visible activities in a section, for concrete visual references.
+     *
+     * @param \stdClass $course The course.
+     * @param int $sectionnum Section number.
+     * @param int $exclude Course module to leave out (the card's own activity), or 0.
+     * @return string[]
+     */
+    public static function section_contents(\stdClass $course, int $sectionnum, int $exclude = 0): array {
+        $names = [];
+        try {
+            $modinfo = get_fast_modinfo($course);
+            $context = \context_course::instance($course->id);
+            foreach ($modinfo->sections[$sectionnum] ?? [] as $cmid) {
+                $cm = $modinfo->get_cm($cmid);
+                if ((int) $cmid === $exclude || !$cm->visible || $cm->deletioninprogress
+                        || in_array($cm->modname, ['label', 'subsection'], true)) {
+                    continue;
+                }
+                $name = self::clean(text::plain((string) $cm->name, $context));
+                if ($name !== '' && !self::is_numbered_only($name)) {
+                    $names[] = $name;
+                }
+                if (count($names) >= 8) {
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {
+            return [];
+        }
+        return $names;
+    }
+
+    /**
+     * Names of the course's sections, for a course banner.
+     *
+     * @param \stdClass $course The course.
+     * @return string[]
+     */
+    public static function course_section_names(\stdClass $course): array {
+        $names = [];
+        try {
+            $context = \context_course::instance($course->id);
+            foreach (get_fast_modinfo($course)->get_section_info_all() as $section) {
+                if ((int) $section->section === 0 || !$section->visible || trim((string) $section->name) === '') {
+                    continue;
+                }
+                $name = self::clean(text::plain((string) $section->name, $context));
+                if (!self::is_numbered_only($name)) {
+                    $names[] = self::strip_number_prefix($name);
+                }
+                if (count($names) >= 8) {
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {
+            return [];
+        }
+        return $names;
     }
 
     /**
@@ -555,7 +685,9 @@ class cardprompt {
     private static function people(string $scene, bool $school): string {
         $one = $school ? 'a secondary school student' : 'an adult learner';
         $many = $school ? 'school students' : 'adult learners';
-        return str_replace(['{one}', '{many}'], [$one, $many], $scene);
+        $pro = $school ? 'a secondary school student with their teacher' : 'a skilled professional';
+        $pros = $school ? 'school students and their teacher' : 'skilled professionals';
+        return str_replace(['{one}', '{many}', '{pro}', '{pros}'], [$one, $many, $pro, $pros], $scene);
     }
 
     /**
@@ -592,19 +724,6 @@ class cardprompt {
     }
 
     /**
-     * "a" or "an" for a word, by how it sounds: an Assignment, an H5P, a SCORM package.
-     *
-     * @param string $word The word.
-     * @return string
-     */
-    private static function article(string $word): string {
-        if (preg_match('~^[aeiou]~i', $word) || preg_match('~^[FHLMNRSX][A-Z0-9]{1,2}\b~', $word)) {
-            return 'an';
-        }
-        return 'a';
-    }
-
-    /**
      * The first sentence of a text, at most TOPIC_MAX characters.
      *
      * @param string $text Plain text.
@@ -628,7 +747,7 @@ class cardprompt {
      * @param \stdClass $course The course.
      * @return string
      */
-    private static function category_name(\stdClass $course): string {
+    public static function category_name(\stdClass $course): string {
         global $DB;
         if (empty($course->category)) {
             return '';
@@ -649,7 +768,7 @@ class cardprompt {
      * @param \cm_info $cm The activity.
      * @return string
      */
-    private static function activity_intro(\cm_info $cm): string {
+    public static function activity_intro(\cm_info $cm): string {
         global $DB;
 
         $columns = $DB->get_columns($cm->modname);
@@ -681,7 +800,7 @@ class cardprompt {
      * @param string $modname The module's component name without mod_.
      * @return string
      */
-    private static function activity_label(string $modname): string {
+    public static function activity_label(string $modname): string {
         $label = get_string_manager()->string_exists('modulename', 'mod_' . $modname)
             ? get_string('modulename', 'mod_' . $modname) : $modname;
         return self::clean($label);
@@ -697,6 +816,12 @@ class cardprompt {
         $colour = trim((string) ($options['accentcolour'] ?? ''));
         if ($colour === '') {
             $colour = trim((string) get_config('format_dari', 'defaultaccentcolour'));
+        }
+        if ($colour === '') {
+            // The site's own primary colour, so images sit with the rest of the site.
+            global $PAGE;
+            $theme = isset($PAGE->theme->name) ? (string) $PAGE->theme->name : 'boost';
+            $colour = trim((string) (get_config('theme_' . $theme, 'brandcolor') ?: get_config('theme_boost', 'brandcolor')));
         }
         $forced = trim((string) get_config('format_dari', 'forceaccentcolour'));
         if ($forced !== '') {
@@ -770,7 +895,7 @@ class cardprompt {
      * @param string $text Plain text.
      * @return string
      */
-    private static function excerpt(string $text): string {
+    public static function excerpt(string $text): string {
         $text = self::clean($text);
         if (\core_text::strlen($text) <= self::DETAIL_MAX) {
             return $text;

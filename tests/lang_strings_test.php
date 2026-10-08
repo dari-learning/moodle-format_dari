@@ -222,4 +222,18 @@ final class lang_strings_test extends \advanced_testcase {
             "Course settings declare help text that does not exist:\n  " . implode("\n  ", $undescribed)
         );
     }
+
+    /**
+     * Every {$a} placeholder is written so Moodle can fill it: an escaped "{\$a}" in a single-quoted
+     * string reaches the page literally.
+     *
+     * @return void
+     */
+    public function test_placeholders_are_not_escaped(): void {
+        global $CFG;
+        $string = [];
+        include($CFG->dirroot . '/course/format/dari/lang/en/format_dari.php');
+        $broken = array_keys(array_filter($string, fn($text) => str_contains($text, '{\\$a')));
+        $this->assertSame([], $broken, 'Strings with an escaped placeholder: ' . implode(', ', $broken));
+    }
 }

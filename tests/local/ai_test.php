@@ -183,11 +183,12 @@ final class ai_test extends \advanced_testcase {
     }
 
     /**
-     * generate_image() returns the image bytes and removes core's draft file.
+     * generate_image() returns the image bytes, removes core's draft file, and always asks for the
+     * highest quality (the old quality and style settings are ignored).
      */
     public function test_generate_image(): void {
         $this->stub_ai();
-        set_config('imagequality', 'hd', 'format_dari');
+        set_config('imagequality', 'standard', 'format_dari');
         set_config('imagestyle', 'vivid', 'format_dari');
         $png = self::make_png(40, 20);
         $this->queue_image_reply($png);
@@ -199,7 +200,7 @@ final class ai_test extends \advanced_testcase {
         $action = $this->aiactions[0];
         $this->assertSame('square', $action->get_configuration('aspectratio'));
         $this->assertSame('hd', $action->get_configuration('quality'));
-        $this->assertSame('vivid', $action->get_configuration('style'));
+        $this->assertSame('natural', $action->get_configuration('style'));
         $this->assertSame(1, $action->get_configuration('numimages'));
 
         // An unknown aspect ratio falls back to landscape.
@@ -226,47 +227,34 @@ final class ai_test extends \advanced_testcase {
     }
 
     /**
-     * image_prompt() appends the Avoid line, and only when there is something to avoid.
-     */
-    public function test_image_prompt_appends_avoid_line(): void {
-        $this->stub_ai();
-        $userid = (int) $this->teacher->id;
-
-        $prompt = ai::image_prompt(['prompt' => 'A chef at work.', 'negativePrompt' => 'text, logos'], $this->context, $userid);
-        $this->assertSame("A chef at work.\nAvoid: text, logos.", $prompt);
-
-        $prompt = ai::image_prompt(['prompt' => 'A chef at work.', 'negativePrompt' => ''], $this->context, $userid);
-        $this->assertSame('A chef at work.', $prompt);
-        // No brief, so the art director has nothing to work from and is not asked.
-        $this->assertCount(0, $this->aiactions);
-    }
-
-    /**
-     * image_prompt() hands the recipe to the art director and appends the Avoid line; without a
-     * text provider, or with the art director switched off, the template is used.
+     * image_prompt() hands the recipe to the art director, which returns its scene and the fixed
+     * tail; without a brief or without a text provider the template is used as it is.
      */
     public function test_image_prompt_uses_the_art_director(): void {
         $this->stub_ai();
         $userid = (int) $this->teacher->id;
         $composed = [
-            'prompt' => 'Template scene. STYLE TAIL',
+            'prompt' => "Template scene.\n\nSTYLE TAIL",
             'promptTail' => 'STYLE TAIL',
             'negativePrompt' => 'text',
             'brief' => ['topic' => 'Food safety', 'courseName' => 'Kitchen operations', 'style' => 'photo'],
         ];
 
         $prompt = ai::image_prompt($composed, $this->context, $userid);
+        // No targetKey: the course banner's plan (one request), then its prompt written (one request).
         $this->assertStringStartsWith('An apprentice chef in crisp whites', $prompt);
-        $this->assertStringContainsString("\n\nSTYLE TAIL\n\n", $prompt);
-        $this->assertStringEndsWith("Keep out: Bare hands on raw food.\nAvoid: text.", $prompt);
+        $this->assertStringEndsWith("\n\nSTYLE TAIL", $prompt);
+        $this->assertStringNotContainsString('Avoid:', $prompt);
+        $this->assertSame('artdirector', ai::$lastprompt['source']);
         $this->assertCount(2, $this->aiactions);
 
-        set_config('aiscenewriter', 0, 'format_dari');
-        $this->assertSame("Template scene. STYLE TAIL\nAvoid: text.", ai::image_prompt($composed, $this->context, $userid));
+        unset($composed['brief']);
+        $this->assertSame("Template scene.\n\nSTYLE TAIL", ai::image_prompt($composed, $this->context, $userid));
+        $this->assertSame('template', ai::$lastprompt['source']);
 
-        set_config('aiscenewriter', 1, 'format_dari');
+        $composed['brief'] = ['topic' => 'Food safety'];
         $this->stub_ai(false, true);
-        $this->assertSame("Template scene. STYLE TAIL\nAvoid: text.", ai::image_prompt($composed, $this->context, $userid));
+        $this->assertSame("Template scene.\n\nSTYLE TAIL", ai::image_prompt($composed, $this->context, $userid));
         $this->assertCount(0, $this->aiactions);
     }
 

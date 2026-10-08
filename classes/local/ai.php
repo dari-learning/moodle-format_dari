@@ -118,6 +118,9 @@ class ai {
         return self::$memo[$key];
     }
 
+    /** @var array The last image prompt written this request: prompt, source (artdirector|template|fallback), reason. */
+    public static array $lastprompt = ['prompt' => '', 'source' => '', 'reason' => ''];
+
     /** @var array Per-request memo of unavailable_reason(). */
     protected static array $memo = [];
 
@@ -147,6 +150,10 @@ class ai {
             $manager = self::manager();
             if (!$manager->is_action_available($actionclass)) {
                 return $feature === self::FEATURE_IMAGE ? 'error_ai_noimageprovider' : 'error_ai_notextprovider';
+            }
+            // Images are only ever painted with one model; a provider with any other is not enough.
+            if ($feature === self::FEATURE_IMAGE && !imagemodel::provider_ready()) {
+                return 'error_ai_notopimagemodel';
             }
             if ($context !== null) {
                 // Moodle 5.x lets a course, and an activity, switch AI tools off.
@@ -179,7 +186,7 @@ class ai {
     public static function require_available(string $feature, ?\context $context = null): void {
         $reason = self::unavailable_reason($feature, $context);
         if ($reason !== null) {
-            throw new \moodle_exception($reason, 'format_dari');
+            throw new \moodle_exception($reason, 'format_dari', '', imagemodel::string_params());
         }
     }
 
@@ -238,7 +245,13 @@ class ai {
             userid: $userid,
             prompttext: $prompt,
         );
+        $start = microtime(true);
         $response = self::manager()->process_action($action);
+        $ms = (int) round((microtime(true) - $start) * 1000);
+        if (imagelog::$requestid !== null) {
+            imagelog::add('text_request', $response->get_success() ? 'ok' : 'fail', $ms,
+                \core_text::strlen($prompt) . ' chars sent');
+        }
 
         if (!$response->get_success()) {
             self::throw_failure($response, 'error_ai_textfailed');
@@ -274,27 +287,32 @@ class ai {
             string $aspectratio = 'landscape'): string {
         self::require_available(self::FEATURE_IMAGE, $context);
         if (!self::subsystem_present()) {
-            return self::optimise_image(direct::generate_image(\core_text::substr($prompt, 0, 3900), $aspectratio));
+            return self::optimise_image(imagelog::time('image_request', fn() =>
+                direct::generate_image(\core_text::substr($prompt, 0, 3900), $aspectratio), imagemodel::model()));
         }
 
-        $quality = get_config('format_dari', 'imagequality') === 'hd' ? 'hd' : 'standard';
-        $style = get_config('format_dari', 'imagestyle') === 'vivid' ? 'vivid' : 'natural';
-
+        // Always the highest quality core can ask for ('hd' is sent to GPT Image models as 'high');
+        // style is a DALL·E-only option that GPT Image models do not receive.
         \core_php_time_limit::raise(300);
         $action = new generate_image(
             contextid: $context->id,
             userid: $userid,
             prompttext: \core_text::substr($prompt, 0, 3900),
-            quality: $quality,
+            quality: 'hd',
             aspectratio: in_array($aspectratio, ['square', 'landscape', 'portrait'], true) ? $aspectratio : 'landscape',
             numimages: 1,
-            style: $style,
+            style: 'natural',
         );
-        $response = self::manager()->process_action($action);
-
+        // Run on the provider configured with Dari's image model only, never on another provider.
+        $start = microtime(true);
+        $response = imagemodel::process($action);
+        $ms = (int) round((microtime(true) - $start) * 1000);
         if (!$response->get_success()) {
+            imagelog::add('image_request', 'fail', $ms, 'HTTP ' . $response->get_errorcode() . ' '
+                . (method_exists($response, 'get_errormessage') ? (string) $response->get_errormessage() : ''));
             self::throw_failure($response, 'error_ai_imagefailed');
         }
+        imagelog::add('image_request', 'ok', $ms, imagemodel::model());
 
         $data = $response->get_response_data();
         $file = $data['draftfile'] ?? null;
@@ -319,8 +337,8 @@ class ai {
      *
      * \format_dari\local\promptwriter (Dari's art director) writes it with the site's text model:
      * a per-course visual guide, then a specific scene for this image, then the fixed style,
-     * colour, composition and no-text rules. Without a text model, or if anything fails, the
-     * template prompt from \format_dari\local\cardprompt is used.
+     * colour, composition and no-text rules. Only a site with no text model at all uses the
+     * template prompt from \format_dari\local\cardprompt.
      *
      * @param array $composed Output of cardprompt::compose() or cardprompt::compose_banner().
      * @param \context $context The context the request is made in.
@@ -328,13 +346,17 @@ class ai {
      * @return string
      */
     public static function image_prompt(array $composed, \context $context, int $userid): string {
-        // The art director writes the prompt with the site's text model when it can; otherwise the
-        // template prompt from cardprompt is used as it is.
+        // The art director writes the prompt with the site's text model; the template prompt from
+        // cardprompt is used only when the site has no text model.
         $prompt = promptwriter::write($composed, $context, $userid);
-        $avoid = (string) ($composed['negativePrompt'] ?? '');
-        if ($avoid !== '') {
-            $prompt .= "\nAvoid: " . $avoid . '.';
-        }
+        // Source: plan or written (the AI art director), template (no text model) or fallback (planning
+        // failed; the reason is kept so it is visible, not silent).
+        self::$lastprompt = [
+            'prompt' => $prompt,
+            'source' => promptwriter::$last['source'] === 'plan' || promptwriter::$last['source'] === 'written'
+                ? 'artdirector' : (string) promptwriter::$last['source'],
+            'reason' => (string) promptwriter::$last['reason'],
+        ];
         return $prompt;
     }
 
@@ -441,7 +463,7 @@ class ai {
         if ($reason === null) {
             return ['ready' => true, 'reason' => ''];
         }
-        $text = get_string($reason, 'format_dari');
+        $text = get_string($reason, 'format_dari', imagemodel::string_params());
         if (has_capability('moodle/site:config', \context_system::instance())) {
             $url = self::subsystem_present()
                 ? new \moodle_url('/admin/settings.php', ['section' => 'aiprovider'])

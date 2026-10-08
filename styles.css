@@ -16644,3 +16644,44 @@ body.format-dari .drf-cmimage-btn:focus-visible {
     body.format-dari .drf-cmimage-btn { transition: none; }
     body.format-dari .drf-cmimage-btn:hover { transform: none; }
 }
+
+/* "Prompt used last time" in the card image and banner dialogs. */
+.dari-cardimage-promptused {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.03);
+}
+.dari-cardimage-promptused summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+.dari-cardimage-promptused-text {
+    max-height: 14rem;
+    margin: 0.25rem 0 0;
+    overflow: auto;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+/* --------------------------------------------------------------------------
+   Section cards 25% smaller: four across on wide course pages (was three),
+   three across on medium widths (was two), with type and spacing scaled to
+   match. The list layout is unaffected.
+   -------------------------------------------------------------------------- */
+@container drf-cardarea (min-width: 720px) {
+    body.format-dari:not(.dari-cardlist) .drf-grid--sections {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+    }
+}
+
+@container drf-cardarea (min-width: 1080px) {
+    body.format-dari:not(.dari-cardlist) .drf-grid--sections {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+    }
+}

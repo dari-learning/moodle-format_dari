@@ -38,9 +38,10 @@ use core_ai\aiactions\responses\response_generate_text;
  * actions the plugin sent through $this->aiactions or last_prompt().
  *
  * Text and image replies are queued separately, so a reply meant for the image call is never
- * consumed by a text call made on the way (the art director, \format_dari\local\promptwriter,
- * makes two text calls before every image). With no queued reply, the art director's two
- * requests get a valid art-direction JSON object and a usable scene paragraph, and any other
+ * consumed by a text call made on the way (the image planner and the prompt writer make text
+ * calls before every image). With no queued reply, a course planning request gets a plan with
+ * one distinct item per section, an item planning request gets one item, a prompt-writing request
+ * gets a usable paragraph, and any other
  * text request gets 'A complete answer.'.
  *
  * @package    format_dari
@@ -58,16 +59,87 @@ trait ai_stub {
     /** @var array Queued image replies, consumed in order. Each is a closure taking the action. */
     protected array $aiimagereplies = [];
 
-    /** @var string Default art-direction reply. */
-    protected static string $defaultart = '{"world": "A busy, well-run commercial kitchen", '
-        . '"people": "Apprentice and senior chefs in whites", "places": "Prep bench, cool room, pass", '
-        . '"props": "Probe thermometers, colour-coded boards", "palette": "Stainless steel with fresh greens", '
-        . '"light": "Bright morning light", "mood": "Calm and focused", "avoid": "Bare hands on raw food"}';
-
-    /** @var string Default scene reply. */
+    /** @var string Default scene paragraph (over the art director's 40-word minimum). */
     protected static string $defaultscene = 'An apprentice chef in crisp whites checks the core temperature of a '
-        . 'chicken stew with a probe thermometer while a senior chef watches from the pass, steel benches and '
-        . 'labelled containers behind them.';
+        . 'chicken stew with a probe thermometer while a senior chef watches from the pass, one hand resting on the '
+        . 'steel bench. Labelled containers and a stack of copper pans sit behind them. Medium-wide shot at eye '
+        . 'level, bright morning light through high windows, stainless steel with fresh green accents.';
+
+
+    /**
+     * A default plan item. Items with different $n differ in every structured attribute that the
+     * planner's repetition check compares, so default plans never trigger a revision request.
+     *
+     * @param string $concept The concept (at least four words).
+     * @param int $n A number that makes the item distinct.
+     * @return array
+     */
+    protected static function default_item(string $concept, int $n = 0): array {
+        $cats = \format_dari\local\imageplanner::CATEGORIES;
+        $objects = ['probe thermometer', 'copper saucepan', 'delivery docket', 'piping bag', 'chopping board',
+            'herb planter', 'wine glass', 'stock pot', 'mandoline slicer', 'pastry brush', 'fish scale', 'menu card'];
+        $subjects = ['apprentice chef', 'sous chef', 'kitchen porter', 'pastry cook', 'receiving clerk', 'gardener',
+            'waiter', 'butcher', 'baker', 'sommelier', 'fishmonger', 'trainer'];
+        return [
+            'interpretation' => 'What this part teaches.',
+            'concept' => $concept,
+            'signature_element' => 'a ' . $objects[$n % count($objects)],
+            'environment' => 'a specific place number ' . $n,
+            'perspective' => $cats['composition'][$n % 7] . ' view',
+            'people' => 'one chef',
+            'lighting' => 'bright morning light',
+            'subject' => $subjects[$n % count($subjects)],
+            'action' => ['checking', 'plating', 'receiving', 'piping', 'sorting', 'picking'][$n % 6],
+            'object' => $objects[$n % count($objects)],
+            'env_category' => $cats['env_category'][$n % 12],
+            'composition' => $cats['composition'][$n % 7],
+            'people_arrangement' => $cats['people_arrangement'][$n % 5],
+            'light_category' => $cats['light_category'][$n % 5],
+        ];
+    }
+
+    /**
+     * The default reply to a single-item planning request: unlike any default course-plan item.
+     *
+     * @return array
+     */
+    protected static function default_single_item(): array {
+        return [
+            'interpretation' => 'What this card represents.',
+            'concept' => 'An apprentice chef plating a dessert at the pass',
+            'signature_element' => 'a quenelle of sorbet',
+            'environment' => 'a test kitchen',
+            'perspective' => 'portrait',
+            'people' => 'two chefs',
+            'lighting' => 'low key',
+            'subject' => 'dessert chef',
+            'action' => 'plating sorbet',
+            'object' => 'quenelle spoon',
+            'env_category' => 'laboratory or clinical',
+            'composition' => 'portrait',
+            'people_arrangement' => 'two people',
+            'light_category' => 'low key',
+        ];
+    }
+
+    /**
+     * A default course plan with one item for every key in the planning request.
+     *
+     * @param string $prompt The planning request.
+     * @return string JSON.
+     */
+    protected static function default_plan(string $prompt): string {
+        preg_match_all('~^- \[(section:\d+)\]~m', $prompt, $m);
+        $items = [];
+        foreach ($m[1] as $n => $key) {
+            $items[] = ['key' => $key] + self::default_item('A distinct kitchen scene for ' . $key, $n);
+        }
+        return json_encode([
+            'course' => ['interpretation' => 'A kitchen course.', 'colour_treatment' => 'Steel and fresh greens'],
+            'items' => $items,
+            'banner' => self::default_item('A kitchen brigade at evening service', count($items)),
+        ]);
+    }
 
     /**
      * Install the mock manager.
@@ -109,10 +181,13 @@ trait ai_stub {
                     return self::image_response($action, self::make_png(64, 36));
                 }
                 $prompt = (string) $action->get_configuration('prompttext');
-                if (strpos($prompt, 'You are the art director') === 0) {
-                    return self::text_response(self::$defaultart);
+                if (strpos($prompt, \format_dari\local\imageplanner::COURSE_OPENING) === 0) {
+                    return self::text_response(self::default_plan($prompt));
                 }
-                if (strpos($prompt, 'You write prompts for an AI image generator') === 0) {
+                if (strpos($prompt, \format_dari\local\imageplanner::ITEM_OPENING) === 0) {
+                    return self::text_response(json_encode(self::default_single_item()));
+                }
+                if (strpos($prompt, \format_dari\local\promptwriter::SCENE_OPENING) === 0) {
                     return self::text_response(self::$defaultscene);
                 }
                 return self::text_response('A complete answer.');

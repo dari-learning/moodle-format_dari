@@ -12,7 +12,7 @@ No response-time guarantee is made.
 
 ## Release status
 
-The initial repository contains the supplied 1.0.5 package. Marketplace
+The current release is 2.0.5; the repository began with the supplied 1.0.5 package. Marketplace
 approval and an independent security audit are not implied by its publication.
 
 ## Sensitive information

@@ -21,7 +21,9 @@ namespace format_dari\local;
  *
  * Moodle 4.5 introduced the AI subsystem, and on 4.5 and later Dari always uses it. Moodle 4.4
  * has nothing equivalent, so there the administrator enters the school's own endpoint, key and
- * model names in Dari's settings and requests go straight there. Any service that speaks the
+ * text model name in Dari's settings and requests go straight there. Images always use the one
+ * model of the chosen image engine (\format_dari\local\imagemodel): Google's is called on the
+ * Gemini API directly, OpenAI's on the endpoint above. For text, any service that speaks the
  * OpenAI API works: OpenAI itself, Azure OpenAI's v1 endpoint, Google Gemini's OpenAI-compatible
  * endpoint, OpenRouter, a LiteLLM gateway, or a self-hosted Ollama or vLLM server.
  *
@@ -46,11 +48,22 @@ class direct {
      * @return bool
      */
     public static function is_configured(string $feature): bool {
-        if (self::endpoint() === '') {
+        if ($feature !== ai::FEATURE_IMAGE && self::endpoint() === '') {
             return false;
         }
-        $model = $feature === ai::FEATURE_IMAGE ? 'directimagemodel' : 'directtextmodel';
-        return trim((string) get_config('format_dari', $model)) !== '';
+        if ($feature === ai::FEATURE_IMAGE && imagemodel::engine() === imagemodel::ENGINE_OPENAI
+                && self::endpoint() === '') {
+            return false;
+        }
+        if ($feature === ai::FEATURE_IMAGE) {
+            // The image model is fixed by the engine; the administrator turns images on or off.
+            if ((string) get_config('format_dari', 'directimages') === '0') {
+                return false;
+            }
+            // Google is called on its own API, which needs a key; OpenAI uses the endpoint above.
+            return imagemodel::engine() === imagemodel::ENGINE_GOOGLE ? self::image_key() !== '' : true;
+        }
+        return trim((string) get_config('format_dari', 'directtextmodel')) !== '';
     }
 
     /**
@@ -68,10 +81,11 @@ class direct {
      * @param string $path Path below the endpoint, e.g. /chat/completions.
      * @param array $body Request body.
      * @param int $timeout Seconds.
+     * @param string|null $key API key; null for the API key setting.
      * @return array Decoded response.
      * @throws \moodle_exception On any transport or HTTP failure.
      */
-    protected static function post(string $path, array $body, int $timeout): array {
+    protected static function post(string $path, array $body, int $timeout, ?string $key = null): array {
         global $CFG;
         require_once($CFG->libdir . '/filelib.php');
 
@@ -81,7 +95,7 @@ class direct {
         $curl = new \curl();
         $curl->setopt(['CURLOPT_TIMEOUT' => $timeout, 'CURLOPT_CONNECTTIMEOUT' => 20]);
         $headers = ['Content-Type: application/json', 'Accept: application/json'];
-        $key = trim((string) get_config('format_dari', 'directapikey'));
+        $key = $key ?? trim((string) get_config('format_dari', 'directapikey'));
         if ($key !== '') {
             $headers[] = 'Authorization: Bearer ' . $key;
             // Azure OpenAI accepts its key in this header instead.
@@ -144,39 +158,114 @@ class direct {
     }
 
     /**
-     * Generate one image and return its bytes.
+     * The key for image requests: the image key if one is set, otherwise the API key above.
      *
-     * DALL·E models are asked for base64 directly. gpt-image models always return base64 and reject
-     * the response_format field. Services that answer with a URL instead are followed once.
+     * @return string
+     */
+    protected static function image_key(): string {
+        $key = trim((string) get_config('format_dari', 'directimagekey'));
+        return $key !== '' ? $key : trim((string) get_config('format_dari', 'directapikey'));
+    }
+
+    /**
+     * Generate one image with the chosen engine's model and return its bytes.
      *
      * @param string $prompt The image prompt.
      * @param string $aspectratio square, landscape or portrait.
      * @return string Raw image bytes.
      */
     public static function generate_image(string $prompt, string $aspectratio): string {
-        global $CFG;
+        return imagemodel::engine() === imagemodel::ENGINE_GOOGLE
+            ? self::generate_image_google($prompt, $aspectratio)
+            : self::generate_image_openai($prompt, $aspectratio);
+    }
 
-        $model = trim((string) get_config('format_dari', 'directimagemodel'));
-        $isdalle = stripos($model, 'dall-e') === 0;
-        $sizes = $isdalle
-            ? ['square' => '1024x1024', 'landscape' => '1792x1024', 'portrait' => '1024x1792']
-            : ['square' => '1024x1024', 'landscape' => '1536x1024', 'portrait' => '1024x1536'];
+    /**
+     * Google: Nano Banana 2.1 through the Gemini API's generateContent method, 16:9 at 2K.
+     *
+     * @param string $prompt The image prompt.
+     * @param string $aspectratio square, landscape or portrait.
+     * @return string Raw image bytes.
+     */
+    protected static function generate_image_google(string $prompt, string $aspectratio): string {
+        global $CFG;
+        require_once($CFG->libdir . '/filelib.php');
+
         $body = [
-            'model' => $model,
-            'prompt' => $prompt,
-            'n' => 1,
-            'size' => $sizes[$aspectratio] ?? $sizes['landscape'],
+            'contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]],
+            'generationConfig' => [
+                'responseModalities' => ['IMAGE'],
+                'imageConfig' => [
+                    'aspectRatio' => imagemodel::GOOGLE_RATIOS[$aspectratio] ?? imagemodel::GOOGLE_RATIOS['landscape'],
+                    'imageSize' => imagemodel::GOOGLE_IMAGE_SIZE,
+                ],
+            ],
         ];
-        $quality = get_config('format_dari', 'imagequality') === 'hd';
-        if ($isdalle) {
-            $body['response_format'] = 'b64_json';
-            $body['quality'] = $quality ? 'hd' : 'standard';
-            $body['style'] = get_config('format_dari', 'imagestyle') === 'vivid' ? 'vivid' : 'natural';
-        } else if (stripos($model, 'gpt-image') === 0) {
-            $body['quality'] = $quality ? 'high' : 'medium';
+        $url = imagemodel::GOOGLE_API . rawurlencode(imagemodel::model()) . ':generateContent';
+        \core_php_time_limit::raise(self::IMAGE_TIMEOUT + 60);
+
+        $curl = new \curl();
+        $curl->setopt(['CURLOPT_TIMEOUT' => self::IMAGE_TIMEOUT, 'CURLOPT_CONNECTTIMEOUT' => 20]);
+        $curl->setHeader(['Content-Type: application/json', 'Accept: application/json',
+            'x-goog-api-key: ' . self::image_key()]);
+        $response = $curl->post($url, json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+            | JSON_INVALID_UTF8_SUBSTITUTE));
+        $code = (int) ($curl->info['http_code'] ?? 0);
+        $decoded = json_decode((string) $response, true);
+
+        if ($curl->get_errno() || $code < 200 || $code >= 300) {
+            debugging('format_dari Google image HTTP ' . $code . ' ' . $curl->error . ' ' . substr((string) $response, 0, 500),
+                DEBUG_DEVELOPER);
+            if ($code === 429) {
+                throw new \moodle_exception('error_apiratelimited', 'format_dari');
+            }
+            if ($code === 401 || $code === 403) {
+                throw new \moodle_exception('error_apiunauthorized', 'format_dari');
+            }
+            $message = is_array($decoded) ? (string) ($decoded['error']['message'] ?? '') : '';
+            $message = $message !== '' ? $message : ($curl->error ?: ('HTTP ' . $code));
+            throw new \moodle_exception('error_ai_imagefailed_detail', 'format_dari', '',
+                s(\core_text::substr(trim(strip_tags($message)), 0, 200)));
         }
 
-        $result = self::post('/images/generations', $body, self::IMAGE_TIMEOUT);
+        foreach ((array) ($decoded['candidates'][0]['content']['parts'] ?? []) as $part) {
+            $data = $part['inlineData']['data'] ?? $part['inline_data']['data'] ?? '';
+            if ($data !== '') {
+                $bytes = base64_decode((string) $data, true);
+                if ($bytes !== false && $bytes !== '') {
+                    return $bytes;
+                }
+            }
+        }
+        // No image: usually a safety block, which Google explains in promptFeedback or finishReason.
+        $reason = (string) ($decoded['promptFeedback']['blockReason'] ?? $decoded['candidates'][0]['finishReason'] ?? '');
+        if ($reason !== '' && strtoupper($reason) !== 'STOP') {
+            throw new \moodle_exception('error_ai_imagefailed_detail', 'format_dari', '', s($reason));
+        }
+        throw new \moodle_exception('error_bannernoimage', 'format_dari');
+    }
+
+    /**
+     * OpenAI: GPT Image 2.5 Sunburst on the endpoint above, high quality, landscape at 16:9.
+     *
+     * GPT Image models return base64; a service that answers with a URL instead is followed once.
+     *
+     * @param string $prompt The image prompt.
+     * @param string $aspectratio square, landscape or portrait.
+     * @return string Raw image bytes.
+     */
+    protected static function generate_image_openai(string $prompt, string $aspectratio): string {
+        global $CFG;
+
+        $body = [
+            'model' => imagemodel::model(),
+            'prompt' => $prompt,
+            'n' => 1,
+            'size' => imagemodel::DIRECT_SIZES[$aspectratio] ?? imagemodel::DIRECT_SIZES['landscape'],
+            'quality' => imagemodel::DIRECT_QUALITY,
+        ];
+
+        $result = self::post('/images/generations', $body, self::IMAGE_TIMEOUT, self::image_key());
         $item = $result['data'][0] ?? [];
         if (!empty($item['b64_json'])) {
             $bytes = base64_decode((string) $item['b64_json'], true);

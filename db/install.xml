@@ -88,5 +88,51 @@
         <INDEX NAME="targettype_targetid" UNIQUE="true" FIELDS="targettype, targetid"/>
       </INDEXES>
     </TABLE>
+    <TABLE NAME="format_dari_imageplan" COMMENT="Visual plan and image prompt per course image (course content only, no user data)">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="itemkey" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="course, banner, section:{id} or cm:{id}"/>
+        <FIELD NAME="factshash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="sha1 of the facts the item was planned from"/>
+        <FIELD NAME="teacherhash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="sha1 of the teacher's own description the item was planned with, or empty"/>
+        <FIELD NAME="plan" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON plan item"/>
+        <FIELD NAME="prompt" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Image prompt built from the plan, without the fixed tail"/>
+        <FIELD NAME="attempts" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Image requests made for this item"/>
+        <FIELD NAME="successes" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Images generated and stored"/>
+        <FIELD NAME="failures" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Image requests that failed"/>
+        <FIELD NAME="lastresult" TYPE="char" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="success or failure"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="courseid_itemkey" UNIQUE="true" FIELDS="courseid, itemkey"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="format_dari_imagelog" COMMENT="Timings and errors of AI image jobs, and browser errors on Dari pages; kept 30 days">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="itemkey" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="requestid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="stage" TYPE="char" LENGTH="30" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="ok" SEQUENCE="false"/>
+        <FIELD NAME="durationms" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="message" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="courseid_time" UNIQUE="false" FIELDS="courseid, timecreated"/>
+        <INDEX NAME="requestid" UNIQUE="false" FIELDS="requestid"/>
+        <INDEX NAME="timecreated" UNIQUE="false" FIELDS="timecreated"/>
+      </INDEXES>
+    </TABLE>
   </TABLES>
 </XMLDB>

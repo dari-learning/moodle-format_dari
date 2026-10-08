@@ -63,6 +63,19 @@ class generate_card_image extends generate_banner_image {
                 VALUE_DEFAULT,
                 ''
             ),
+            'mode' => new external_value(
+                PARAM_ALPHA,
+                'auto, retry (use the stored prompt again) or new (plan a different concept)',
+                VALUE_DEFAULT,
+                'auto'
+            ),
+            'replaceprompt' => new external_value(
+                PARAM_BOOL,
+                'True when prompt replaces the card\'s stored description, even when empty; false keeps the stored one '
+                    . 'when prompt is empty',
+                VALUE_DEFAULT,
+                false
+            ),
         ]);
     }
 
@@ -76,9 +89,11 @@ class generate_card_image extends generate_banner_image {
      * @param string $targettype section or cm.
      * @param int $targetid course_sections.id or course_modules.id.
      * @param string $prompt Teacher's description.
+     * @param string $mode auto, retry or new.
      * @return array
      */
-    public static function execute($courseid, $targettype = '', $targetid = 0, $prompt = ''): array {
+    public static function execute($courseid, $targettype = '', $targetid = 0, $prompt = '', $mode = 'auto',
+            $replaceprompt = false): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -86,7 +101,10 @@ class generate_card_image extends generate_banner_image {
             'targettype' => $targettype,
             'targetid' => $targetid,
             'prompt' => $prompt,
+            'mode' => $mode,
+            'replaceprompt' => $replaceprompt,
         ]);
+        $mode = in_array($params['mode'], ['retry', 'new'], true) ? $params['mode'] : 'auto';
 
         $course = get_course($params['courseid']);
         $context = \context_course::instance($course->id);
@@ -107,19 +125,8 @@ class generate_card_image extends generate_banner_image {
         // The authoritative cap: the textarea's maxlength is a convenience and is not trusted.
         $prompttext = \core_text::substr(trim($params['prompt']), 0, self::PROMPT_MAX);
 
-        $task = new \format_dari\task\generate_card_image();
-        $task->set_custom_data([
-            'courseid' => (int) $course->id,
-            'targettype' => $params['targettype'],
-            'targetid' => (int) $target->id,
-            'prompt' => $prompttext,
-            'requestid' => \core\uuid::generate(),
-            'userid' => (int) $USER->id,
-        ]);
-        $task->set_component('format_dari');
-        $task->set_userid((int) $USER->id);
-        cardimage::set_status((int) $course->id, $params['targettype'], (int) $target->id, 'queued');
-        \core\task\manager::queue_adhoc_task($task);
+        self::queue((int) $course->id, $params['targettype'], (int) $target->id, $prompttext, $mode, (int) $USER->id,
+            (bool) $params['replaceprompt']);
 
         return ['status' => 'queued', 'imageurl' => '', 'message' => ''];
     }
@@ -199,15 +206,61 @@ class generate_card_image extends generate_banner_image {
     }
 
     /**
+     * Queue one card's generation as an adhoc task with a fresh request id.
+     *
+     * The request id makes this the card's current job: an older job still running for the same
+     * card can no longer change its status or replace its image.
+     *
+     * @param int $courseid The course.
+     * @param string $type section or cm.
+     * @param int $id Target id.
+     * @param string $prompt Teacher's description.
+     * @param string $mode auto, retry or new.
+     * @param int $userid The teacher.
+     * @param bool $replace Whether $prompt replaces the card's stored description even when empty.
+     * @return string The request id.
+     */
+    public static function queue(int $courseid, string $type, int $id, string $prompt, string $mode, int $userid,
+            bool $replace = false): string {
+        $requestid = \core\uuid::generate();
+        $task = new \format_dari\task\generate_card_image();
+        $task->set_custom_data([
+            'courseid' => $courseid,
+            'targettype' => $type,
+            'targetid' => $id,
+            'prompt' => $prompt,
+            'mode' => $mode,
+            'replaceprompt' => $replace,
+            'requestid' => $requestid,
+            'userid' => $userid,
+            'queued' => time(),
+        ]);
+        $task->set_component('format_dari');
+        $task->set_userid($userid);
+        cardimage::set_status($courseid, $type, $id, 'queued', '', ['requestid' => $requestid, 'stage' => 'waiting',
+            'queued' => time()]);
+        \core\task\manager::queue_adhoc_task($task);
+        \format_dari\local\imagelog::add('queued', 'info', 0, 'mode ' . $mode . ($prompt !== '' ? '; teacher description given' : ''),
+            $courseid, $type . ':' . $id, $requestid);
+        return $requestid;
+    }
+
+    /**
      * Generate one card image with the site's AI provider and store it.
+     *
+     * Each stage is written to the card's status (for the browser) and timed in the image log.
+     * The image is stored only if this job is still the card's current one.
      *
      * @param \stdClass $course The course.
      * @param string $type section or cm.
      * @param int $id course_sections.id or course_modules.id.
      * @param string $prompt Teacher's description.
-     * @param string $requestid Kept for tasks queued by earlier versions; unused.
+     * @param string $requestid The job's request id.
      * @param int $userid The teacher the request is made for; 0 for the current user.
-     * @return string URL of the stored image.
+     * @param string $mode auto, retry or new.
+     * @param bool $replace Whether $prompt replaces the card's stored description even when empty.
+     * @return string URL of the stored image, or '' when a newer request replaced this job.
+     * @throws \format_dari\local\planning_busy_exception When another worker is planning the course.
      */
     public static function generate_card(
         \stdClass $course,
@@ -215,7 +268,9 @@ class generate_card_image extends generate_banner_image {
         int $id,
         string $prompt,
         string $requestid = '',
-        int $userid = 0
+        int $userid = 0,
+        string $mode = 'auto',
+        bool $replace = false
     ): string {
         global $USER;
 
@@ -223,15 +278,32 @@ class generate_card_image extends generate_banner_image {
         $target = cardimage::require_target($course, $type, $id);
         $context = \context_course::instance($course->id);
         $userid = $userid > 0 ? $userid : (int) $USER->id;
+        $key = $type . ':' . (int) $target->id;
 
+        cardimage::set_stage((int) $course->id, $type, (int) $target->id, $requestid, 'planning');
         $composed = \format_dari\local\cardprompt::compose($course, $type, $target, trim($prompt));
-        $bytes = \format_dari\local\ai::generate_image(
-            $context,
-            $userid,
-            \format_dari\local\ai::image_prompt($composed, $context, $userid),
-            'landscape'
-        );
+        $composed['brief']['mode'] = $mode;
+        $composed['brief']['replaceTeacher'] = $replace;
+        $imageprompt = \format_dari\local\ai::image_prompt($composed, $context, $userid);
 
-        return cardimage::store((int) $course->id, $type, (int) $target->id, $bytes, 'ai');
+        if (!cardimage::set_stage((int) $course->id, $type, (int) $target->id, $requestid, 'generating')) {
+            \format_dari\local\imagelog::add('superseded', 'info', 0, 'A newer request replaced this job before the image request.');
+            return '';
+        }
+        try {
+            $bytes = \format_dari\local\ai::generate_image($context, $userid, $imageprompt, 'landscape');
+        } catch (\Throwable $e) {
+            \format_dari\local\imageplanner::record_result((int) $course->id, $key, false);
+            throw $e;
+        }
+
+        if (!cardimage::set_stage((int) $course->id, $type, (int) $target->id, $requestid, 'saving')) {
+            \format_dari\local\imagelog::add('superseded', 'info', 0, 'A newer request replaced this job; its image was not stored.');
+            return '';
+        }
+        $url = \format_dari\local\imagelog::time('save', fn() =>
+            cardimage::store((int) $course->id, $type, (int) $target->id, $bytes, 'ai'));
+        \format_dari\local\imageplanner::record_result((int) $course->id, $key, true);
+        return $url;
     }
 }

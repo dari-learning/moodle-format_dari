@@ -36,7 +36,7 @@ final class cardprompt_test extends \advanced_testcase {
     }
 
     /**
-     * An activity card's prompt is a described scene, then the shared tail, with the teacher's words.
+     * An activity card's prompt is a described scene, the teacher's words, then the shared tail.
      */
     public function test_activity_prompt_is_a_scene_with_tail(): void {
         $this->resetAfterTest();
@@ -65,65 +65,68 @@ final class cardprompt_test extends \advanced_testcase {
         $out = cardprompt::compose(get_course($course->id), cardimage::TYPE_CM, $cm, 'sunlight through windows');
         $prompt = $out['prompt'];
 
-        $this->assertSame('card-2', $out['promptVersion']);
-        $this->assertStringStartsWith(
-            'A realistic professional photograph representing Leading change, a Page '
-                . 'activity in an online course in Diploma of Leadership and Management.',
-            $prompt
-        );
-        // The activity type gives the scene when the title is not a common one.
+        $this->assertSame('card-5', $out['promptVersion']);
         $this->assertSame('page', $out['brief']['sceneKey']);
-        $this->assertStringContainsString('an adult learner reading an engaging lesson on a tablet', $prompt);
-        $this->assertStringContainsString(
-            'The topic covers: How leaders guide teams through change. Includes links.',
-            $prompt
-        );
-        $this->assertStringContainsString('The teacher asks for: sunlight through windows.', $prompt);
+        $this->assertStringStartsWith('An adult learner reading a printed guide in a comfortable armchair', $prompt);
+        $this->assertStringContainsString('Sunlight through windows.', $prompt);
+        $this->assertStringContainsString('a lesson on Leading change in a Diploma of Leadership and Management course',
+            $prompt);
+        $this->assertStringEndsWith("\n\n" . $out['promptTail'], $prompt);
+
+        // The tail: medium, accent colour in words, 16:9 composition, no text.
+        $this->assertStringStartsWith('Photorealistic, high-end documentary and editorial photography', $out['promptTail']);
+        $this->assertStringContainsString('deep teal appears as a subtle accent', $out['promptTail']);
+        $this->assertStringContainsString('16:9', $out['promptTail']);
+        $this->assertStringContainsString('minimal, clean lettering; no captions, logos or watermarks', $out['promptTail']);
+        // Cards carry no title over the image, so no room is asked for one.
+        $this->assertStringNotContainsString('title overlay', $prompt);
+
+        // Nothing that made the 2.0.0 images generic.
+        $this->assertStringNotContainsString('laptop', $prompt);
+        $this->assertStringNotContainsString('Include subtle visual references', $prompt);
+        $this->assertStringNotContainsString('Create a premium', $prompt);
         $this->assertStringNotContainsString('BSB50420', $prompt);
         $this->assertStringNotContainsString('TEAMS', $prompt);
         $this->assertStringNotContainsString('"', $prompt);
         $this->assertStringNotContainsString('<', $prompt);
-        // The tail ends the prompt, whole, and travels on its own too.
-        $this->assertStringEndsWith("\n\n" . $out['promptTail'], $prompt);
-        $this->assertStringContainsString('deep teal (#0F766E)', $out['promptTail']);
-        $this->assertStringContainsString('16:9', $out['promptTail']);
-        $this->assertStringContainsString('No visible text', $out['promptTail']);
-        // The 3.0.0 bans that emptied every scene are gone.
-        $this->assertStringNotContainsString('laptops', $prompt);
-        $this->assertStringNotContainsString('single focal point', $prompt);
-        $this->assertStringNotContainsString('screens with content', $out['negativePrompt']);
         $this->assertStringContainsString('cartoon', $out['negativePrompt']);
-        // The brief carries every fact the scene writer needs.
+
         $this->assertSame('Leading change', $out['brief']['topic']);
         $this->assertSame('page', $out['brief']['activityType']);
         $this->assertSame('Diploma of Leadership and Management', $out['brief']['courseTopic']);
+        $this->assertSame('business and leadership', $out['brief']['field']);
         $this->assertSame('adult learners', $out['brief']['audience']);
         $this->assertSame('#0F766E', $out['brief']['colourHex']);
         $this->assertSame('sunlight through windows', $out['brief']['teacherDirection']);
+        $this->assertIsArray($out['brief']['courseSections']);
     }
 
     /**
-     * A common section title gets its own scene; "Student Instructions" gets the instructions scene.
+     * A common title gets its own scene, and none of the common scenes is someone at a laptop.
      */
     public function test_common_title_gets_its_scene(): void {
-        global $DB;
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course(['format' => 'dari', 'numsections' => 1]);
         $section = get_fast_modinfo($course->id)->get_section_info(1);
-        $DB->set_field('course_sections', 'name', 'Student Instructions', ['id' => $section->id]);
-        rebuild_course_cache($course->id, true);
+        course_update_section($course, $section, ['name' => 'Student instructions']);
         $section = get_fast_modinfo($course->id)->get_section_info(1);
 
         $out = cardprompt::compose(get_course($course->id), cardimage::TYPE_SECTION, $section, '');
-
         $this->assertSame('instructions', $out['brief']['sceneKey']);
-        $this->assertStringContainsString('checklist', $out['prompt']);
-        $this->assertStringContainsString('course handbook', $out['prompt']);
-        $this->assertStringNotContainsString('The teacher asks for', $out['prompt']);
+        $this->assertStringContainsString('wall planner', $out['prompt']);
+        $this->assertStringContainsString('The image introduces part of a', $out['prompt']);
+
+        foreach (['Welcome', 'Student instructions', 'Quiz', 'Assessment 1', 'Forum', 'Resources', 'Key dates',
+                'Live sessions', 'Videos', 'Feedback', 'Glossary', 'Reflection', 'Student support'] as $title) {
+            [$key, $scene] = cardprompt::scene($title, '');
+            $this->assertNotSame('general', $key, $title);
+            $this->assertStringNotContainsString('laptop', $scene, $title);
+            $this->assertStringNotContainsString('{', $scene, $title);
+        }
     }
 
     /**
-     * The scene table: common titles, activity types, and topics that must not be caught.
+     * Scene matching by title, then by activity type.
      */
     public function test_scene_matching(): void {
         $this->assertSame('welcome', cardprompt::scene('Welcome to the course', '')[0]);
@@ -132,10 +135,10 @@ final class cardprompt_test extends \advanced_testcase {
         $this->assertSame('forum', cardprompt::scene('Introduce yourself', '')[0]);
         $this->assertSame('certificate', cardprompt::scene('Certificate of completion', '')[0]);
         $this->assertSame('resources', cardprompt::scene('Learning materials', '')[0]);
-        // The title wins over the type; the type is used when the title says nothing common.
+
         $this->assertSame('quiz', cardprompt::scene('Leading change', 'quiz')[0]);
         $this->assertSame('live', cardprompt::scene('Leading change', 'zoom')[0]);
-        // Topic words are not housekeeping words.
+
         $this->assertSame('general', cardprompt::scene('Construction materials', '')[0]);
         $this->assertSame('general', cardprompt::scene('Providing client support', '')[0]);
         $this->assertSame('general', cardprompt::scene('Working in community services', '')[0]);
@@ -144,8 +147,8 @@ final class cardprompt_test extends \advanced_testcase {
         $this->assertSame('general', cardprompt::scene('Practical first aid', '')[0]);
         $this->assertSame('workplace', cardprompt::scene('Workplace assessment', '')[0]);
         $this->assertSame('workplace', cardprompt::scene('Practical tasks', '')[0]);
-        // School courses get school students.
-        $this->assertStringContainsString('a secondary school student', cardprompt::scene('Quiz', '', true)[1]);
+
+        $this->assertStringContainsString('a secondary school student', cardprompt::scene('Reflection', '', true)[1]);
     }
 
     /**
@@ -180,18 +183,36 @@ final class cardprompt_test extends \advanced_testcase {
         $out = cardprompt::compose(get_course($course->id), cardimage::TYPE_SECTION, $section, '');
         $prompt = $out['prompt'];
 
-        $this->assertStringStartsWith(
-            'A flat vector illustration representing Managing risk on a building site, a '
-                . 'section in an online course in Year 10 Biology.',
-            $prompt
-        );
-        $this->assertStringContainsString('a secondary school student actively engaged in Managing risk', $prompt);
+        $this->assertStringStartsWith('A secondary school student', $prompt);
+        $this->assertStringContainsString('a lesson on Managing risk on a building site', $prompt);
         $this->assertStringNotContainsString('Week 3', $prompt);
-        $this->assertStringContainsString('flat vector illustration', $out['promptTail']);
-        $this->assertStringContainsString('(#B91C1C)', $prompt);
-        $this->assertStringNotContainsString('#0F766E', $prompt);
+        $this->assertStringStartsWith('Flat vector illustration', $out['promptTail']);
+        $this->assertStringContainsString('red appears as a subtle accent', $out['promptTail']);
+        $this->assertSame('#B91C1C', $out['brief']['colourHex']);
         $this->assertStringNotContainsString('cartoon', $out['negativePrompt']);
         $this->assertSame('school students', $out['brief']['audience']);
+    }
+
+    /**
+     * A section with only a number and no summary falls back to the course, without treating the
+     * course name as a housekeeping title.
+     */
+    public function test_untitled_section_does_not_match_course_words(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course([
+            'format' => 'dari',
+            'fullname' => 'US CPA Exam Preparation',
+            'numsections' => 1,
+        ]);
+        $section = get_fast_modinfo($course->id)->get_section_info(1);
+        $DB->set_field('course_sections', 'name', 'Week 3', ['id' => $section->id]);
+        rebuild_course_cache($course->id, true);
+        $section = get_fast_modinfo($course->id)->get_section_info(1);
+
+        $out = cardprompt::compose(get_course($course->id), cardimage::TYPE_SECTION, $section, '');
+        $this->assertNotSame('quiz', $out['brief']['sceneKey'], '"Exam" in the course name is not a quiz');
+        $this->assertSame('field:accounting', $out['brief']['sceneKey']);
     }
 
     /**
@@ -213,18 +234,16 @@ final class cardprompt_test extends \advanced_testcase {
         ]);
 
         $out = cardprompt::compose_banner(get_course($course->id), null, 'golden hour');
-        $this->assertSame('banner-1', $out['promptVersion']);
+        $this->assertSame('banner-4', $out['promptVersion']);
         $this->assertSame('banner', $out['brief']['imageKind']);
-        $this->assertStringStartsWith(
-            'A polished 3D render for the banner of an online course in Certificate III '
-                . 'in Carpentry. It shows adult learners putting what they learn in Certificate III in Carpentry '
-                . 'into practice',
-            $out['prompt']
-        );
-        $this->assertStringContainsString('The course covers: Build framing, stairs and formwork.', $out['prompt']);
-        $this->assertStringContainsString('The teacher asks for: golden hour.', $out['prompt']);
-        $this->assertStringContainsString('left third quieter', $out['promptTail']);
-        $this->assertStringContainsString('blue (#2563EB)', $out['promptTail']);
+        $this->assertSame('field:construction', $out['brief']['sceneKey']);
+        $this->assertStringStartsWith('A construction crew at work', $out['prompt']);
+        $this->assertStringContainsString('Golden hour.', $out['prompt']);
+        $this->assertStringContainsString('a construction and trades course', $out['prompt']);
+        $this->assertStringNotContainsString('CPC30220', $out['prompt']);
+        $this->assertStringStartsWith('Polished 3D render', $out['promptTail']);
+        $this->assertStringContainsString('left third calm and simple', $out['promptTail']);
+        $this->assertStringContainsString('blue appears as a subtle accent', $out['promptTail']);
 
         $section = get_fast_modinfo($course->id)->get_section_info(1);
         $DB->set_field('course_sections', 'name', 'Welcome', ['id' => $section->id]);
@@ -232,11 +251,11 @@ final class cardprompt_test extends \advanced_testcase {
         $section = get_fast_modinfo($course->id)->get_section_info(1);
         $out = cardprompt::compose_banner(get_course($course->id), $section, '');
         $this->assertSame('welcome', $out['brief']['sceneKey']);
-        $this->assertStringContainsString('representing Welcome, a section in', $out['prompt']);
+        $this->assertStringContainsString('greeting', $out['prompt']);
     }
 
     /**
-     * Long names and descriptions never push the tail out, and the prompt stays within the limit.
+     * Long names and descriptions never push the tail out.
      */
     public function test_prompt_stays_within_limit(): void {
         $this->resetAfterTest();
@@ -251,9 +270,10 @@ final class cardprompt_test extends \advanced_testcase {
             ]
         );
         $cm = get_fast_modinfo($course->id)->get_cm($page->cmid);
-        $out = cardprompt::compose(get_course($course->id), cardimage::TYPE_CM, $cm, str_repeat('x ', 200));
+        $out = cardprompt::compose(get_course($course->id), cardimage::TYPE_CM, $cm, str_repeat('x ', 1200));
 
-        $this->assertLessThanOrEqual(cardprompt::PROMPT_MAX, \core_text::strlen($out['prompt']));
+        $this->assertLessThanOrEqual(cardprompt::PROMPT_MAX + 2 + \core_text::strlen($out['promptTail']),
+            \core_text::strlen($out['prompt']));
         $this->assertStringEndsWith($out['promptTail'], $out['prompt']);
     }
 

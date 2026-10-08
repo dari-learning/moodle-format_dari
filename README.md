@@ -59,7 +59,8 @@ Made by Dari Learning.
 - **AI banners.** Dari writes an image brief from the course name and summary, and your school's AI provider generates a wide banner. Teachers can add optional detail. The banner is generated in the background and saved to the course automatically.
 - **AI card images.** Generate an image for one section or activity card, or for all cards at once (only the cards without an image, if you prefer).
 - **One art style per course.** Photographic, Illustration, 3D render or Flat illustration, so every image in a course looks like one set.
-- **Optional AI scene writer.** Before each image, the text provider writes a specific scene from the course, section and activity details.
+- **One image model, no fallbacks.** Choose an image engine and Dari paints every image with that engine's highest rated model: **Google, the default: Nano Banana 2.1** (`gemini-nano-banana-2.1`), or **OpenAI: GPT Image 2.5 Sunburst** (`gpt-image-2.5-sunburst`). Dari never hands an image to a second provider or an older model.
+- **Planned like a photo essay.** Your text model first plans every image in the course together: what each section teaches, and for each activity what the learner does there (instructions, assessment, practice, discussion, submission and so on), so an activity card never repeats its section's image. Each card gets one clear concept, a signature element, setting, camera, people and lighting, checked in code so cards do not repeat. The text model then writes each final prompt from the plan. Use **Image plan preview** (course More menu) to see every plan and prompt before any image is generated, and its **Generation log** to see how long each step took.
 
 ---
 
@@ -109,8 +110,8 @@ Dari uses whatever AI provider your site already has. If you do not have one yet
 1. Go to *Site administration > General > AI > AI providers*.
 2. Add or enable a provider, for example OpenAI, Azure AI, Gemini, Anthropic, AWS Bedrock, DeepSeek or Ollama, depending on what your Moodle™ version offers. Enter your organisation's API key or endpoint.
 3. In that provider's action settings, turn on:
-   - **Generate text** for Ask Dari, and the AI scene writer if you use it
-   - **Generate image** for banners and card images (the provider and model must support image generation)
+   - **Generate text** for Ask Dari and image planning
+   - **Generate image** for banners and card images, with the model of your chosen image engine. **Google (default), Moodle 5.2+ Google Gemini provider:** model *Custom* `gemini-nano-banana-2.1`, endpoint `https://generativelanguage.googleapis.com/v1beta/models/gemini-nano-banana-2.1:generateContent`. **OpenAI:** `gpt-image-2.5-sunburst`. Dari uses only the provider configured with that model, never another provider as a fallback.
 4. Check the **AI usage policy**. Each user accepts it once before using any AI feature, and Dari will not send a request until they have.
 5. Optional: Moodle™ 5.0 and later can turn AI tools on or off per course and per activity. Dari respects those switches.
 
@@ -122,8 +123,9 @@ Moodle™ 4.4 has no AI settings of its own. Go to *Site administration > Plugin
 |---|---|---|
 | `directendpoint`: API endpoint | The base URL of any OpenAI-compatible API, ending before `/chat/completions`. For example `https://api.openai.com/v1`, an Azure OpenAI v1 endpoint, `https://generativelanguage.googleapis.com/v1beta/openai` (Gemini), `https://openrouter.ai/api/v1`, a LiteLLM gateway, or `http://your-server:11434/v1` (Ollama or vLLM) | empty |
 | `directapikey`: API key | Your school's own key. Leave empty for a self-hosted server that needs none. | empty |
-| `directtextmodel`: Text model | The model Ask Dari uses, for example `gpt-4o-mini`, `gemini-2.5-flash` or `llama3.1:8b`. Leave empty to turn Ask Dari off. | `gpt-4o-mini` |
-| `directimagemodel`: Image model | The model for banners and card images, for example `gpt-image-1` or `dall-e-3`. Leave empty to turn AI images off. | `gpt-image-1` |
+| `directtextmodel`: Text model | The model Ask Dari uses, for example `gpt-6-astra`, `gpt-6.1-sol`, `gemini-2.5-flash` or `llama3.1:8b`. It also writes the image prompts. Leave empty to turn Ask Dari off. | `gpt-6-astra` |
+| `directimages`: AI images | Banners and card images with the image engine's one model. Google (default): Nano Banana 2.1 on the Gemini API directly, 16:9 at 2K. OpenAI: GPT Image 2.5 Sunburst on the endpoint above, 2048×1152, high quality. Untick to turn AI images off. | On |
+| `directimagekey`: Image API key | The key for images (a Gemini API key for Google). Empty uses `directapikey`. | empty |
 
 Requests go through Moodle™'s own HTTP client, so your proxy settings apply. Moodle™'s HTTP security settings also apply, so a server on your own network may need adding to the allowed hosts under *Site administration > General > Security > HTTP security*. These settings only appear on Moodle™ 4.4. After an upgrade to 4.5 or later, set up a provider in Moodle™'s AI settings instead.
 
@@ -144,9 +146,8 @@ Go to *Site administration > Plugins > Course formats > Dari*. The settings page
 | `sendfirstname`: Send learners' first names | Includes the learner's first name so Ask Dari can greet them. Always off for primary-school courses. | On |
 | `maxcontextchars`: Course content sent with each question | The maximum number of characters of course text included with each question. Use 6000–8000 for small self-hosted models. | 40000 |
 | `shareassessmentanswers`: Send quiz and knowledge-check answers to Ask Dari | *Never share*, *Always share, in every course*, or *Let each course decide*. This is the site ceiling: a course can never share more than this allows. | **Never share** |
-| `imagequality`: Image quality | Standard or high definition, for providers that support it. | Standard |
-| `imagestyle`: Image rendering | Natural or vivid, for providers that support it (OpenAI DALL·E 3). | Natural |
-| `aiscenewriter` (AI art director for images, on by default): Write image scenes with AI | Uses one extra small text request per image to write a specific scene before the image is generated. | Off |
+| `imageengine`: Image engine | The engine for every AI banner and card image: **Google (Nano Banana 2.1, `gemini-nano-banana-2.1`)** or **OpenAI (GPT Image 2.5 Sunburst, `gpt-image-2.5-sunburst`)**. Only that engine's one model is ever used. | Google |
+| `diagnostics`: Diagnostics log | Records how long each step of every AI image took, any failure and its reason, and browser errors on Dari pages for course editors. Shown on each course's Image plan preview page, downloadable as CSV, kept 30 days. | On |
 
 The page also links to the site-wide **Ask Dari Q&A Report**.
 

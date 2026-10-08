@@ -37,6 +37,7 @@ import ModalSaveCancel from 'core/modal_save_cancel';
 import ModalEvents from 'core/modal_events';
 import Pending from 'core/pending';
 import {ensureAccepted as ensureAiPolicy} from 'format_dari/aipolicy';
+import {report} from 'format_dari/diagnostics';
 
 /** @var {Number} Longest edge an upload is scaled down to before it is sent. */
 const MAX_EDGE = 1600;
@@ -47,8 +48,11 @@ const MAX_PICK_BYTES = 20 * 1024 * 1024;
 /** @var {Number} Milliseconds between status polls while an image is generated. */
 const POLL_EVERY = 3000;
 
-/** @var {Number} Polls before giving up: 120 x 3s is six minutes, as the banner allows. */
+/** @var {Number} Fast polls (every 3 s, six minutes); after that the browser keeps checking slowly. */
 const POLL_LIMIT = 120;
+
+/** @var {Number} Milliseconds between slow polls once the fast ones are used up. */
+const POLL_SLOW = 15000;
 
 /** @var {Number} Longest prompt, matching generate_card_image::PROMPT_MAX. */
 const PROMPT_MAX = 400;
@@ -91,7 +95,10 @@ const STRING_KEYS = [
     'cardimage_all_scope_all', 'cardimage_all_scope_sections', 'cardimage_all_scope_activities',
     'cardimage_all_onlymissing', 'cardimage_all_counting', 'cardimage_all_none',
     'cardimage_all_desc', 'cardimage_all_capped', 'cardimage_all_queued', 'cardimage_menu', 'ai_notready_title',
-    'cardimage_dialogtitle', 'save', 'cancel',
+    'cardimage_promptused', 'cardimage_promptused_ai', 'cardimage_promptused_template',
+    'cardimage_dialogtitle', 'cardimage_stage_waiting', 'cardimage_stage_waitingcron', 'cardimage_stage_planning',
+    'cardimage_stage_generating', 'cardimage_stage_saving', 'cardimage_stillworking', 'cardimage_mode',
+    'cardimage_mode_new', 'cardimage_mode_retry', 'save', 'cancel',
 ];
 
 /**
@@ -128,7 +135,23 @@ const fill = (key, a) => String(str[key] || '').replace('{$a}', String(a));
  * @param {Object} args Arguments.
  * @returns {Promise<Object>}
  */
-const call = (name, args) => Ajax.call([{methodname: 'format_dari_' + name, args}])[0];
+const call = (name, args) => Ajax.call([{methodname: 'format_dari_' + name, args}])[0].catch((error) => {
+    report('ajax', (error && (error.message || error.errorcode)) || 'Request failed', 'format_dari_' + name);
+    throw error;
+});
+
+/**
+ * The busy label for a job's stage, from get_card_image_status.
+ *
+ * @param {Object} status The status.
+ * @returns {String}
+ */
+const stageLabel = (status) => {
+    if (status.stage === 'waiting' && status.cronago > 120) {
+        return fill('cardimage_stage_waitingcron', Math.round(status.cronago / 60));
+    }
+    return str['cardimage_stage_' + status.stage] || str.cardimage_generating;
+};
 
 /**
  * Explain why AI images cannot be generated yet (no AI image service set up, or AI switched off).
@@ -410,7 +433,11 @@ const poll = (type, id, name) => {
         try {
             status = await call('get_card_image_status', {courseid: config.courseid, targettype: type, targetid: id});
         } catch (error) {
-            status = {status: 'failed', message: (error && error.message) || ''};
+            // A failed status check is not a failed job: try again on the next tick.
+            status = {status: 'running', stage: '', elapsed: 0, cronago: -1};
+            if (attempts > POLL_LIMIT * 2) {
+                status = {status: 'failed', message: (error && error.message) || ''};
+            }
         }
         if (!polls[key]) {
             // Stopped while the request was in flight: an upload replaced the image.
@@ -423,13 +450,21 @@ const poll = (type, id, name) => {
             tell(fill('cardimage_generated', name));
             return;
         }
-        if (status.status === 'failed' || status.status === 'idle' || attempts >= POLL_LIMIT) {
+        if (status.status === 'failed' || status.status === 'idle') {
             delete polls[key];
             setBusy(type, id, null);
             tell(fill('cardimage_failed', status.message || ''), 'error');
             return;
         }
-        polls[key] = window.setTimeout(tick, POLL_EVERY);
+        // Still queued or running on the server. A long wait is not a failure: keep showing the
+        // real stage, and after six minutes check every 15 seconds instead of every 3.
+        setBusy(type, id, stageLabel(status));
+        if (attempts === POLL_LIMIT) {
+            tell(fill('cardimage_stillworking', name), 'info');
+            report('timeout', 'Still ' + (status.stage || status.status) + ' after ' + status.elapsed + ' s; cron last ran '
+                + status.cronago + ' s ago', type + ':' + id);
+        }
+        polls[key] = window.setTimeout(tick, attempts >= POLL_LIMIT ? POLL_SLOW : POLL_EVERY);
     };
     polls[key] = window.setTimeout(tick, POLL_EVERY);
 };
@@ -474,8 +509,20 @@ const generate = async(media) => {
         'placeholder': str.cardimage_promptph,
         'aria-describedby': hintid,
     });
+    // A card that already has an image can keep its idea (try again) or get a new one.
+    const hasimage = media.classList.contains('drf-media--image');
+    const modeid = promptid + '-mode';
+    const modes = hasimage ? el('fieldset', {'class': 'dari-cardimage-mode mb-2'}, [
+        el('legend', {'class': 'form-label fw-semibold fs-6', 'text': str.cardimage_mode}),
+        ...['new', 'retry'].map((value) => el('div', {'class': 'form-check'}, [
+            el('input', {'class': 'form-check-input', 'type': 'radio', 'name': modeid, 'id': modeid + value,
+                'value': value, 'checked': value === 'new'}),
+            el('label', {'class': 'form-check-label', 'for': modeid + value, 'text': str['cardimage_mode_' + value]}),
+        ])),
+    ]) : null;
     const body = el('div', {'class': 'dari-cardimage-dialog'}, [
         el('p', {'class': 'dari-cardimage-for', 'text': fill('cardimage_titlefor', target.name)}),
+        ...(modes ? [modes] : []),
         el('label', {'for': promptid, 'class': 'form-label fw-semibold', 'text': str.cardimage_promptlabel}),
         textarea,
         el('p', {'id': hintid, 'class': 'form-text text-muted small mt-1', 'text': str.cardimage_prompthint}),
@@ -484,6 +531,27 @@ const generate = async(media) => {
             el('span', {'class': 'dari-cardimage-cost', 'text': fill('cardimage_cost', config.cost)}),
         ]),
     ]);
+    // The prompt Dari sent last time for this card, so the teacher can see exactly what the image
+    // model was asked for, and refine it with their own words above.
+    const used = el('details', {'class': 'dari-cardimage-promptused', 'hidden': 'hidden'}, [
+        el('summary', {'text': str.cardimage_promptused}),
+        el('p', {'class': 'dari-cardimage-promptused-source small text-muted'}),
+        el('pre', {'class': 'dari-cardimage-promptused-text'}),
+    ]);
+    body.appendChild(used);
+    call('get_image_prompt', {courseid: config.courseid, targettype: target.type, targetid: target.id}).then((result) => {
+        // The teacher's own description is kept with the card: show it so it can be kept, edited or cleared.
+        if (result && result.teacherprompt && textarea.value === '') {
+            textarea.value = result.teacherprompt;
+        }
+        if (result && result.prompt) {
+            used.querySelector('.dari-cardimage-promptused-text').textContent = result.prompt;
+            used.querySelector('.dari-cardimage-promptused-source').textContent =
+                result.source === 'artdirector' ? str.cardimage_promptused_ai : str.cardimage_promptused_template;
+            used.hidden = false;
+        }
+        return result;
+    }).catch(() => null);
 
     const modal = await ModalSaveCancel.create({
         title: str.cardimage_title,
@@ -501,6 +569,8 @@ const generate = async(media) => {
                 targettype: target.type,
                 targetid: target.id,
                 prompt: textarea.value.slice(0, PROMPT_MAX),
+                replaceprompt: true,
+                mode: modes ? (modes.querySelector('input:checked') || {}).value || 'auto' : 'auto',
             });
             poll(target.type, target.id, target.name);
         } catch (error) {
