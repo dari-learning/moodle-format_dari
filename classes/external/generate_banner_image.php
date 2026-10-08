@@ -73,6 +73,8 @@ class generate_banner_image extends external_api {
      * Generate and store a banner image for the course.
      *
      * @param int $courseid Id of the course.
+     * @param string $extraprompt Additional image instructions.
+     * @param int $sectionid Section ID, or zero for the course banner.
      * @return array The URL of the stored image and the credits it cost.
      */
     public static function execute(int $courseid, string $extraprompt = '', int $sectionid = 0): array {
@@ -236,8 +238,12 @@ class generate_banner_image extends external_api {
      * @param int $userid The teacher the request is made for; 0 for the current user.
      * @return string The moodle_url of the stored image.
      */
-    public static function generate_and_store(\stdClass $course, string $extraprompt = '', int $sectionid = 0,
-            int $userid = 0): string {
+    public static function generate_and_store(
+        \stdClass $course,
+        string $extraprompt = '',
+        int $sectionid = 0,
+        int $userid = 0
+    ): string {
         global $USER;
 
         $context = \context_course::instance($course->id);

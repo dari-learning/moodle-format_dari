@@ -176,8 +176,10 @@ class fonts {
         $page->add_body_class('dari-font-google');
         $page->add_body_class('dari-font-g-' . $choice);
         // Only while the page head can still be written, and never for CLI or AJAX requests.
-        if ((defined('CLI_SCRIPT') && CLI_SCRIPT) || (defined('AJAX_SCRIPT') && AJAX_SCRIPT)
-                || $page->state >= \moodle_page::STATE_PRINTING_HEADER) {
+        if (
+            (defined('CLI_SCRIPT') && CLI_SCRIPT) || (defined('AJAX_SCRIPT') && AJAX_SCRIPT)
+                || $page->state >= \moodle_page::STATE_PRINTING_HEADER
+        ) {
             return;
         }
         try {

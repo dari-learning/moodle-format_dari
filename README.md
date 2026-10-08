@@ -1,8 +1,8 @@
-<!-- Repository metadata added for Marketplace submission; runtime source remains as supplied. -->
+<!-- The imported 1.0.5 source is preserved at v1.0.5; corrections are versioned separately. -->
 
 [Documentation](https://darilearning.com/docs) · [Report a bug](https://github.com/dari-learning/moodle-format_dari/issues) · [Submission checklist](docs/marketplace-submission.md) · [Moodle™ Marketplace](https://marketplace.moodle.com/)
 
-**Marketplace listing: not approved yet.** Source hosting does not imply approval or independently verified compatibility. See [CHANGELOG.md](CHANGELOG.md) for the imported package version.
+**Marketplace listing: not approved yet.** Source hosting does not imply approval or independently verified compatibility. This branch is the unreleased **1.0.6** CI-correction candidate; the supplied 1.0.5 ZIP and `v1.0.5` tag are unchanged. See [CHANGELOG.md](CHANGELOG.md) and [the correction pull request](https://github.com/dari-learning/moodle-format_dari/pull/2) for changes and validation results.
 
 # Dari course format (format_dari)
 

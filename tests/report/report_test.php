@@ -35,6 +35,14 @@ use format_dari\output\report\csvexporter;
 use format_dari\output\report\historytab;
 use format_dari\output\report\indexpage;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\chatfilter::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\adminfilter::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\csvexporter::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\coursereport::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\historytab::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\contenttab::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\adminreport::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\indexpage::class)]
 /**
  * Unit tests for Ask Dari report pages.
  *
@@ -51,14 +59,6 @@ use format_dari\output\report\indexpage;
  * @covers     \format_dari\output\report\adminreport
  * @covers     \format_dari\output\report\indexpage
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\chatfilter::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\adminfilter::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\csvexporter::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\coursereport::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\historytab::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\contenttab::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\adminreport::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\report\indexpage::class)]
 final class report_test extends \advanced_testcase {
     /**
      * Request parameter values under test.

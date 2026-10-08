@@ -27,6 +27,13 @@ namespace format_dari\local;
  */
 class permissions {
     /**
+     * Clear request-local role decisions after changing role assignments.
+     */
+    public static function reset_memo(): void {
+        self::$gradercache = [];
+    }
+
+    /**
      * Memoised results of {@see self::is_grader()}, keyed on "contextid_userid".
      *
      * @var array<string, bool>

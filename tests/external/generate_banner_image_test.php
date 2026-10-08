@@ -30,6 +30,7 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testcase.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\generate_banner_image::class)]
 /**
  * Tests for the format_dari_generate_banner_image external function.
  *
@@ -41,7 +42,6 @@ require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testca
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\external\generate_banner_image
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\generate_banner_image::class)]
 final class generate_banner_image_test extends external_testcase {
     /**
      * A student cannot generate a banner.
@@ -60,7 +60,7 @@ final class generate_banner_image_test extends external_testcase {
         $this->stub_ai(true, false);
         $this->setUser($this->teacher);
 
-        $this->assert_throws_errorcode('error_ai_noimageprovider', function (): void {
+        $this->assert_throws_errorcode($this->no_provider_error(true), function (): void {
             generate_banner_image::execute($this->course->id);
         });
         $this->assertCount(0, \core\task\manager::get_adhoc_tasks('\\format_dari\\task\\generate_banner'));
@@ -73,6 +73,13 @@ final class generate_banner_image_test extends external_testcase {
         $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'editingteacher');
         $this->setUser($teacher);
 
+        if (!\format_dari\local\ai::subsystem_present()) {
+            // No core policy API exists on 4.4; the permitted request must still queue normally.
+            $this->assertTrue(\format_dari\local\ai::policy_accepted((int) $teacher->id));
+            $this->assertSame('queued', generate_banner_image::execute($this->course->id)['status']);
+            $this->assertCount(1, \core\task\manager::get_adhoc_tasks('\\format_dari\\task\\generate_banner'));
+            return;
+        }
         $this->assert_throws_errorcode('error_ai_policynotaccepted', function (): void {
             generate_banner_image::execute($this->course->id);
         });
@@ -103,8 +110,12 @@ final class generate_banner_image_test extends external_testcase {
         $this->setUser($this->teacher);
         $this->queue_image_reply();
 
-        $url = generate_banner_image::generate_and_store(get_course($this->course->id), 'warm light', 0,
-            (int) $this->teacher->id);
+        $url = generate_banner_image::generate_and_store(
+            get_course($this->course->id),
+            'warm light',
+            0,
+            (int) $this->teacher->id
+        );
 
         $this->assertStringContainsString('/format_dari/bannerimage/', $url);
         $files = get_file_storage()->get_area_files($this->context->id, 'format_dari', 'bannerimage', false, 'id', false);
@@ -115,7 +126,9 @@ final class generate_banner_image_test extends external_testcase {
         $this->assertCount(1, $images);
         $action = $images[0];
         $this->assertSame('landscape', $action->get_configuration('aspectratio'));
-        $this->assertSame($this->context->id, $action->get_configuration('contextid'));
+        if (\format_dari\local\ai::subsystem_present()) {
+            $this->assertSame($this->context->id, $action->get_configuration('contextid'));
+        }
         $prompt = $action->get_configuration('prompttext');
         // The art director wrote it: its scene first, its "Keep out" line, then core's Avoid line.
         $this->assertStringStartsWith('An apprentice chef in crisp whites', $prompt);
@@ -165,7 +178,7 @@ final class generate_banner_image_test extends external_testcase {
                 generate_banner_image::execute($this->course->id);
                 $this->fail('Expected the availability check to reject this call.');
             } catch (\moodle_exception $e) {
-                $this->assertSame('error_ai_noimageprovider', $e->errorcode);
+                $this->assertSame($this->no_provider_error(true), $e->errorcode);
             }
         }
 

@@ -36,6 +36,7 @@ use format_dari\local\icons;
 use ReflectionMethod;
 use stdClass;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\courseformat\content::class)]
 /**
  * Tests for the section card exported context.
  *
@@ -50,7 +51,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\output\courseformat\content
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\courseformat\content::class)]
 final class content_test extends \advanced_testcase {
     /**
      * Export the card context for one section of a course.

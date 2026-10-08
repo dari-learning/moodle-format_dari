@@ -150,14 +150,18 @@ class ai {
             }
             if ($context !== null) {
                 // Moodle 5.x lets a course, and an activity, switch AI tools off.
-                if (method_exists($manager, 'is_ai_tools_enabled_in_course')
+                if (
+                    method_exists($manager, 'is_ai_tools_enabled_in_course')
                         && in_array($context->contextlevel, [CONTEXT_COURSE, CONTEXT_MODULE], true)
-                        && !$manager::is_ai_tools_enabled_in_course($context)) {
+                        && !$manager::is_ai_tools_enabled_in_course($context)
+                ) {
                     return 'error_ai_disabledincourse';
                 }
-                if ($context->contextlevel === CONTEXT_MODULE
+                if (
+                    $context->contextlevel === CONTEXT_MODULE
                         && method_exists($manager, 'is_action_enabled_in_context')
-                        && !$manager->is_action_enabled_in_context($context, $actionclass)) {
+                        && !$manager->is_action_enabled_in_context($context, $actionclass)
+                ) {
                     return 'error_ai_disabledincourse';
                 }
             }
@@ -270,8 +274,12 @@ class ai {
      * @return string The raw image bytes.
      * @throws \moodle_exception When no provider could produce an image.
      */
-    public static function generate_image(\context $context, int $userid, string $prompt,
-            string $aspectratio = 'landscape'): string {
+    public static function generate_image(
+        \context $context,
+        int $userid,
+        string $prompt,
+        string $aspectratio = 'landscape'
+    ): string {
         self::require_available(self::FEATURE_IMAGE, $context);
         if (!self::subsystem_present()) {
             return self::optimise_image(direct::generate_image(\core_text::substr($prompt, 0, 3900), $aspectratio));

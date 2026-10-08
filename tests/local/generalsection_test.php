@@ -16,6 +16,9 @@
 
 namespace format_dari\local;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\activityinfo::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\progress::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari::class)]
 /**
  * Tests for the General section rule and the shared course totals.
  *
@@ -27,9 +30,6 @@ namespace format_dari\local;
  * @covers     \format_dari\local\progress
  * @covers     \format_dari
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\activityinfo::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\progress::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari::class)]
 final class generalsection_test extends \advanced_testcase {
     /**
      * A course in this format that hides General from everyone, with an Announcements forum.

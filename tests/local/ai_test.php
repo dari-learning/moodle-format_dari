@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/../fixtures/ai_stub.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\ai::class)]
 /**
  * Tests for \format_dari\local\ai.
  *
@@ -38,7 +39,6 @@ require_once(__DIR__ . '/../fixtures/ai_stub.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\ai
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\ai::class)]
 final class ai_test extends \advanced_testcase {
     use \format_dari\tests\ai_stub;
 
@@ -68,8 +68,8 @@ final class ai_test extends \advanced_testcase {
      * With Moodle's real manager and no provider configured, both features say so.
      */
     public function test_unavailable_with_no_provider(): void {
-        $this->assertSame('error_ai_notextprovider', ai::unavailable_reason(ai::FEATURE_TEXT));
-        $this->assertSame('error_ai_noimageprovider', ai::unavailable_reason(ai::FEATURE_IMAGE, $this->context));
+        $this->assertSame($this->no_provider_error(), ai::unavailable_reason(ai::FEATURE_TEXT));
+        $this->assertSame($this->no_provider_error(true), ai::unavailable_reason(ai::FEATURE_IMAGE, $this->context));
         $this->assertFalse(ai::is_available(ai::FEATURE_TEXT, $this->context));
         $this->assertFalse(permissions::is_tutor_enabled($this->context));
         // The administrator's own switch is a separate question.
@@ -79,7 +79,7 @@ final class ai_test extends \advanced_testcase {
             ai::require_available(ai::FEATURE_IMAGE, $this->context);
             $this->fail('Expected an exception');
         } catch (\moodle_exception $e) {
-            $this->assertSame('error_ai_noimageprovider', $e->errorcode);
+            $this->assertSame($this->no_provider_error(true), $e->errorcode);
         }
     }
 
@@ -89,11 +89,11 @@ final class ai_test extends \advanced_testcase {
     public function test_reason_per_feature(): void {
         $this->stub_ai(true, false);
         $this->assertNull(ai::unavailable_reason(ai::FEATURE_TEXT, $this->context));
-        $this->assertSame('error_ai_noimageprovider', ai::unavailable_reason(ai::FEATURE_IMAGE, $this->context));
+        $this->assertSame($this->no_provider_error(true), ai::unavailable_reason(ai::FEATURE_IMAGE, $this->context));
         $this->assertTrue(permissions::is_tutor_enabled($this->context));
 
         $this->stub_ai(false, true);
-        $this->assertSame('error_ai_notextprovider', ai::unavailable_reason(ai::FEATURE_TEXT, $this->context));
+        $this->assertSame($this->no_provider_error(), ai::unavailable_reason(ai::FEATURE_TEXT, $this->context));
         $this->assertNull(ai::unavailable_reason(ai::FEATURE_IMAGE, $this->context));
 
         set_config('enabletutor', 0, 'format_dari');
@@ -107,14 +107,12 @@ final class ai_test extends \advanced_testcase {
      */
     public function test_memo(): void {
         $this->stub_ai(false, false);
-        $this->assertSame('error_ai_notextprovider', ai::unavailable_reason(ai::FEATURE_TEXT, $this->context));
+        $reason = $this->no_provider_error();
+        $this->assertSame($reason, ai::unavailable_reason(ai::FEATURE_TEXT, $this->context));
 
-        // Swap the manager without clearing the memo: the cached answer stands.
-        $manager = $this->getMockBuilder(\core_ai\manager::class)->disableOriginalConstructor()
-            ->onlyMethods(['is_action_available'])->getMock();
-        $manager->method('is_action_available')->willReturn(true);
-        \core\di::set(\core_ai\manager::class, $manager);
-        $this->assertSame('error_ai_notextprovider', ai::unavailable_reason(ai::FEATURE_TEXT, $this->context));
+        // Change the provider without clearing the memo: the cached answer stands.
+        $this->set_stub_availability(true, true);
+        $this->assertSame($reason, ai::unavailable_reason(ai::FEATURE_TEXT, $this->context));
 
         ai::reset_memo();
         $this->assertNull(ai::unavailable_reason(ai::FEATURE_TEXT, $this->context));
@@ -125,6 +123,16 @@ final class ai_test extends \advanced_testcase {
      */
     public function test_policy(): void {
         $userid = (int) $this->teacher->id;
+        if (!ai::subsystem_present()) {
+            // Moodle 4.4 has no core AI policy API; the direct connection must not call one.
+            $this->assertTrue(ai::policy_accepted($userid));
+            ai::require_policy($userid);
+            $this->assertSame(
+                ['available' => false, 'policyaccepted' => true],
+                ai::client_state(ai::FEATURE_TEXT, $this->context, $userid)
+            );
+            return;
+        }
         $this->assertFalse(ai::policy_accepted($userid));
         try {
             ai::require_policy($userid);
@@ -150,9 +158,17 @@ final class ai_test extends \advanced_testcase {
 
         $result = ai::generate_text($this->context, (int) $this->teacher->id, 'Prompt here');
 
-        $this->assertSame(['text' => 'The answer.', 'finishreason' => 'length', 'model' => 'test-model'], $result);
+        // Moodle 4.5's response object does not retain model metadata; direct and newer APIs do.
+        $probe = self::text_response('metadata probe');
+        $data = is_array($probe) ? $probe : $probe->get_response_data();
+        $this->assertSame(
+            ['text' => 'The answer.', 'finishreason' => 'length', 'model' => $data['model'] ?? ''],
+            $result
+        );
         $this->assertSame('Prompt here', $this->aiactions[0]->get_configuration('prompttext'));
-        $this->assertSame($this->context->id, $this->aiactions[0]->get_configuration('contextid'));
+        if (\format_dari\local\ai::subsystem_present()) {
+            $this->assertSame($this->context->id, $this->aiactions[0]->get_configuration('contextid'));
+        }
     }
 
     /**
@@ -160,8 +176,10 @@ final class ai_test extends \advanced_testcase {
      */
     public function test_generate_text_failures(): void {
         $this->stub_ai();
-        foreach ([[401, 'bad key', 'error_apiunauthorized'], [429, 'slow down', 'error_apiratelimited'],
-                [500, 'boom', 'error_ai_textfailed_detail']] as [$code, $message, $expected]) {
+        foreach (
+            [[401, 'bad key', 'error_apiunauthorized'], [429, 'slow down', 'error_apiratelimited'],
+                [500, 'boom', 'error_ai_textfailed_detail']] as [$code, $message, $expected]
+        ) {
             $this->queue_failure($code, $message);
             try {
                 ai::generate_text($this->context, (int) $this->teacher->id, 'x');
@@ -170,6 +188,10 @@ final class ai_test extends \advanced_testcase {
                 $this->assertSame($expected, $e->errorcode);
             }
         }
+        if ($this->directdebug) {
+            $this->assertDebuggingCalledCount(count($this->directdebug), $this->directdebug);
+            $this->directdebug = [];
+        }
         $this->resetDebugging();
 
         $this->stub_ai(false, false);
@@ -177,7 +199,7 @@ final class ai_test extends \advanced_testcase {
             ai::generate_text($this->context, (int) $this->teacher->id, 'x');
             $this->fail('Expected an exception');
         } catch (\moodle_exception $e) {
-            $this->assertSame('error_ai_notextprovider', $e->errorcode);
+            $this->assertSame($this->no_provider_error(), $e->errorcode);
         }
         $this->assertCount(0, $this->aiactions);
     }
@@ -213,6 +235,9 @@ final class ai_test extends \advanced_testcase {
     public function test_generate_image_without_a_file(): void {
         $this->stub_ai();
         $this->aiimagereplies[] = function () {
+            if (!ai::subsystem_present()) {
+                return ['data' => [[]]];
+            }
             $response = new \core_ai\aiactions\responses\response_generate_image(true);
             $response->set_response_data(['draftfile' => null]);
             return $response;

@@ -24,6 +24,7 @@
 
 namespace format_dari\local;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\permissions::class)]
 /**
  * Tests for format_dari\local\permissions.
  *
@@ -32,8 +33,15 @@ namespace format_dari\local;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\permissions
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\permissions::class)]
 final class permissions_test extends \advanced_testcase {
+    /**
+     * Isolate request-local role caches between test requests.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        permissions::reset_memo();
+    }
+
     /**
      * A teacher is a grader, a student is not.
      *

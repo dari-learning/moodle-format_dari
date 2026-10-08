@@ -25,6 +25,7 @@
 
 namespace format_dari\output\courseformat;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\courseformat\chatbox::class)]
 /**
  * Tests for Ask Dari panel (3.2.0).
  *
@@ -34,7 +35,6 @@ namespace format_dari\output\courseformat;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\output\courseformat\chatbox
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\output\courseformat\chatbox::class)]
 final class chatbox_test extends \advanced_testcase {
     /**
      * Build a course with an activity whose names carry characters that HTML escapes.

@@ -78,7 +78,7 @@ class direct {
         $payload = json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
         \core_php_time_limit::raise($timeout + 60);
 
-        $curl = new \curl();
+        $curl = \core\di::get(direct_client::class)->create();
         $curl->setopt(['CURLOPT_TIMEOUT' => $timeout, 'CURLOPT_CONNECTTIMEOUT' => 20]);
         $headers = ['Content-Type: application/json', 'Accept: application/json'];
         $key = trim((string) get_config('format_dari', 'directapikey'));
@@ -92,8 +92,10 @@ class direct {
         $code = (int) ($curl->info['http_code'] ?? 0);
 
         if ($curl->get_errno() || $code < 200 || $code >= 300) {
-            debugging('format_dari direct AI HTTP ' . $code . ' ' . $curl->error . ' ' . substr((string) $response, 0, 500),
-                DEBUG_DEVELOPER);
+            debugging(
+                'format_dari direct AI HTTP ' . $code . ' ' . $curl->error . ' ' . substr((string) $response, 0, 500),
+                DEBUG_DEVELOPER
+            );
             if ($code === 429) {
                 throw new \moodle_exception('error_apiratelimited', 'format_dari');
             }
@@ -112,8 +114,10 @@ class direct {
 
         $decoded = json_decode((string) $response, true);
         if (!is_array($decoded)) {
-            throw new \moodle_exception($path === '/chat/completions' ? 'error_ai_textfailed' : 'error_ai_imagefailed',
-                'format_dari');
+            throw new \moodle_exception(
+                $path === '/chat/completions' ? 'error_ai_textfailed' : 'error_ai_imagefailed',
+                'format_dari'
+            );
         }
         return $decoded;
     }

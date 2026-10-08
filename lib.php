@@ -1171,8 +1171,11 @@ class format_dari extends format_topics {
                     'help_component' => 'format_dari',
                     'element_type' => 'select',
                     'element_attributes' => [
-                        ['' => get_string('fontfamily_sitedefault', 'format_dari',
-                            \format_dari\local\fonts::label(\format_dari\local\fonts::site_choice()))]
+                        ['' => get_string(
+                            'fontfamily_sitedefault',
+                            'format_dari',
+                            \format_dari\local\fonts::label(\format_dari\local\fonts::site_choice())
+                        )]
                             + \format_dari\local\fonts::options(),
                     ],
                 ],

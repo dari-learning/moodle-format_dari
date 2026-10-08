@@ -120,7 +120,7 @@ class promptwriter {
      * @param array $brief The image brief (course facts are read from it).
      * @param \context $context The course context.
      * @param int $userid The teacher.
-     * @return array{world: string, people: string, places: string, props: string, palette: string, light: string, mood: string, avoid: string}
+     * @return array Art direction: world, people, places, props, palette, light, mood and avoid.
      */
     public static function art_direction(int $courseid, array $brief, \context $context, int $userid): array {
         $facts = [
@@ -237,7 +237,8 @@ class promptwriter {
         $lines[] = '';
         $lines[] = 'THIS IMAGE:';
         $lines[] = '- It is ' . ($isbanner ? 'the wide banner for the whole course' : 'the image for one ' . $target) . '.';
-        foreach ([
+        foreach (
+            [
             'topic' => 'Topic',
             'title' => 'Title',
             'detail' => 'What it covers',
@@ -245,7 +246,8 @@ class promptwriter {
             'activityType' => 'Activity type',
             'teacherDirection' => 'The teacher asks for',
             'sceneIdea' => 'A starting idea you may improve on',
-        ] as $key => $label) {
+            ] as $key => $label
+        ) {
             $value = trim((string) ($brief[$key] ?? ''));
             if ($value !== '') {
                 $lines[] = '- ' . $label . ': ' . \core_text::substr($value, 0, 400);
@@ -372,7 +374,7 @@ class promptwriter {
      * @return string
      */
     protected static function clean(string $text, int $max): string {
-        $text = preg_replace('~```[a-z]*~i', '', $text);
+        $text = preg_replace('~\x60{3}[a-z]*~i', '', $text);
         $text = strip_tags($text);
         $text = str_replace(['**', '__'], '', $text);
         // Markdown heading marks only; a hex colour such as #0F766E keeps its '#'.

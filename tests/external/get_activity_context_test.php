@@ -33,6 +33,7 @@ global $CFG;
 require_once($CFG->dirroot . '/course/format/dari/tests/external/external_testcase.php');
 require_once($CFG->dirroot . '/mod/quiz/locallib.php');
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\get_activity_context::class)]
 /**
  * Tests for the format_dari_get_activity_context external function.
  *
@@ -47,12 +48,12 @@ require_once($CFG->dirroot . '/mod/quiz/locallib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\external\get_activity_context
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\get_activity_context::class)]
 final class get_activity_context_test extends external_testcase {
     /**
      * Build a quiz in the fixture course with one multiple choice question.
      *
      * @param array $options Extra module options, e.g. ['visible' => 0].
+     * @param \stdClass|null $question Created question, returned by reference.
      * @return \stdClass The quiz activity record, with cmid.
      */
     protected function create_quiz(array $options = [], ?\stdClass &$question = null): \stdClass {
@@ -168,8 +169,12 @@ final class get_activity_context_test extends external_testcase {
 
         // Pin the slot to version 1.
         $slotid = $DB->get_field('quiz_slots', 'id', ['quizid' => $quiz->id, 'slot' => 1], MUST_EXIST);
-        $DB->set_field('question_references', 'version', 1,
-            ['component' => 'mod_quiz', 'questionarea' => 'slot', 'itemid' => $slotid]);
+        $DB->set_field(
+            'question_references',
+            'version',
+            1,
+            ['component' => 'mod_quiz', 'questionarea' => 'slot', 'itemid' => $slotid]
+        );
         $result = get_activity_context::execute($this->course->id, $quiz->cmid, 1);
         $this->assertCount(1, $result['context']['questions']);
         $this->assertStringContainsString('Which of these is a hazard?', $result['context']['questions'][0]['text']);
@@ -183,7 +188,7 @@ final class get_activity_context_test extends external_testcase {
         $this->setUser($this->student);
 
         $this->stub_ai(false, false);
-        $this->assert_throws_errorcode('error_ai_notextprovider', function () use ($quiz): void {
+        $this->assert_throws_errorcode($this->no_provider_error(), function () use ($quiz): void {
             get_activity_context::execute($this->course->id, $quiz->cmid, 0);
         });
 
