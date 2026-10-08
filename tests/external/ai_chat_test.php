@@ -550,6 +550,16 @@ final class ai_chat_test extends external_testcase {
         $newcomer = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
         $this->setUser($newcomer);
 
+        if (!ai::subsystem_present()) {
+            // Moodle 4.4 has no core policy API. Still exercise the actual permitted request.
+            $this->assertTrue(ai::policy_accepted((int) $newcomer->id));
+            $this->assertSame(
+                'A complete answer.',
+                ai_chat::execute($this->course->id, 'What is a hazard?')['answer']
+            );
+            $this->assertCount(1, $this->aiactions);
+            return;
+        }
         $this->assert_throws_errorcode('error_ai_policynotaccepted', function (): void {
             ai_chat::execute($this->course->id, 'What is a hazard?');
         });

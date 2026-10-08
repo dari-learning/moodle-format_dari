@@ -188,7 +188,7 @@ final class get_activity_context_test extends external_testcase {
         $this->setUser($this->student);
 
         $this->stub_ai(false, false);
-        $this->assert_throws_errorcode('error_ai_notextprovider', function () use ($quiz): void {
+        $this->assert_throws_errorcode($this->no_provider_error(), function () use ($quiz): void {
             get_activity_context::execute($this->course->id, $quiz->cmid, 0);
         });
 

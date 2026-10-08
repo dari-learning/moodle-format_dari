@@ -8,6 +8,9 @@
   regenerate the affected AMD builds and source maps.
 - Format CSS, replace embedded data URLs with bundled assets, and remove redundant
   overrides from the final scoped course rules.
+- Pin the CSS grammar validator to 3.1.0 so container queries and other valid modern
+  syntax are recognised on older Moodle CI toolchains. Keep the rule set and failure
+  thresholds unchanged, with positive and negative controls for the validator.
 - Link tutor controls to their panel only after the panel exists, and make the
   standalone section-card template example use its editing-mode accessibility context.
 - Correct the Behat field locator to the actual activities-on-cards setting label.

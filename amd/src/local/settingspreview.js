@@ -69,7 +69,7 @@ const tw = (s, size, bold) => s.length * size * (bold ? 0.6 : 0.56);
  * @param {Number} [r] Corner radius.
  * @returns {String}
  */
-const r = (x, y, w, h, c, r) =>
+const drawRect = (x, y, w, h, c, r) =>
     '<rect class="' +
     c +
     '" x="' +
@@ -94,7 +94,7 @@ const r = (x, y, w, h, c, r) =>
  * @param {String} c Class.
  * @returns {String}
  */
-const l = (x1, y1, x2, y2, c) => '<path class="' + c + '" d="M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2 + '"/>';
+const drawLine = (x1, y1, x2, y2, c) => '<path class="' + c + '" d="M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2 + '"/>';
 
 /**
  * Text.
@@ -106,7 +106,7 @@ const l = (x1, y1, x2, y2, c) => '<path class="' + c + '" d="M' + x1 + ' ' + y1 
  * @param {String} [a] Anchor: 'm' middle, 'e' end.
  * @returns {String}
  */
-const t = (x, y, s, c, a) =>
+const drawText = (x, y, s, c, a) =>
     '<text class="x ' +
     (c || '') +
     '" x="' +
@@ -133,7 +133,7 @@ const t = (x, y, s, c, a) =>
  * @param {String} c Class.
  * @returns {String}
  */
-const c = (cx, cy, r, c) => '<circle class="' + c + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '"/>';
+const drawCircle = (cx, cy, r, c) => '<circle class="' + c + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '"/>';
 
 /**
  * A group, optionally moved.
@@ -145,7 +145,7 @@ const c = (cx, cy, r, c) => '<circle class="' + c + '" cx="' + cx + '" cy="' + c
  * @param {Number} [s] Scale.
  * @returns {String}
  */
-const g = (inner, x, y, c, s) =>
+const drawGroup = (inner, x, y, c, s) =>
     '<g' +
     (c ? ' class="' + c + '"' : '') +
     (x || y || s
@@ -202,7 +202,7 @@ const ICON = {
  * @param {String} c Class (ic-2, ic-w, ic-b, ic-ok, plus ic-f for a filled glyph).
  * @returns {String}
  */
-const i = (k, x, y, s, c) =>
+const drawIcon = (k, x, y, s, c) =>
     '<path class="ik ' +
     (c || 'ic-2') +
     '" transform="translate(' +
@@ -230,7 +230,7 @@ const i = (k, x, y, s, c) =>
  * @param {Number} [r] Radius.
  * @returns {String}
  */
-const hl = (x, y, w, h, r) => r(x, y, w, h, 'hl', r === undefined ? 4 : r);
+const drawHighlight = (x, y, w, h, r) => drawRect(x, y, w, h, 'hl', r === undefined ? 4 : r);
 
 /**
  * A callout: a primary pill with the name of what changes, and a leader to it.
@@ -242,7 +242,7 @@ const hl = (x, y, w, h, r) => r(x, y, w, h, 'hl', r === undefined ? 4 : r);
  * @param {Number} [ty] Leader end y.
  * @returns {String}
  */
-const co = (x, y, s, tx, ty) => {
+const drawCallout = (x, y, s, tx, ty) => {
     const w = Math.round(tw(s, 9, true) + 14);
     let out = '';
     if (tx !== undefined) {
@@ -258,9 +258,9 @@ const co = (x, y, s, tx, ty) => {
             }
             return ty > y + 15 ? y + 15 : y + 7.5;
         })();
-        out += l(sx, sy, tx, ty, 'co-ln') + c(tx, ty, 2.2, 'co-dot');
+        out += drawLine(sx, sy, tx, ty, 'co-ln') + drawCircle(tx, ty, 2.2, 'co-dot');
     }
-    return out + r(x, y, w, 15, 'co-bg', 7.5) + t(x + w / 2, y + 10.5, s, 'x9 b kw', 'm');
+    return out + drawRect(x, y, w, 15, 'co-bg', 7.5) + drawText(x + w / 2, y + 10.5, s, 'x9 b kw', 'm');
 };
 
 /**
@@ -274,17 +274,17 @@ const co = (x, y, s, tx, ty) => {
  * @param {String} inner Content, drawn from y=20 down.
  * @returns {String}
  */
-const panel = (x, w, label, on, values, inner) => {
+const drawPanel = (x, w, label, on, values, inner) => {
     const lw = Math.round(tw(label, 9, true) + 14);
     return (
         '<g class="pv-panel" data-v="' +
         values +
         '">' +
-        r(x + 0.5, 18.5, w - 1, H - 19, 'pv-frame', 7) +
-        r(x + 0.5, 18.5, w - 1, H - 19, 'pv-cur', 7) +
-        r(x, 0, lw, 14, on ? 'tag-on' : 'tag-off', 7) +
-        t(x + lw / 2, 10, label, 'x9 b ' + (on ? 'kw' : 'k2'), 'm') +
-        t(x + lw + 6, 10, '', 'x9 b kb pv-curlabel') +
+        drawRect(x + 0.5, 18.5, w - 1, H - 19, 'pv-frame', 7) +
+        drawRect(x + 0.5, 18.5, w - 1, H - 19, 'pv-cur', 7) +
+        drawRect(x, 0, lw, 14, on ? 'tag-on' : 'tag-off', 7) +
+        drawText(x + lw / 2, 10, label, 'x9 b ' + (on ? 'kw' : 'k2'), 'm') +
+        drawText(x + lw + 6, 10, '', 'x9 b kb pv-curlabel') +
         '<svg x="' +
         (x + 1) +
         '" y="19" width="' +
@@ -308,7 +308,7 @@ const panel = (x, w, label, on, values, inner) => {
  * @param {Array} b The same for the right panel.
  * @returns {String}
  */
-const two = (a, b) => panel(0, 174, a[0], a[1], a[2], a[3]) + panel(186, 174, b[0], b[1], b[2], b[3]);
+const drawTwo = (a, b) => drawPanel(0, 174, a[0], a[1], a[2], a[3]) + drawPanel(186, 174, b[0], b[1], b[2], b[3]);
 
 /**
  * Three panels side by side.
@@ -316,7 +316,7 @@ const two = (a, b) => panel(0, 174, a[0], a[1], a[2], a[3]) + panel(186, 174, b[
  * @param {Array} list Three [label, on, values, inner].
  * @returns {String}
  */
-const three = (list) => list.map((p, i) => panel(i * 122, 114, p[0], p[1], p[2], p[3])).join('');
+const drawThree = (list) => list.map((p, i) => drawPanel(i * 122, 114, p[0], p[1], p[2], p[3])).join('');
 
 /* --------------------------------------------------------------------------
    Page parts.
@@ -331,9 +331,12 @@ const three = (list) => list.map((p, i) => panel(i * 122, 114, p[0], p[1], p[2],
  * @param {Object} [o] {tabs: true to carry the course tabs beside the links}
  * @returns {String}
  */
-const navbar = (x, y, w, o) => {
+const drawNavbar = (x, y, w, o) => {
     o = o || {};
-    let s = r(x, y, w, 20, 'p-surf0') + l(x, y + 20, x + w, y + 20, 'p-line') + t(x + 8, y + 13.5, 'dari', 'x11 b');
+    let s =
+        drawRect(x, y, w, 20, 'p-surf0') +
+        drawLine(x, y + 20, x + w, y + 20, 'p-line') +
+        drawText(x + 8, y + 13.5, 'dari', 'x11 b');
     let lx = x + 34;
     const narrow = w < 240;
     const fs = narrow ? 8 : 9;
@@ -344,14 +347,14 @@ const navbar = (x, y, w, o) => {
         return ['Home', 'Dashboard', 'My courses'];
     })();
     links.forEach((l, i) => {
-        s += t(lx, y + 13, l, 'x' + fs + (o.tabs && i > 0 ? ' kb b' : ''));
+        s += drawText(lx, y + 13, l, 'x' + fs + (o.tabs && i > 0 ? ' kb b' : ''));
         lx += tw(l, fs, o.tabs && i > 0) + (narrow ? 7 : 10);
     });
     if (!narrow) {
         s +=
-            i('bell', x + w - 36, y + 4, 11, 'ic-2') +
-            c(x + w - 13, y + 10, 6.5, 'p-chip') +
-            t(x + w - 13, y + 12.8, 'SR', 'x8 b k2', 'm');
+            drawIcon('bell', x + w - 36, y + 4, 11, 'ic-2') +
+            drawCircle(x + w - 13, y + 10, 6.5, 'p-chip') +
+            drawText(x + w - 13, y + 12.8, 'SR', 'x8 b k2', 'm');
     }
     return s;
 };
@@ -364,12 +367,12 @@ const navbar = (x, y, w, o) => {
  * @param {Number} w Width.
  * @returns {String}
  */
-const logoband = (x, y, w) =>
-    r(x, y, w, 26, 'p-brandsoft') +
-    r(x + 8, y + 5, 16, 16, 'p-brand', 4) +
-    t(x + 16, y + 16.5, 'D', 'x10 b kw', 'm') +
-    t(x + 30, y + 16.5, 'Dari Academy', 'x11 b') +
-    (w >= 240 ? t(x + w - 8, y + 16, 'Learning portal', 'x9 k3', 'e') : '');
+const drawLogoband = (x, y, w) =>
+    drawRect(x, y, w, 26, 'p-brandsoft') +
+    drawRect(x + 8, y + 5, 16, 16, 'p-brand', 4) +
+    drawText(x + 16, y + 16.5, 'D', 'x10 b kw', 'm') +
+    drawText(x + 30, y + 16.5, 'Dari Academy', 'x11 b') +
+    (w >= 240 ? drawText(x + w - 8, y + 16, 'Learning portal', 'x9 k3', 'e') : '');
 
 /**
  * The breadcrumb trail.
@@ -379,16 +382,16 @@ const logoband = (x, y, w) =>
  * @param {Number} [n] How many crumbs.
  * @returns {String}
  */
-const crumbs = (x, y, n) => {
+const drawCrumbs = (x, y, n) => {
     const parts = ['Dashboard', 'My courses', 'WHS101', 'Spotting hazards'].slice(0, n || 4);
     let s = '';
     let cx = x;
     parts.forEach((p, i) => {
         const last = i === parts.length - 1;
-        s += t(cx, y, p, 'x9 ' + (last ? 'k2' : 'kb'));
+        s += drawText(cx, y, p, 'x9 ' + (last ? 'k2' : 'kb'));
         cx += tw(p, 9) + 4;
         if (!last) {
-            s += t(cx, y, '›', 'x9 k3');
+            s += drawText(cx, y, '›', 'x9 k3');
             cx += 8;
         }
     });
@@ -403,17 +406,17 @@ const crumbs = (x, y, n) => {
  * @param {Number} w Width.
  * @returns {String}
  */
-const tabs = (x, y, w) => {
-    let s = l(x, y + 16, x + w, y + 16, 'p-line');
+const drawTabs = (x, y, w) => {
+    let s = drawLine(x, y + 16, x + w, y + 16, 'p-line');
     let cx = x + 2;
     ['Course', 'Settings', 'Participants', 'Grades', 'Reports'].forEach((l, i) => {
         const lw = tw(l, 9, i === 0);
         if (cx + lw > x + w) {
             return;
         }
-        s += t(cx, y + 11, l, 'x9 ' + (i === 0 ? 'b' : 'kb'));
+        s += drawText(cx, y + 11, l, 'x9 ' + (i === 0 ? 'b' : 'kb'));
         if (i === 0) {
-            s += r(cx - 2, y + 14.5, lw + 4, 2, 'p-brand');
+            s += drawRect(cx - 2, y + 14.5, lw + 4, 2, 'p-brand');
         }
         cx += lw + 11;
     });
@@ -430,7 +433,7 @@ const tabs = (x, y, w) => {
  * @param {String} [tone] 'vivid' for saturated colours.
  * @returns {String}
  */
-const photo = (x, y, w, h, tone) => {
+const drawPhoto = (x, y, w, h, tone) => {
     const id = 'pvg' + ++uid;
     const sky = tone === 'vivid' ? ['#3b82f6', '#93c5fd'] : ['#6f93ad', '#c9d8e2'];
     const hill1 = tone === 'vivid' ? '#16a34a' : '#5f7d6a';
@@ -518,10 +521,10 @@ const photo = (x, y, w, h, tone) => {
  * @param {Boolean} [onmedia] White, over a picture.
  * @returns {String}
  */
-const ring = (cx, cy, r, pct, onmedia) => {
+const drawRing = (cx, cy, r, pct, onmedia) => {
     const c = 2 * Math.PI * r;
     return (
-        c(cx, cy, r, onmedia ? 'ring-tw' : 'ring-t') +
+        drawCircle(cx, cy, r, onmedia ? 'ring-tw' : 'ring-t') +
         '<circle class="' +
         (onmedia ? 'ring-aw' : 'ring-a') +
         '" cx="' +
@@ -539,7 +542,7 @@ const ring = (cx, cy, r, pct, onmedia) => {
         ' ' +
         cy +
         ')"/>' +
-        t(cx, cy + 3, pct + '%', 'x8 b ' + (onmedia ? 'kw' : ''), 'm')
+        drawText(cx, cy + 3, pct + '%', 'x8 b ' + (onmedia ? 'kw' : ''), 'm')
     );
 };
 
@@ -553,13 +556,13 @@ const ring = (cx, cy, r, pct, onmedia) => {
  * @param {Object} [o] {image, scrim (0..1), fade (0..1), title, chevrons, compact}
  * @returns {String}
  */
-const banner = (x, y, w, h, o) => {
+const drawBanner = (x, y, w, h, o) => {
     o = o || {};
     const media = !!o.image;
     let s = '';
     if (media) {
         s +=
-            photo(x, y, w, h) +
+            drawPhoto(x, y, w, h) +
             '<rect x="' +
             x +
             '" y="' +
@@ -577,7 +580,7 @@ const banner = (x, y, w, h, o) => {
             })() +
             '"/>';
     } else {
-        s += r(x, y, w, h, 'p-banner');
+        s += drawRect(x, y, w, h, 'p-banner');
         if (o.fade) {
             s +=
                 '<rect class="p-c" x="' +
@@ -593,7 +596,7 @@ const banner = (x, y, w, h, o) => {
                 '"/>';
         }
     }
-    s += r(x + 0.5, y + 0.5, w - 1, h - 1, 'p-edge');
+    s += drawRect(x + 0.5, y + 0.5, w - 1, h - 1, 'p-edge');
     const kt = (() => {
         if (media) {
             return ' kw';
@@ -615,7 +618,7 @@ const banner = (x, y, w, h, o) => {
             })();
         })();
     const btn = (bx, by, k, ai) =>
-        r(
+        drawRect(
             bx,
             by,
             17,
@@ -627,13 +630,13 @@ const banner = (x, y, w, h, o) => {
                 return media ? 'p-glass' : 'p-btn';
             })(),
             4
-        ) + i(k, bx + 2.5, by + 2.5, 12, ai || media ? 'ic-w' : 'ic-b');
+        ) + drawIcon(k, bx + 2.5, by + 2.5, 12, ai || media ? 'ic-w' : 'ic-b');
     if (wide) {
         const cy = y + h / 2;
         s += btn(x + 8, cy - 8.5, 'home') + btn(x + 28, cy - 8.5, 'grades') + btn(x + 48, cy - 8.5, 'spark', true);
         s +=
-            t(x + w / 2 + 6, cy - 1, title, 'x11 b' + kt, 'm') +
-            t(
+            drawText(x + w / 2 + 6, cy - 1, title, 'x11 b' + kt, 'm') +
+            drawText(
                 x + w / 2 + 6,
                 cy + 11,
                 '3 modules · 5 activities · 1 hr 10 min',
@@ -646,11 +649,11 @@ const banner = (x, y, w, h, o) => {
                     })(),
                 'm'
             );
-        s += ring(x + w - 20, cy, 11, 42, media);
+        s += drawRing(x + w - 20, cy, 11, 42, media);
     } else {
-        s += t(x + 8, y + 16, title, 'x10 b' + kt);
+        s += drawText(x + 8, y + 16, title, 'x10 b' + kt);
         if (h >= 58) {
-            s += t(
+            s += drawText(
                 x + 8,
                 y + 28,
                 '3 modules · 5 activities',
@@ -665,12 +668,12 @@ const banner = (x, y, w, h, o) => {
         }
         s +=
             btn(x + 8, y + h - 22, 'home') + btn(x + 28, y + h - 22, 'grades') + btn(x + 48, y + h - 22, 'spark', true);
-        s += ring(x + w - 18, y + h - 15, 10, 42, media);
+        s += drawRing(x + w - 18, y + h - 15, 10, 42, media);
     }
     if (o.chevrons && !wide) {
         const cy2 = y + h - 13.5;
         s +=
-            c(
+            drawCircle(
                 x + 82,
                 cy2,
                 8,
@@ -681,7 +684,7 @@ const banner = (x, y, w, h, o) => {
                     return 'p-btn';
                 })()
             ) +
-            i(
+            drawIcon(
                 'chevl',
                 x + 76,
                 cy2 - 6,
@@ -693,7 +696,7 @@ const banner = (x, y, w, h, o) => {
                     return 'ic-b';
                 })()
             ) +
-            c(
+            drawCircle(
                 x + 102,
                 cy2,
                 8,
@@ -704,7 +707,7 @@ const banner = (x, y, w, h, o) => {
                     return 'p-btn';
                 })()
             ) +
-            i(
+            drawIcon(
                 'chevr',
                 x + 96,
                 cy2 - 6,
@@ -718,7 +721,7 @@ const banner = (x, y, w, h, o) => {
             );
     } else if (o.chevrons) {
         s +=
-            c(
+            drawCircle(
                 x + w - 52,
                 y + h / 2,
                 8,
@@ -729,7 +732,7 @@ const banner = (x, y, w, h, o) => {
                     return 'p-btn';
                 })()
             ) +
-            i(
+            drawIcon(
                 'chevl',
                 x + w - 58,
                 y + h / 2 - 6,
@@ -741,7 +744,7 @@ const banner = (x, y, w, h, o) => {
                     return 'ic-b';
                 })()
             ) +
-            c(
+            drawCircle(
                 x + w - 32,
                 y + h / 2,
                 8,
@@ -752,7 +755,7 @@ const banner = (x, y, w, h, o) => {
                     return 'p-btn';
                 })()
             ) +
-            i(
+            drawIcon(
                 'chevr',
                 x + w - 38,
                 y + h / 2 - 6,
@@ -824,10 +827,10 @@ const INDEXROWS = [
  * @param {Object} [o] {plain, time, total, logo, nogeneral, head (colour class), heading, icons, bg, op, mark}
  * @returns {String}
  */
-const index = (x, y, w, h, o) => {
+const drawIndex = (x, y, w, h, o) => {
     o = o || {};
     let s = '<svg x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" overflow="hidden">';
-    s += r(0, 0, w, h, 'p-index');
+    s += drawRect(0, 0, w, h, 'p-index');
     if (o.bg) {
         s +=
             '<rect class="p-c" x="0" y="0" width="' +
@@ -840,50 +843,53 @@ const index = (x, y, w, h, o) => {
     }
     let cy = 0;
     if (o.plain) {
-        s += t(8, 14, 'Course index', 'x9 b k2');
+        s += drawText(8, 14, 'Course index', 'x9 b k2');
         cy = 22;
         INDEXROWS.forEach((r) => {
             if (r.general && o.nogeneral) {
                 return;
             }
             if (r.sec) {
-                s += i(r.open ? 'chevd' : 'chevr', 5, cy + 3, 10, 'ic-2') + t(17, cy + 11, r.sec, 'x9 b');
+                s += drawIcon(r.open ? 'chevd' : 'chevr', 5, cy + 3, 10, 'ic-2') + drawText(17, cy + 11, r.sec, 'x9 b');
             } else {
-                s += (r.current ? r(0, cy, w, 17, 'p-brandsoft') : '') + t(17, cy + 11, r.act, 'x9 kb');
+                s += (r.current ? drawRect(0, cy, w, 17, 'p-brandsoft') : '') + drawText(17, cy + 11, r.act, 'x9 kb');
             }
             cy += 17;
         });
-        return s + l(w - 0.5, 0, w - 0.5, h, 'p-line') + '</svg>';
+        return s + drawLine(w - 0.5, 0, w - 0.5, h, 'p-line') + '</svg>';
     }
     // Player header: logo row, course title, total time, ring.
     if (o.logo) {
         s +=
-            r(0, 0, w, 22, 'p-surf0') +
-            r(7, 4, 14, 14, 'p-brand', 3) +
-            t(14, 14.5, 'D', 'x9 b kw', 'm') +
-            t(25, 14.5, 'Dari Academy', 'x9 b');
+            drawRect(0, 0, w, 22, 'p-surf0') +
+            drawRect(7, 4, 14, 14, 'p-brand', 3) +
+            drawText(14, 14.5, 'D', 'x9 b kw', 'm') +
+            drawText(25, 14.5, 'Dari Academy', 'x9 b');
         cy = 22;
     } else {
-        s += i('grid', w - 46, 4, 10, 'ic-2') + i('dots', w - 30, 4, 10, 'ic-2') + i('close', w - 15, 4, 10, 'ic-2');
+        s +=
+            drawIcon('grid', w - 46, 4, 10, 'ic-2') +
+            drawIcon('dots', w - 30, 4, 10, 'ic-2') +
+            drawIcon('close', w - 15, 4, 10, 'ic-2');
         cy = 16;
     }
-    s += r(0, cy, w, 34, o.head ? 'p-c' : 'p-head');
+    s += drawRect(0, cy, w, 34, o.head ? 'p-c' : 'p-head');
     const ink = o.head ? 'kw' : 'kb';
-    s += t(7, cy + 14, w < 130 ? 'WHS101' : 'WHS for Supervisors', 'x9 b ' + ink + (o.head ? ' onc' : ''));
+    s += drawText(7, cy + 14, w < 130 ? 'WHS101' : 'WHS for Supervisors', 'x9 b ' + ink + (o.head ? ' onc' : ''));
     if (o.total !== false) {
-        s += t(7, cy + 26, '1 hr 10 min', 'x8 ' + (o.head ? 'kw onc' : 'k2'));
+        s += drawText(7, cy + 26, '1 hr 10 min', 'x8 ' + (o.head ? 'kw onc' : 'k2'));
     }
     if (w >= 90) {
-        s += ring(w - 16, cy + 17, 10, 42, !!o.head);
+        s += drawRing(w - 16, cy + 17, 10, 42, !!o.head);
     }
     if (o.mark === 'total' && o.total !== false) {
-        s += hl(4, cy + 18, 50, 12, 3);
+        s += drawHighlight(4, cy + 18, 50, 12, 3);
     }
     if (o.mark === 'logo' && o.logo) {
-        s += hl(3, 2, Math.min(w - 6, 84), 18, 3);
+        s += drawHighlight(3, 2, Math.min(w - 6, 84), 18, 3);
     }
     if (o.mark === 'header') {
-        s += hl(1, cy + 1, w - 2, 32, 2);
+        s += drawHighlight(1, cy + 1, w - 2, 32, 2);
     }
     cy += 34;
     INDEXROWS.forEach((r) => {
@@ -892,39 +898,39 @@ const index = (x, y, w, h, o) => {
         }
         if (r.sec) {
             s +=
-                r(0, cy, w, 20, o.heading ? 'p-c' : 'p-brand') +
-                l(0, cy + 20, w, cy + 20, 'p-sep') +
-                i(r.open ? 'chevd' : 'chevr', 5, cy + 4, 11, 'ic-w' + (o.heading ? ' onc' : '')) +
-                t(19, cy + 13.5, r.sec, 'x9 b kw' + (o.heading ? ' onc' : ''));
+                drawRect(0, cy, w, 20, o.heading ? 'p-c' : 'p-brand') +
+                drawLine(0, cy + 20, w, cy + 20, 'p-sep') +
+                drawIcon(r.open ? 'chevd' : 'chevr', 5, cy + 4, 11, 'ic-w' + (o.heading ? ' onc' : '')) +
+                drawText(19, cy + 13.5, r.sec, 'x9 b kw' + (o.heading ? ' onc' : ''));
             cy += 20;
         } else {
             if (r.current) {
-                s += r(0, cy, w, 20, 'p-brandsoft') + r(0, cy, 2.5, 20, 'p-brand');
+                s += drawRect(0, cy, w, 20, 'p-brandsoft') + drawRect(0, cy, 2.5, 20, 'p-brand');
             }
             s +=
-                r(6, cy + 4, 12, 12, o.icons ? 'p-cs' : 'p-brandsoft') +
-                i(r.icon, 7, cy + 5, 10, o.icons ? 'ic-c' : 'ic-b');
+                drawRect(6, cy + 4, 12, 12, o.icons ? 'p-cs' : 'p-brandsoft') +
+                drawIcon(r.icon, 7, cy + 5, 10, o.icons ? 'ic-c' : 'ic-b');
             const room = w - 24 - (o.time === false ? 16 : 52);
             let name = r.act;
             while (name.length > 4 && tw(name, 9.5) > room) {
                 name = name.slice(0, -2).trim() + '…';
                 name = name.replace(/…+$/, '…');
             }
-            s += t(23, cy + 13.5, name, 'x9');
+            s += drawText(23, cy + 13.5, name, 'x9');
             if (o.time !== false) {
-                s += r(w - 50, cy + 5, 32, 11, 'p-chip') + t(w - 34, cy + 13.2, r.time, 'x8 k2', 'm');
+                s += drawRect(w - 50, cy + 5, 32, 11, 'p-chip') + drawText(w - 34, cy + 13.2, r.time, 'x8 k2', 'm');
                 if (o.mark === 'time') {
-                    s += hl(w - 52, cy + 3.5, 36, 14, 3);
+                    s += drawHighlight(w - 52, cy + 3.5, 36, 14, 3);
                 }
             }
             s += r.done
-                ? c(w - 9, cy + 10, 5, 'p-ok') + i('check', w - 14, cy + 5, 10, 'ic-w')
-                : c(w - 9, cy + 10, 4.5, 'p-tick0');
-            s += l(0, cy + 20, w, cy + 20, 'p-line');
+                ? drawCircle(w - 9, cy + 10, 5, 'p-ok') + drawIcon('check', w - 14, cy + 5, 10, 'ic-w')
+                : drawCircle(w - 9, cy + 10, 4.5, 'p-tick0');
+            s += drawLine(0, cy + 20, w, cy + 20, 'p-line');
             cy += 20;
         }
     });
-    return s + l(w - 0.5, 0, w - 0.5, h, 'p-line') + '</svg>';
+    return s + drawLine(w - 0.5, 0, w - 0.5, h, 'p-line') + '</svg>';
 };
 
 /**
@@ -936,7 +942,7 @@ const index = (x, y, w, h, o) => {
  * @param {Object} [o] {colour, op, big, small, acts, limit, time, image, mark, title, eyebrow, cta}
  * @returns {String} Markup; the card is as tall as its content.
  */
-const card = (x, y, w, o) => {
+const drawCard = (x, y, w, o) => {
     o = o || {};
     const mh = o.mh || 56;
     let s = '';
@@ -951,11 +957,11 @@ const card = (x, y, w, o) => {
             '" height="' +
             mh +
             '">' +
-            photo(0, 0, w - 8, mh) +
+            drawPhoto(0, 0, w - 8, mh) +
             '</svg>';
     } else {
         s +=
-            r(x + 4, y + 4, w - 8, mh, 'p-surf0', 5) +
+            drawRect(x + 4, y + 4, w - 8, mh, 'p-surf0', 5) +
             '<rect class="' +
             (() => {
                 if (o.colour) {
@@ -990,8 +996,8 @@ const card = (x, y, w, o) => {
     const mini = w < 110;
     if (mh >= 32) {
         s +=
-            r(x + 9, y + 9, tw(captionOr(o.eyebrow, 'Module 2'), 8, true) + 10, 12, 'p-glass', 6) +
-            t(
+            drawRect(x + 9, y + 9, tw(captionOr(o.eyebrow, 'Module 2'), 8, true) + 10, 12, 'p-glass', 6) +
+            drawText(
                 x + 14,
                 y + 17.5,
                 captionOr(o.eyebrow, 'Module 2'),
@@ -1015,7 +1021,7 @@ const card = (x, y, w, o) => {
             return 'x11';
         })();
     })();
-    s += t(
+    s += drawText(
         x + 10,
         y + mh - 3,
         captionOr(o.title, 'Spotting hazards'),
@@ -1029,7 +1035,7 @@ const card = (x, y, w, o) => {
             })()
     );
     if (o.mark === 'title') {
-        s += hl(
+        s += drawHighlight(
             x + 7,
             y +
                 mh -
@@ -1064,16 +1070,19 @@ const card = (x, y, w, o) => {
         );
     }
     if (o.mark === 'panel') {
-        s += hl(x + 3, y + 3, w - 6, mh + 2, 6);
+        s += drawHighlight(x + 3, y + 3, w - 6, mh + 2, 6);
     }
     let cy = y + mh + 10;
     // Chips.
     let cx = x + 8;
     const chip = (k, label, hl) => {
         const cw = tw(label, 8) + 22;
-        let c = r(cx, cy, cw, 13, 'p-chip', 4) + i(k, cx + 3, cy + 2, 9, 'ic-b') + t(cx + 15, cy + 9.5, label, 'x8 k2');
+        let c =
+            drawRect(cx, cy, cw, 13, 'p-chip', 4) +
+            drawIcon(k, cx + 3, cy + 2, 9, 'ic-b') +
+            drawText(cx + 15, cy + 9.5, label, 'x8 k2');
         if (hl) {
-            c += hl(cx - 2, cy - 2, cw + 4, 17, 4);
+            c += drawHighlight(cx - 2, cy - 2, cw + 4, 17, 4);
         }
         cx += cw + 4;
         return c;
@@ -1090,7 +1099,7 @@ const card = (x, y, w, o) => {
         const n = o.limit || names.length;
         names.slice(0, n).forEach((nm, i) => {
             s +=
-                i(
+                drawIcon(
                     (() => {
                         if (i === 2) {
                             return 'quiz';
@@ -1107,44 +1116,44 @@ const card = (x, y, w, o) => {
                     10,
                     'ic-b'
                 ) +
-                t(x + 21, cy + 7, nm, 'x8') +
+                drawText(x + 21, cy + 7, nm, 'x8') +
                 (() => {
                     if (i < 2) {
-                        return c(x + w - 14, cy + 4, 4, 'p-ok') + i('check', x + w - 18, cy, 8, 'ic-w');
+                        return drawCircle(x + w - 14, cy + 4, 4, 'p-ok') + drawIcon('check', x + w - 18, cy, 8, 'ic-w');
                     }
-                    return c(x + w - 14, cy + 4, 3.6, 'p-tick0');
+                    return drawCircle(x + w - 14, cy + 4, 3.6, 'p-tick0');
                 })();
             cy += 13;
         });
         if (o.limit && o.limit < names.length) {
-            s += t(x + 21, cy + 7, '+ ' + (names.length - o.limit) + ' more', 'x8 kb b');
+            s += drawText(x + 21, cy + 7, '+ ' + (names.length - o.limit) + ' more', 'x8 kb b');
             cy += 13;
         }
         if (o.mark === 'list') {
-            s += hl(x + 5, y + mh + 28, w - 10, cy - (y + mh + 28) + 2, 3);
+            s += drawHighlight(x + 5, y + mh + 28, w - 10, cy - (y + mh + 28) + 2, 3);
         }
         cy += 9;
     }
     // Progress.
     if (mini) {
         s +=
-            r(x + 8, cy, w - 16, 4, 'p-track', 2) +
-            r(x + 8, cy, (w - 16) / 2, 4, 'p-brand', 2) +
-            t(x + 8, cy + 15, '2 of 4 done', 'x8 b k2');
+            drawRect(x + 8, cy, w - 16, 4, 'p-track', 2) +
+            drawRect(x + 8, cy, (w - 16) / 2, 4, 'p-brand', 2) +
+            drawText(x + 8, cy + 15, '2 of 4 done', 'x8 b k2');
         cy += 22;
     } else {
         s +=
-            r(x + 8, cy, w - 66, 4, 'p-track', 2) +
-            r(x + 8, cy, (w - 66) / 2, 4, 'p-brand', 2) +
-            t(x + w - 8, cy + 5, '2 of 4 done', 'x8 b k2', 'e');
+            drawRect(x + 8, cy, w - 66, 4, 'p-track', 2) +
+            drawRect(x + 8, cy, (w - 66) / 2, 4, 'p-brand', 2) +
+            drawText(x + w - 8, cy + 5, '2 of 4 done', 'x8 b k2', 'e');
         cy += 12;
     }
     if (o.cta !== false && !mini) {
         s +=
-            l(x + 8, cy, x + w - 8, cy, 'p-line') +
-            t(x + 8, cy + 14, 'In progress', 'x8 k3') +
-            r(x + w - 66, cy + 4, 58, 15, 'p-brandsoft', 5) +
-            t(x + w - 37, cy + 14.5, 'Continue →', 'x8 b kb', 'm');
+            drawLine(x + 8, cy, x + w - 8, cy, 'p-line') +
+            drawText(x + 8, cy + 14, 'In progress', 'x8 k3') +
+            drawRect(x + w - 66, cy + 4, 58, 15, 'p-brandsoft', 5) +
+            drawText(x + w - 37, cy + 14.5, 'Continue →', 'x8 b kb', 'm');
         cy += 24;
     }
     const body = (() => {
@@ -1168,7 +1177,7 @@ const card = (x, y, w, o) => {
                 '"/>' +
                 (() => {
                     if (o.mark === 'body') {
-                        return hl(x - 2, y - 2, w + 4, cy - y + 4, 9);
+                        return drawHighlight(x - 2, y - 2, w + 4, cy - y + 4, 9);
                     }
                     return '';
                 })()
@@ -1176,7 +1185,7 @@ const card = (x, y, w, o) => {
         }
         return '';
     })();
-    return r(x, y, w, cy - y, 'p-card', 8) + body + s;
+    return drawRect(x, y, w, cy - y, 'p-card', 8) + body + s;
 };
 
 /**
@@ -1188,32 +1197,32 @@ const card = (x, y, w, o) => {
  * @param {Object} [o] {time, title, kind, icon, mark}
  * @returns {String}
  */
-const tile = (x, y, w, o) => {
+const drawTile = (x, y, w, o) => {
     o = o || {};
     const mh = 40;
     let s =
-        r(x, y, w, mh + 30, 'p-card', 7) +
-        r(x + 3, y + 3, w - 6, mh, 'p-brand', 5) +
-        r(x + 8, y + 8, 14, 14, 'p-glass', 3) +
-        i(o.icon || 'page', x + 9, y + 9, 12, 'ic-w') +
-        t(x + 8, y + mh - 4, w < 100 ? o.short || 'Controls' : o.title || 'Hierarchy of control', 'x9 b kw');
+        drawRect(x, y, w, mh + 30, 'p-card', 7) +
+        drawRect(x + 3, y + 3, w - 6, mh, 'p-brand', 5) +
+        drawRect(x + 8, y + 8, 14, 14, 'p-glass', 3) +
+        drawIcon(o.icon || 'page', x + 9, y + 9, 12, 'ic-w') +
+        drawText(x + 8, y + mh - 4, w < 100 ? o.short || 'Controls' : o.title || 'Hierarchy of control', 'x9 b kw');
     let cx = x + 7;
     const cy = y + mh + 10;
     const kind = o.kind || 'Page';
     if (w >= 100) {
         s +=
-            r(cx, cy, tw(kind, 8) + 20, 13, 'p-chip', 4) +
-            i(o.icon || 'page', cx + 3, cy + 2, 9, 'ic-2') +
-            t(cx + 14, cy + 9.5, kind, 'x8 k2');
+            drawRect(cx, cy, tw(kind, 8) + 20, 13, 'p-chip', 4) +
+            drawIcon(o.icon || 'page', cx + 3, cy + 2, 9, 'ic-2') +
+            drawText(cx + 14, cy + 9.5, kind, 'x8 k2');
         cx += tw(kind, 8) + 24;
     }
     if (o.time !== false) {
         s +=
-            r(cx, cy, 44, 13, 'p-chip', 4) +
-            i('clock', cx + 3, cy + 2, 9, 'ic-b') +
-            t(cx + 15, cy + 9.5, o.timelabel || '10 min', 'x8 k2');
+            drawRect(cx, cy, 44, 13, 'p-chip', 4) +
+            drawIcon('clock', cx + 3, cy + 2, 9, 'ic-b') +
+            drawText(cx + 15, cy + 9.5, o.timelabel || '10 min', 'x8 k2');
         if (o.mark === 'time') {
-            s += hl(cx - 2, cy - 2, 48, 17, 4);
+            s += drawHighlight(cx - 2, cy - 2, 48, 17, 4);
         }
     }
     return s;
@@ -1227,8 +1236,8 @@ const tile = (x, y, w, o) => {
  * @param {Number} w Width.
  * @returns {String}
  */
-const stdlist = (x, y, w) => {
-    let s = t(x, y + 11, 'Spotting hazards', 'x11 b');
+const drawStdlist = (x, y, w) => {
+    let s = drawText(x, y + 11, 'Spotting hazards', 'x11 b');
     const rows = [
         ['Hierarchy of control', 'page', 'Done: View', true],
         ['Risk assessment', 'assign', 'To do: Submit', false],
@@ -1237,14 +1246,14 @@ const stdlist = (x, y, w) => {
     let cy = y + 20;
     rows.forEach((r) => {
         s +=
-            r(x, cy, w, 34, 'p-card', 5) +
-            r(x + 7, cy + 7, 20, 20, 'p-modico', 4) +
-            i(r[1], x + 11, cy + 11, 12, 'ic-w') +
-            t(x + 33, cy + 15, r[0], 'x9 b kb');
+            drawRect(x, cy, w, 34, 'p-card', 5) +
+            drawRect(x + 7, cy + 7, 20, 20, 'p-modico', 4) +
+            drawIcon(r[1], x + 11, cy + 11, 12, 'ic-w') +
+            drawText(x + 33, cy + 15, r[0], 'x9 b kb');
         const bw = tw(r[2], 8) + 10;
         s +=
-            r(x + 33, cy + 20, bw, 11, r[3] ? 'p-okbadge' : 'p-chip', 3) +
-            t(x + 38, cy + 28, r[2], 'x8 ' + (r[3] ? 'kok b' : 'k2'));
+            drawRect(x + 33, cy + 20, bw, 11, r[3] ? 'p-okbadge' : 'p-chip', 3) +
+            drawText(x + 38, cy + 28, r[2], 'x8 ' + (r[3] ? 'kok b' : 'k2'));
         cy += 39;
     });
     return s;
@@ -1258,13 +1267,15 @@ const stdlist = (x, y, w) => {
  * @param {Number} w Width.
  * @returns {String}
  */
-const footer = (x, y, w) => {
-    let s = r(x, y, w, 40, 'p-foot') + t(x + 10, y + 14, 'Contact site support', 'x9 kfl');
-    s += t(x + 10, y + 27, 'Data retention summary', 'x9 kfl');
+const drawFooter = (x, y, w) => {
+    let s = drawRect(x, y, w, 40, 'p-foot') + drawText(x + 10, y + 14, 'Contact site support', 'x9 kfl');
+    s += drawText(x + 10, y + 27, 'Data retention summary', 'x9 kfl');
     if (w > 220) {
-        s += t(x + 130, y + 14, 'Get the mobile app', 'x9 kfl') + t(x + 130, y + 27, 'Powered by Moodle', 'x9 kf');
+        s +=
+            drawText(x + 130, y + 14, 'Get the mobile app', 'x9 kfl') +
+            drawText(x + 130, y + 27, 'Powered by Moodle', 'x9 kf');
     } else {
-        s += t(x + 10, y + 37, 'Powered by Moodle', 'x8 kf');
+        s += drawText(x + 10, y + 37, 'Powered by Moodle', 'x8 kf');
     }
     return s;
 };
@@ -1279,7 +1290,7 @@ const footer = (x, y, w) => {
  * @param {Object} [o] {name (false = no first name), answer, tools, support, quiz, mark}
  * @returns {String}
  */
-const chat = (x, y, w, h, o) => {
+const drawChat = (x, y, w, h, o) => {
     o = o || {};
     let s =
         '<svg x="' +
@@ -1291,33 +1302,33 @@ const chat = (x, y, w, h, o) => {
         '" height="' +
         h +
         '" overflow="hidden">' +
-        r(0.5, 0.5, w - 1, h - 1, 'p-card', 9) +
-        r(0.5, 0.5, w - 1, 30, 'p-brand', 9) +
-        r(0.5, 20, w - 1, 11, 'p-brand') +
-        r(8, 7, 17, 17, 'p-glass', 4) +
-        i('spark', 10.5, 9.5, 12, 'ic-wf') +
-        t(31, 14, 'Ask Dari', 'x10 b kw') +
-        t(31, 25, 'WHS for Supervisors', 'x8 kw') +
-        i('close', w - 18, 9, 12, 'ic-w');
+        drawRect(0.5, 0.5, w - 1, h - 1, 'p-card', 9) +
+        drawRect(0.5, 0.5, w - 1, 30, 'p-brand', 9) +
+        drawRect(0.5, 20, w - 1, 11, 'p-brand') +
+        drawRect(8, 7, 17, 17, 'p-glass', 4) +
+        drawIcon('spark', 10.5, 9.5, 12, 'ic-wf') +
+        drawText(31, 14, 'Ask Dari', 'x10 b kw') +
+        drawText(31, 25, 'WHS for Supervisors', 'x8 kw') +
+        drawIcon('close', w - 18, 9, 12, 'ic-w');
     let cy = 40;
     const bot = (lines, hl) => {
         const bh = lines.length * 11 + 8;
         let b =
-            r(8, cy, 13, 13, 'p-brandsoft', 3) +
-            i('spark', 9.5, cy + 1.5, 10, 'ic-bf') +
-            r(25, cy, w - 33, bh, 'p-bubble', 6);
+            drawRect(8, cy, 13, 13, 'p-brandsoft', 3) +
+            drawIcon('spark', 9.5, cy + 1.5, 10, 'ic-bf') +
+            drawRect(25, cy, w - 33, bh, 'p-bubble', 6);
         lines.forEach((l, i) => {
-            b += t(31, cy + 12 + i * 11, l, 'x8' + (i === 0 && o.bold ? ' b' : ''));
+            b += drawText(31, cy + 12 + i * 11, l, 'x8' + (i === 0 && o.bold ? ' b' : ''));
         });
         if (hl) {
-            b += hl(23, cy - 2, w - 29, bh + 4, 6);
+            b += drawHighlight(23, cy - 2, w - 29, bh + 4, 6);
         }
         cy += bh + 6;
         return b;
     };
     const me = (l) => {
         const bw = Math.min(w - 40, tw(l, 8) + 14);
-        const b = r(w - 8 - bw, cy, bw, 18, 'p-brand', 6) + t(w - 15, cy + 12, l, 'x8 kw', 'e');
+        const b = drawRect(w - 8 - bw, cy, bw, 18, 'p-brand', 6) + drawText(w - 15, cy + 12, l, 'x8 kw', 'e');
         cy += 24;
         return b;
     };
@@ -1332,7 +1343,7 @@ const chat = (x, y, w, h, o) => {
         s += bot(o.answer, o.mark === 'answer');
     }
     if (o.tools !== false) {
-        s += t(8, cy + 8, 'Pick a tool, or type your own question', 'x8 k2');
+        s += drawText(8, cy + 8, 'Pick a tool, or type your own question', 'x8 k2');
         cy += 14;
         [
             ['book', 'Explain the concept simply'],
@@ -1340,18 +1351,18 @@ const chat = (x, y, w, h, o) => {
             ['building', 'Show me a real-world example']
         ].forEach((t) => {
             s +=
-                r(8, cy, w - 16, 19, 'p-card', 5) +
-                r(12, cy + 3.5, 12, 12, 'p-brandsoft', 3) +
-                i(t[0], 13, cy + 4.5, 10, 'ic-b') +
-                t(29, cy + 12.5, t[1], 'x8 b');
+                drawRect(8, cy, w - 16, 19, 'p-card', 5) +
+                drawRect(12, cy + 3.5, 12, 12, 'p-brandsoft', 3) +
+                drawIcon(t[0], 13, cy + 4.5, 10, 'ic-b') +
+                drawText(29, cy + 12.5, t[1], 'x8 b');
             cy += 22;
         });
     }
     s +=
-        r(8, h - 26, w - 16, 19, 'p-card', 6) +
-        t(15, h - 13.5, 'Ask about this course…', 'x8 k3') +
-        r(w - 29, h - 24, 18, 15, 'p-brand', 4) +
-        i('send', w - 26, h - 22.5, 11, 'ic-w');
+        drawRect(8, h - 26, w - 16, 19, 'p-card', 6) +
+        drawText(15, h - 13.5, 'Ask about this course…', 'x8 k3') +
+        drawRect(w - 29, h - 24, 18, 15, 'p-brand', 4) +
+        drawIcon('send', w - 26, h - 22.5, 11, 'ic-w');
     return s + '</svg>';
 };
 
@@ -1364,39 +1375,41 @@ const chat = (x, y, w, h, o) => {
  * @param {Object} [o] {voice: true (narrated) | false (muted) | undefined (no button), lang, mark}
  * @returns {String}
  */
-const tour = (x, y, w, o) => {
+const drawTour = (x, y, w, o) => {
     o = o || {};
     let s =
-        r(x, y, w, 108, 'p-pop', 9) +
-        r(x, y, w, 3, 'p-brand', 1.5) +
-        t(x + 10, y + 17, '1 / 8', 'x9 b kb') +
-        t(x + 10, y + 33, 'Welcome to your course', 'x11 b') +
-        t(x + 10, y + 47, 'A one-minute look at how this', 'x8 k2') +
-        t(x + 10, y + 58, 'course works. Skip any time.', 'x8 k2');
+        drawRect(x, y, w, 108, 'p-pop', 9) +
+        drawRect(x, y, w, 3, 'p-brand', 1.5) +
+        drawText(x + 10, y + 17, '1 / 8', 'x9 b kb') +
+        drawText(x + 10, y + 33, 'Welcome to your course', 'x11 b') +
+        drawText(x + 10, y + 47, 'A one-minute look at how this', 'x8 k2') +
+        drawText(x + 10, y + 58, 'course works. Skip any time.', 'x8 k2');
     if (o.voice !== undefined) {
         s +=
-            r(x + w - 26, y + 7, 18, 16, 'p-btn', 4) +
-            i('speaker', x + w - 24, y + 9, 12, 'ic-2') +
-            (o.voice ? i('waves', x + w - 24, y + 9, 12, 'ic-b') : i('mute', x + w - 24, y + 9, 12, 'ic-2'));
+            drawRect(x + w - 26, y + 7, 18, 16, 'p-btn', 4) +
+            drawIcon('speaker', x + w - 24, y + 9, 12, 'ic-2') +
+            (o.voice
+                ? drawIcon('waves', x + w - 24, y + 9, 12, 'ic-b')
+                : drawIcon('mute', x + w - 24, y + 9, 12, 'ic-2'));
         if (o.mark === 'voice') {
-            s += hl(x + w - 29, y + 4, 24, 22, 4);
+            s += drawHighlight(x + w - 29, y + 4, 24, 22, 4);
         }
     }
     let dx = x + 10;
     for (let i = 0; i < 8; i++) {
-        s += r(dx, y + 68, i === 0 ? 12 : 4, 4, i === 0 ? 'p-brand' : 'p-track', 2);
+        s += drawRect(dx, y + 68, i === 0 ? 12 : 4, 4, i === 0 ? 'p-brand' : 'p-track', 2);
         dx += i === 0 ? 16 : 7;
     }
     s +=
-        t(x + 10, y + 95, 'End tour', 'x9 k2') +
-        t(x + w - 74, y + 95, 'Back', 'x9 kb') +
-        r(x + w - 46, y + 82, 38, 19, 'p-brand', 5) +
-        t(x + w - 27, y + 95, 'Next', 'x9 b kw', 'm');
+        drawText(x + 10, y + 95, 'End tour', 'x9 k2') +
+        drawText(x + w - 74, y + 95, 'Back', 'x9 kb') +
+        drawRect(x + w - 46, y + 82, 38, 19, 'p-brand', 5) +
+        drawText(x + w - 27, y + 95, 'Next', 'x9 b kw', 'm');
     if (o.lang) {
         s +=
-            r(x + 10, y + 113, tw(o.lang, 8) + 26, 15, 'p-chip', 7) +
-            i('speaker', x + 14, y + 115, 11, 'ic-b') +
-            t(x + 28, y + 123.5, o.lang, 'x8 k2');
+            drawRect(x + 10, y + 113, tw(o.lang, 8) + 26, 15, 'p-chip', 7) +
+            drawIcon('speaker', x + 14, y + 115, 11, 'ic-b') +
+            drawText(x + 28, y + 123.5, o.lang, 'x8 k2');
     }
     return s;
 };
@@ -1407,32 +1420,32 @@ const tour = (x, y, w, o) => {
  * @param {Object} [o] {mark: 'endpoint' | 'secret' | 'textmodel' | 'imagemodel' | 'content' | 'scene', direct}
  * @returns {String}
  */
-const flow = (o) => {
+const drawFlow = (o) => {
     o = o || {};
     let s =
-        r(8, 46, 110, 82, 'p-card', 9) +
-        r(18, 56, 20, 20, 'p-brand', 5) +
-        t(28, 70, 'D', 'x11 b kw', 'm') +
-        t(44, 65, 'Moodle', 'x11 b') +
-        t(44, 77, 'with Dari', 'x8 k2') +
-        t(18, 96, 'Question', 'x8 k2') +
-        t(18, 108, '+ course content', 'x8 k2') +
-        t(18, 120, '+ learner first name', 'x8 k3');
+        drawRect(8, 46, 110, 82, 'p-card', 9) +
+        drawRect(18, 56, 20, 20, 'p-brand', 5) +
+        drawText(28, 70, 'D', 'x11 b kw', 'm') +
+        drawText(44, 65, 'Moodle', 'x11 b') +
+        drawText(44, 77, 'with Dari', 'x8 k2') +
+        drawText(18, 96, 'Question', 'x8 k2') +
+        drawText(18, 108, '+ course content', 'x8 k2') +
+        drawText(18, 120, '+ learner first name', 'x8 k3');
     s +=
-        r(242, 46, 110, 82, 'p-card', 9) +
-        i('cloud', 252, 54, 24, 'ic-b') +
-        t(282, 65, 'Your AI', 'x11 b') +
-        t(282, 77, 'provider', 'x11 b') +
-        t(252, 98, o.direct ? 'OpenAI-compatible' : 'Set in Site admin', 'x8 k2') +
-        t(252, 110, o.direct ? 'endpoint' : '> General > AI', 'x8 k2');
+        drawRect(242, 46, 110, 82, 'p-card', 9) +
+        drawIcon('cloud', 252, 54, 24, 'ic-b') +
+        drawText(282, 65, 'Your AI', 'x11 b') +
+        drawText(282, 77, 'provider', 'x11 b') +
+        drawText(252, 98, o.direct ? 'OpenAI-compatible' : 'Set in Site admin', 'x8 k2') +
+        drawText(252, 110, o.direct ? 'endpoint' : '> General > AI', 'x8 k2');
     s +=
-        l(122, 74, 236, 74, 'p-arrow') +
+        drawLine(122, 74, 236, 74, 'p-arrow') +
         '<path class="p-arrowh" d="M231 70l6 4-6 4"/>' +
-        t(179, 68, 'question', 'x8 k2', 'm');
+        drawText(179, 68, 'question', 'x8 k2', 'm');
     s +=
-        l(236, 100, 122, 100, 'p-arrow') +
+        drawLine(236, 100, 122, 100, 'p-arrow') +
         '<path class="p-arrowh" d="M127 96l-6 4 6 4"/>' +
-        t(179, 114, 'answer or image', 'x8 k2', 'm');
+        drawText(179, 114, 'answer or image', 'x8 k2', 'm');
     if (o.direct) {
         const rows = [
             ['endpoint', 'Endpoint', 'https://ai.school.edu/v1'],
@@ -1442,17 +1455,20 @@ const flow = (o) => {
         ];
         rows.forEach((r, i) => {
             const ry = 140 + i * 17;
-            s += t(150, ry + 9, r[1], 'x8 k2', 'e') + r(156, ry, 160, 13, 'p-chip', 3) + t(161, ry + 9.5, r[2], 'x8');
+            s +=
+                drawText(150, ry + 9, r[1], 'x8 k2', 'e') +
+                drawRect(156, ry, 160, 13, 'p-chip', 3) +
+                drawText(161, ry + 9.5, r[2], 'x8');
             if (o.mark === r[0]) {
-                s += hl(154, ry - 2, 164, 17, 4);
+                s += drawHighlight(154, ry - 2, 164, 17, 4);
             }
         });
-        s += l(236, 134, 236, 205, 'p-dash');
+        s += drawLine(236, 134, 236, 205, 'p-dash');
     }
     if (o.mark === 'content') {
-        s += hl(14, 100, 90, 12, 3) + co(14, 150, 'Course content, up to your limit', 40, 112);
+        s += drawHighlight(14, 100, 90, 12, 3) + drawCallout(14, 150, 'Course content, up to your limit', 40, 112);
     }
-    s += t(
+    s += drawText(
         8,
         24,
         o.direct ? 'Moodle 4.4: Dari calls your provider directly' : "Dari uses your site's own AI provider",
@@ -1467,18 +1483,18 @@ const flow = (o) => {
  * @param {Object} [o] {index: INDEX options | false, banner: BANNER options | false, card: CARD options}
  * @returns {String}
  */
-const page = (o) => {
+const drawPage = (o) => {
     o = o || {};
-    let s = r(0, 0, W, H, 'p-page', 0) + navbar(0, 0, W);
+    let s = drawRect(0, 0, W, H, 'p-page', 0) + drawNavbar(0, 0, W);
     const ix = o.index === false ? 0 : 118;
     if (o.index !== false) {
-        s += index(0, 20, 118, H - 20, o.index || {});
+        s += drawIndex(0, 20, 118, H - 20, o.index || {});
     }
     const cx = ix + 8;
     const cw = W - cx - 8;
     let cy = 28 + (o.top || 0);
     if (o.banner !== false) {
-        s += banner(cx, cy, cw, 46, o.banner || {});
+        s += drawBanner(cx, cy, cw, 46, o.banner || {});
         cy += 54;
     }
     const half = (cw - 8) / 2;
@@ -1489,8 +1505,8 @@ const page = (o) => {
         o.card || {}
     );
     s +=
-        card(cx, cy, half, card) +
-        card(
+        drawCard(cx, cy, half, card) +
+        drawCard(
             cx + half + 8,
             cy,
             half,
@@ -1516,7 +1532,7 @@ const page = (o) => {
  * @param {String} style photo | illustration | render3d | flat | standard | hd | natural | vivid
  * @returns {String}
  */
-const thumb = (x, y, w, h, style) => {
+const drawThumb = (x, y, w, h, style) => {
     let s = '<svg x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" overflow="hidden">';
     if (style === 'illustration') {
         s +=
@@ -1607,7 +1623,7 @@ const thumb = (x, y, w, h, style) => {
             h * 0.15 +
             '" fill="#1e293b"/>';
     } else {
-        s += photo(0, 0, w, h, style === 'vivid' ? 'vivid' : '');
+        s += drawPhoto(0, 0, w, h, style === 'vivid' ? 'vivid' : '');
         if (style === 'standard') {
             const drawStandardTexture = () => {
                 for (let i = 0; i < w; i += 6) {
@@ -1626,7 +1642,7 @@ const thumb = (x, y, w, h, style) => {
             drawStandardTexture();
         }
     }
-    return s + '</svg>' + r(x + 0.5, y + 0.5, w - 1, h - 1, 'p-edge', 3);
+    return s + '</svg>' + drawRect(x + 0.5, y + 0.5, w - 1, h - 1, 'p-edge', 3);
 };
 
 /**
@@ -1637,7 +1653,7 @@ const drawings = {
         return {
             cap: 'The accent colour on the course page: banner buttons, index headings, card panels and progress bars.',
             svg:
-                page({
+                drawPage({
                     top: 16,
                     index: {
                         heading: true
@@ -1646,23 +1662,23 @@ const drawings = {
                         colour: true
                     }
                 }) +
-                hl(171, 62, 22, 22, 4) +
-                hl(1, 70, 116, 22, 2) +
-                co(210, 24, 'Accent colour', 182, 62)
+                drawHighlight(171, 62, 22, 22, 4) +
+                drawHighlight(1, 70, 116, 22, 2) +
+                drawCallout(210, 24, 'Accent colour', 182, 62)
         };
     },
     herobannerfade: () => {
         return {
             cap: 'A banner without an image, untinted on the left and tinted with the accent colour on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'No tint',
                     false,
                     '0',
-                    banner(6, 10, 160, 60, {
+                    drawBanner(6, 10, 160, 60, {
                         compact: true
                     }) +
-                        card(6, 80, 160, {
+                        drawCard(6, 80, 160, {
                             cta: false
                         })
                 ],
@@ -1670,12 +1686,12 @@ const drawings = {
                     'Tinted',
                     true,
                     '',
-                    banner(6, 10, 160, 60, {
+                    drawBanner(6, 10, 160, 60, {
                         compact: true,
                         fade: 0.28
                     }) +
-                        hl(5, 9, 162, 62, 2) +
-                        card(6, 80, 160, {
+                        drawHighlight(5, 9, 162, 62, 2) +
+                        drawCard(6, 80, 160, {
                             cta: false
                         })
                 ]
@@ -1685,38 +1701,38 @@ const drawings = {
     heroimageoverlay: () => {
         return {
             cap: 'A banner photograph darkened lightly, medium and strongly behind white title text.',
-            svg: three([
+            svg: drawThree([
                 [
                     'Light',
                     false,
                     'light',
-                    banner(4, 10, 106, 120, {
+                    drawBanner(4, 10, 106, 120, {
                         image: true,
                         scrim: 0.25,
                         compact: true
-                    }) + t(57, 156, 'Photo shows most', 'x8 k2', 'm')
+                    }) + drawText(57, 156, 'Photo shows most', 'x8 k2', 'm')
                 ],
                 [
                     'Medium',
                     true,
                     'medium',
-                    banner(4, 10, 106, 120, {
+                    drawBanner(4, 10, 106, 120, {
                         image: true,
                         scrim: 0.45,
                         compact: true
                     }) +
-                        hl(3, 9, 108, 122, 2) +
-                        t(57, 156, 'Recommended', 'x8 kb b', 'm')
+                        drawHighlight(3, 9, 108, 122, 2) +
+                        drawText(57, 156, 'Recommended', 'x8 kb b', 'm')
                 ],
                 [
                     'Strong',
                     false,
                     'strong',
-                    banner(4, 10, 106, 120, {
+                    drawBanner(4, 10, 106, 120, {
                         image: true,
                         scrim: 0.7,
                         compact: true
-                    }) + t(57, 156, 'Text stands out most', 'x8 k2', 'm')
+                    }) + drawText(57, 156, 'Text stands out most', 'x8 k2', 'm')
                 ]
             ])
         };
@@ -1724,38 +1740,38 @@ const drawings = {
     scrimstrength: () => {
         return {
             cap: 'A banner photograph darkened lightly, medium and strongly behind white title text.',
-            svg: three([
+            svg: drawThree([
                 [
                     'Light',
                     false,
                     'light',
-                    banner(4, 10, 106, 120, {
+                    drawBanner(4, 10, 106, 120, {
                         image: true,
                         scrim: 0.25,
                         compact: true
-                    }) + t(57, 156, 'Photo shows most', 'x8 k2', 'm')
+                    }) + drawText(57, 156, 'Photo shows most', 'x8 k2', 'm')
                 ],
                 [
                     'Medium',
                     true,
                     'medium',
-                    banner(4, 10, 106, 120, {
+                    drawBanner(4, 10, 106, 120, {
                         image: true,
                         scrim: 0.45,
                         compact: true
                     }) +
-                        hl(3, 9, 108, 122, 2) +
-                        t(57, 156, 'Recommended', 'x8 kb b', 'm')
+                        drawHighlight(3, 9, 108, 122, 2) +
+                        drawText(57, 156, 'Recommended', 'x8 kb b', 'm')
                 ],
                 [
                     'Strong',
                     false,
                     'strong',
-                    banner(4, 10, 106, 120, {
+                    drawBanner(4, 10, 106, 120, {
                         image: true,
                         scrim: 0.7,
                         compact: true
-                    }) + t(57, 156, 'Text stands out most', 'x8 k2', 'm')
+                    }) + drawText(57, 156, 'Text stands out most', 'x8 k2', 'm')
                 ]
             ])
         };
@@ -1764,66 +1780,66 @@ const drawings = {
         return {
             cap: 'Your logo at the top of the course index, above the course title and progress ring.',
             svg:
-                page({
+                drawPage({
                     top: 16,
                     index: {
                         logo: true,
                         mark: 'logo'
                     }
-                }) + co(140, 24, 'Your logo here', 88, 31)
+                }) + drawCallout(140, 24, 'Your logo here', 88, 31)
         };
     },
     indexheadingcolour: () => {
         return {
             cap: 'The section heading bands in the course index, drawn in the chosen colour.',
             svg:
-                page({
+                drawPage({
                     index: {
                         heading: true
                     }
                 }) +
-                hl(1, 70, 116, 22, 2) +
-                hl(1, 132, 116, 22, 2) +
-                co(132, 190, 'Section headings', 112, 143)
+                drawHighlight(1, 70, 116, 22, 2) +
+                drawHighlight(1, 132, 116, 22, 2) +
+                drawCallout(132, 190, 'Section headings', 112, 143)
         };
     },
     indexiconcolour: () => {
         return {
             cap: 'The activity icons in the course index, drawn in the chosen colour.',
             svg:
-                page({
+                drawPage({
                     index: {
                         icons: true
                     }
                 }) +
-                hl(4, 92, 18, 16, 3) +
-                hl(4, 154, 18, 56, 3) +
-                co(132, 190, 'Activity icons', 22, 160)
+                drawHighlight(4, 92, 18, 16, 3) +
+                drawHighlight(4, 154, 18, 56, 3) +
+                drawCallout(132, 190, 'Activity icons', 22, 160)
         };
     },
     indexcolour: () => {
         return {
             cap: 'The course index background tinted with the chosen colour.',
             svg:
-                page({
+                drawPage({
                     index: {
                         bg: true,
                         op: 0.22
                     }
                 }) +
-                hl(1, 21, 116, 192, 2) +
-                co(132, 190, 'Index background', 112, 170)
+                drawHighlight(1, 21, 116, 192, 2) +
+                drawCallout(132, 190, 'Index background', 112, 170)
         };
     },
     indexopacity: () => {
         return {
             cap: 'The course index colour at a weak strength on the left and a strong one on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Weak',
                     false,
                     '',
-                    index(0, 0, 172, 195, {
+                    drawIndex(0, 0, 172, 195, {
                         bg: true,
                         op: 0.1
                     })
@@ -1832,7 +1848,7 @@ const drawings = {
                     'Strong',
                     true,
                     '',
-                    index(0, 0, 172, 195, {
+                    drawIndex(0, 0, 172, 195, {
                         bg: true,
                         op: 0.45
                     })
@@ -1844,24 +1860,24 @@ const drawings = {
         return {
             cap: 'The background of each section card, in the chosen colour.',
             svg:
-                page({
+                drawPage({
                     card: {
                         body: true,
                         bodyop: 0.3,
                         mark: 'body'
                     }
-                }) + co(140, 196, 'Card background', 180, 176)
+                }) + drawCallout(140, 196, 'Card background', 180, 176)
         };
     },
     cardopacity: () => {
         return {
             cap: 'The card background colour at a weak strength on the left and a strong one on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Weak',
                     false,
                     '',
-                    card(10, 8, 152, {
+                    drawCard(10, 8, 152, {
                         body: true,
                         bodyop: 0.12
                     })
@@ -1870,7 +1886,7 @@ const drawings = {
                     'Strong',
                     true,
                     '',
-                    card(10, 8, 152, {
+                    drawCard(10, 8, 152, {
                         body: true,
                         bodyop: 0.45,
                         mark: 'body'
@@ -1883,31 +1899,31 @@ const drawings = {
         return {
             cap: 'The band at the top of the course index, with the course title and ring, in the chosen colour.',
             svg:
-                page({
+                drawPage({
                     top: 16,
                     index: {
                         head: true,
                         mark: 'header'
                     }
-                }) + co(140, 26, 'Index header band', 116, 46)
+                }) + drawCallout(140, 26, 'Index header band', 116, 46)
         };
     },
     colourmode: () => {
         return {
             cap: 'The same course page in light mode on the left and dark mode on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Light',
                     false,
                     'light',
-                    g(
-                        index(0, 0, 70, 195, {
+                    drawGroup(
+                        drawIndex(0, 0, 70, 195, {
                             time: false
                         }) +
-                            banner(76, 6, 94, 46, {
+                            drawBanner(76, 6, 94, 46, {
                                 compact: true
                             }) +
-                            card(76, 58, 94, {
+                            drawCard(76, 58, 94, {
                                 cta: false,
                                 small: true
                             }),
@@ -1920,14 +1936,14 @@ const drawings = {
                     'Dark',
                     true,
                     'dark',
-                    g(
-                        index(0, 0, 70, 195, {
+                    drawGroup(
+                        drawIndex(0, 0, 70, 195, {
                             time: false
                         }) +
-                            banner(76, 6, 94, 46, {
+                            drawBanner(76, 6, 94, 46, {
                                 compact: true
                             }) +
-                            card(76, 58, 94, {
+                            drawCard(76, 58, 94, {
                                 cta: false,
                                 small: true
                             }),
@@ -1943,34 +1959,34 @@ const drawings = {
         return {
             cap: 'A sample of the course page text in the chosen font.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                r(14, 14, 120, 120, 'p-card', 12) +
+                drawRect(0, 0, W, H, 'p-page') +
+                drawRect(14, 14, 120, 120, 'p-card', 12) +
                 '<text class="x pv-font x-aa" x="74" y="96" text-anchor="middle">Aa</text>' +
                 '<text class="x pv-font x13 b" x="150" y="40">Leading Safe Workplaces</text>' +
                 '<text class="x pv-font x10 k2" x="150" y="58">3 modules · 5 activities · 1 hr 10 min</text>' +
                 '<text class="x pv-font x11 b" x="150" y="86">Spotting hazards</text>' +
                 '<text class="x pv-font x9 k2" x="150" y="102">Find what could hurt someone,</text>' +
                 '<text class="x pv-font x9 k2" x="150" y="114">then decide what to do about it.</text>' +
-                r(150, 122, 70, 17, 'p-brandsoft', 5) +
+                drawRect(150, 122, 70, 17, 'p-brandsoft', 5) +
                 '<text class="x pv-font x9 b kb" x="185" y="134" text-anchor="middle">' +
                 'Continue →</text>' +
                 '<text class="x pv-fontname x10 b kb" x="14" y="160"></text>' +
                 '<text class="x pv-fontnote x8 k3" x="14" y="176"></text>' +
-                t(14, 200, 'ABCDEFGHIJKLM abcdefghijklm 0123456789', 'x9 k2 pv-font')
+                drawText(14, 200, 'ABCDEFGHIJKLM abcdefghijklm 0123456789', 'x9 k2 pv-font')
         };
     },
     showherobanner: () => {
         return {
             cap: 'The course page without the banner on the left and with it on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Off',
                     false,
                     '0',
-                    navbar(0, 0, 172) +
-                        crumbs(6, 32, 2) +
-                        t(6, 50, 'WHS for Supervisors', 'x11 b') +
-                        card(6, 60, 160, {
+                    drawNavbar(0, 0, 172) +
+                        drawCrumbs(6, 32, 2) +
+                        drawText(6, 50, 'WHS for Supervisors', 'x11 b') +
+                        drawCard(6, 60, 160, {
                             cta: false
                         })
                 ],
@@ -1978,10 +1994,10 @@ const drawings = {
                     'On',
                     true,
                     '1',
-                    navbar(0, 0, 172) +
-                        banner(6, 26, 160, 62) +
-                        hl(5, 25, 162, 64, 2) +
-                        card(6, 96, 160, {
+                    drawNavbar(0, 0, 172) +
+                        drawBanner(6, 26, 160, 62) +
+                        drawHighlight(5, 25, 162, 64, 2) +
+                        drawCard(6, 96, 160, {
                             cta: false
                         })
                 ]
@@ -1991,36 +2007,36 @@ const drawings = {
     herosticky: () => {
         return {
             cap: 'After scrolling down: on the left the banner has scrolled away, on the right it stays pinned at the top.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Scrolls away',
                     false,
                     '0',
-                    navbar(0, 0, 172) +
-                        card(6, 26, 160, {
+                    drawNavbar(0, 0, 172) +
+                        drawCard(6, 26, 160, {
                             list: true,
                             limit: 3,
                             title: 'Consultation',
                             eyebrow: 'Module 3'
                         }) +
-                        l(166, 40, 166, 140, 'p-scroll')
+                        drawLine(166, 40, 166, 140, 'p-scroll')
                 ],
                 [
                     'Stays at top',
                     true,
                     '1',
-                    navbar(0, 0, 172) +
-                        card(6, 70, 160, {
+                    drawNavbar(0, 0, 172) +
+                        drawCard(6, 70, 160, {
                             list: true,
                             limit: 3,
                             title: 'Consultation',
                             eyebrow: 'Module 3'
                         }) +
-                        r(0, 20, 172, 58, 'p-shadow') +
-                        banner(0, 20, 172, 58, {
+                        drawRect(0, 20, 172, 58, 'p-shadow') +
+                        drawBanner(0, 20, 172, 58, {
                             compact: true
                         }) +
-                        hl(1, 21, 170, 56, 2)
+                        drawHighlight(1, 21, 170, 56, 2)
                 ]
             )
         };
@@ -2028,18 +2044,18 @@ const drawings = {
     heroattop: () => {
         return {
             cap: 'The banner under the course tabs on the left, and moved above the tabs on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Below the tabs',
                     false,
                     '0',
-                    navbar(0, 0, 172) +
-                        t(6, 36, 'WHS for Supervisors', 'x11 b') +
-                        tabs(6, 42, 160) +
-                        banner(6, 66, 160, 56, {
+                    drawNavbar(0, 0, 172) +
+                        drawText(6, 36, 'WHS for Supervisors', 'x11 b') +
+                        drawTabs(6, 42, 160) +
+                        drawBanner(6, 66, 160, 56, {
                             compact: true
                         }) +
-                        card(6, 130, 160, {
+                        drawCard(6, 130, 160, {
                             cta: false
                         })
                 ],
@@ -2047,13 +2063,13 @@ const drawings = {
                     'Above the tabs',
                     true,
                     '1',
-                    navbar(0, 0, 172) +
-                        banner(6, 26, 160, 56, {
+                    drawNavbar(0, 0, 172) +
+                        drawBanner(6, 26, 160, 56, {
                             compact: true
                         }) +
-                        hl(5, 25, 162, 58, 2) +
-                        tabs(6, 88, 160) +
-                        card(6, 112, 160, {
+                        drawHighlight(5, 25, 162, 58, 2) +
+                        drawTabs(6, 88, 160) +
+                        drawCard(6, 112, 160, {
                             cta: false
                         })
                 ]
@@ -2063,24 +2079,24 @@ const drawings = {
     displayascards: () => {
         return {
             cap: "The course home as Moodle's long page of sections on the left, and as section cards on the right.",
-            svg: two(
-                ['Off: long page', false, '0', stdlist(6, 8, 160)],
+            svg: drawTwo(
+                ['Off: long page', false, '0', drawStdlist(6, 8, 160)],
                 [
                     'On: cards',
                     true,
                     '1',
-                    card(6, 8, 77, {
+                    drawCard(6, 8, 77, {
                         small: true,
                         cta: false,
                         title: 'Duty of care',
                         eyebrow: 'Module 1'
                     }) +
-                        card(89, 8, 77, {
+                        drawCard(89, 8, 77, {
                             small: true,
                             cta: false,
                             title: 'Hazards'
                         }) +
-                        card(6, 112, 77, {
+                        drawCard(6, 112, 77, {
                             small: true,
                             cta: false,
                             title: 'Consultation',
@@ -2093,23 +2109,23 @@ const drawings = {
     cardlayout: () => {
         return {
             cap: 'Section cards side by side in a grid on the left, and one per row in a list on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Grid',
                     false,
                     '0',
-                    card(6, 8, 77, {
+                    drawCard(6, 8, 77, {
                         small: true,
                         cta: false,
                         title: 'Duty of care',
                         eyebrow: 'Module 1'
                     }) +
-                        card(89, 8, 77, {
+                        drawCard(89, 8, 77, {
                             small: true,
                             cta: false,
                             title: 'Hazards'
                         }) +
-                        card(6, 112, 77, {
+                        drawCard(6, 112, 77, {
                             small: true,
                             cta: false,
                             title: 'Consultation',
@@ -2120,13 +2136,13 @@ const drawings = {
                     'List',
                     true,
                     '1',
-                    card(6, 8, 160, {
+                    drawCard(6, 8, 160, {
                         mh: 34,
                         cta: false,
                         title: 'Your duty of care',
                         eyebrow: 'Module 1'
                     }) +
-                        card(6, 98, 160, {
+                        drawCard(6, 98, 160, {
                             mh: 34,
                             cta: false
                         })
@@ -2137,13 +2153,13 @@ const drawings = {
     showactivitiesoncards: () => {
         return {
             cap: 'A section card without its activity list on the left, and listing its activities with ticks on the right.',
-            svg: two(
-                ['Off', false, '0', card(10, 8, 152, {})],
+            svg: drawTwo(
+                ['Off', false, '0', drawCard(10, 8, 152, {})],
                 [
                     'On',
                     true,
                     '1',
-                    card(10, 8, 152, {
+                    drawCard(10, 8, 152, {
                         list: true,
                         limit: 4,
                         mark: 'list'
@@ -2156,25 +2172,25 @@ const drawings = {
         return {
             cap: 'A section card listing its first three activities, then how many more there are.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                card(10, 6, 196, {
+                drawRect(0, 0, W, H, 'p-page') +
+                drawCard(10, 6, 196, {
                     list: true,
                     limit: 3,
                     mark: 'list',
                     cta: false
                 }) +
-                co(214, 60, 'Shows 3, then “+ 2 more”', 200, 96)
+                drawCallout(214, 60, 'Shows 3, then “+ 2 more”', 200, 96)
         };
     },
     cardtitlesize: () => {
         return {
             cap: 'The section card title at a small size on the left and a large size on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Small',
                     false,
                     '',
-                    card(10, 8, 152, {
+                    drawCard(10, 8, 152, {
                         small: true,
                         mark: 'title'
                     })
@@ -2183,7 +2199,7 @@ const drawings = {
                     'Large',
                     true,
                     '',
-                    card(10, 8, 152, {
+                    drawCard(10, 8, 152, {
                         big: true,
                         mark: 'title'
                     })
@@ -2195,7 +2211,7 @@ const drawings = {
         return {
             cap: 'The four looks for AI card images: photographic, illustration, 3D render and flat illustration.',
             svg:
-                r(0, 0, W, H, 'p-page') +
+                drawRect(0, 0, W, H, 'p-page') +
                 ['photo', 'illustration', 'render3d', 'flat']
                     .map((st, i) => {
                         const x = 8 + i * 88;
@@ -2204,35 +2220,35 @@ const drawings = {
                             '<g class="pv-panel" data-v="' +
                             st +
                             '">' +
-                            r(x - 2, 30, 84, 120, 'pv-cur', 8) +
-                            thumb(x + 2, 34, 76, 76, st) +
-                            t(x + 40, 126, label, 'x9 b', 'm') +
-                            t(x + 40, 140, '', 'x8 b kb pv-curlabel', 'm') +
+                            drawRect(x - 2, 30, 84, 120, 'pv-cur', 8) +
+                            drawThumb(x + 2, 34, 76, 76, st) +
+                            drawText(x + 40, 126, label, 'x9 b', 'm') +
+                            drawText(x + 40, 140, '', 'x8 b kb pv-curlabel', 'm') +
                             '</g>'
                         );
                     })
                     .join('') +
-                t(8, 18, 'Generated card images', 'x10 b')
+                drawText(8, 18, 'Generated card images', 'x10 b')
         };
     },
     activitydisplaymode: () => {
         return {
             cap: "A section page as Moodle's standard activity list on the left, and as activity tiles on the right.",
-            svg: two(
-                ['Standard list', false, '0', stdlist(6, 8, 160)],
+            svg: drawTwo(
+                ['Standard list', false, '0', drawStdlist(6, 8, 160)],
                 [
                     'Activity tiles',
                     true,
                     '1',
-                    t(6, 19, 'Spotting hazards', 'x11 b') +
-                        tile(6, 28, 78, {}) +
-                        tile(88, 28, 78, {
+                    drawText(6, 19, 'Spotting hazards', 'x11 b') +
+                        drawTile(6, 28, 78, {}) +
+                        drawTile(88, 28, 78, {
                             title: 'Risk assessment',
                             "short": 'Assessment',
                             icon: 'assign',
                             kind: 'Assign'
                         }) +
-                        tile(6, 104, 78, {
+                        drawTile(6, 104, 78, {
                             title: 'Hazard quiz',
                             "short": 'Hazard quiz',
                             icon: 'quiz',
@@ -2245,31 +2261,31 @@ const drawings = {
     shownavchevrons: () => {
         return {
             cap: 'An activity page banner without, then with, the previous and next activity arrows.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Off',
                     false,
                     '0',
-                    banner(6, 10, 160, 56, {
+                    drawBanner(6, 10, 160, 56, {
                         compact: true,
                         title: 'Hierarchy of control'
                     }) +
-                        t(6, 88, 'Eliminate, substitute, isolate,', 'x9 k2') +
-                        t(6, 101, 'engineer, administrate, PPE.', 'x9 k2')
+                        drawText(6, 88, 'Eliminate, substitute, isolate,', 'x9 k2') +
+                        drawText(6, 101, 'engineer, administrate, PPE.', 'x9 k2')
                 ],
                 [
                     'On',
                     true,
                     '1',
-                    banner(6, 10, 160, 56, {
+                    drawBanner(6, 10, 160, 56, {
                         compact: true,
                         chevrons: true,
                         title: 'Hierarchy of control'
                     }) +
-                        hl(72, 44, 40, 21, 10) +
-                        co(70, 74, 'Previous / next', 92, 65) +
-                        t(6, 110, 'Eliminate, substitute, isolate,', 'x9 k2') +
-                        t(6, 123, 'engineer, administrate, PPE.', 'x9 k2')
+                        drawHighlight(72, 44, 40, 21, 10) +
+                        drawCallout(70, 74, 'Previous / next', 92, 65) +
+                        drawText(6, 110, 'Eliminate, substitute, isolate,', 'x9 k2') +
+                        drawText(6, 123, 'engineer, administrate, PPE.', 'x9 k2')
                 ]
             )
         };
@@ -2277,13 +2293,13 @@ const drawings = {
     hidegeneral: () => {
         return {
             cap: 'The course index with the General section on the left, and without it on the right.',
-            svg: two(
-                ['Show', false, '0', index(0, 0, 172, 195, {}) + hl(1, 51, 170, 21, 2)],
+            svg: drawTwo(
+                ['Show', false, '0', drawIndex(0, 0, 172, 195, {}) + drawHighlight(1, 51, 170, 21, 2)],
                 [
                     'Hide',
                     true,
                     '1 2',
-                    index(0, 0, 172, 195, {
+                    drawIndex(0, 0, 172, 195, {
                         nogeneral: true
                     })
                 ]
@@ -2293,19 +2309,19 @@ const drawings = {
     indexstate: () => {
         return {
             cap: 'A course opened with the index collapsed to a button on the left, and open beside the page on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Start collapsed',
                     false,
                     '1',
-                    navbar(0, 0, 172) +
-                        r(4, 26, 18, 18, 'p-btn', 5) +
-                        i('list', 7, 29, 12, 'ic-b') +
-                        hl(2, 24, 22, 22, 6) +
-                        banner(28, 26, 140, 52, {
+                    drawNavbar(0, 0, 172) +
+                        drawRect(4, 26, 18, 18, 'p-btn', 5) +
+                        drawIcon('list', 7, 29, 12, 'ic-b') +
+                        drawHighlight(2, 24, 22, 22, 6) +
+                        drawBanner(28, 26, 140, 52, {
                             compact: true
                         }) +
-                        card(28, 86, 140, {
+                        drawCard(28, 86, 140, {
                             cta: false
                         })
                 ],
@@ -2313,15 +2329,15 @@ const drawings = {
                     'Start open',
                     true,
                     '2',
-                    navbar(0, 0, 172) +
-                        index(0, 20, 82, 175, {
+                    drawNavbar(0, 0, 172) +
+                        drawIndex(0, 20, 82, 175, {
                             time: false
                         }) +
-                        hl(1, 21, 80, 173, 2) +
-                        banner(88, 26, 80, 52, {
+                        drawHighlight(1, 21, 80, 173, 2) +
+                        drawBanner(88, 26, 80, 52, {
                             compact: true
                         }) +
-                        card(88, 86, 80, {
+                        drawCard(88, 86, 80, {
                             cta: false,
                             small: true
                         })
@@ -2332,35 +2348,39 @@ const drawings = {
     playerindex: () => {
         return {
             cap: "Moodle's plain course index on the left, and the player sidebar with progress, times and ticks on the right.",
-            svg: two(
+            svg: drawTwo(
                 [
                     'Plain course index',
                     false,
                     '0',
-                    index(0, 0, 172, 195, {
+                    drawIndex(0, 0, 172, 195, {
                         plain: true
                     })
                 ],
-                ['Player sidebar', true, '1', index(0, 0, 172, 195, {})]
+                ['Player sidebar', true, '1', drawIndex(0, 0, 172, 195, {})]
             )
         };
     },
     showcourseindex: () => {
         return {
-            cap: 'The course index beside the course page; you choose on which pages it appears: '
-                + 'course home, sections, activities.',
-            svg: page({}) + hl(1, 21, 116, 192, 2) + co(130, 186, 'Course home · Sections · Activities', 112, 150)
+            cap:
+                'The course index beside the course page; you choose on which pages it appears: ' +
+                'course home, sections, activities.',
+            svg:
+                drawPage({}) +
+                drawHighlight(1, 21, 116, 192, 2) +
+                drawCallout(130, 186, 'Course home · Sections · Activities', 112, 150)
         };
     },
     hidetimeindex: () => {
         return {
             cap: 'Course index rows with their estimated time chips on the left, and without them on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Show',
                     false,
                     '0',
-                    index(0, 0, 172, 195, {
+                    drawIndex(0, 0, 172, 195, {
                         mark: 'time'
                     })
                 ],
@@ -2368,7 +2388,7 @@ const drawings = {
                     'Hide',
                     true,
                     '1',
-                    index(0, 0, 172, 195, {
+                    drawIndex(0, 0, 172, 195, {
                         time: false
                     })
                 ]
@@ -2378,12 +2398,12 @@ const drawings = {
     hidetimetotal: () => {
         return {
             cap: 'The total course time under the course title in the index, shown on the left and hidden on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Show',
                     false,
                     '0',
-                    index(0, 0, 172, 195, {
+                    drawIndex(0, 0, 172, 195, {
                         mark: 'total'
                     })
                 ],
@@ -2391,7 +2411,7 @@ const drawings = {
                     'Hide',
                     true,
                     '1',
-                    index(0, 0, 172, 195, {
+                    drawIndex(0, 0, 172, 195, {
                         total: false
                     })
                 ]
@@ -2401,12 +2421,12 @@ const drawings = {
     hidetimesectioncards: () => {
         return {
             cap: 'A section card with its total time chip on the left, and without it on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Show',
                     false,
                     '0',
-                    card(10, 8, 152, {
+                    drawCard(10, 8, 152, {
                         mark: 'time'
                     })
                 ],
@@ -2414,7 +2434,7 @@ const drawings = {
                     'Hide',
                     true,
                     '1',
-                    card(10, 8, 152, {
+                    drawCard(10, 8, 152, {
                         time: false
                     })
                 ]
@@ -2424,12 +2444,12 @@ const drawings = {
     hidetimeactivitycards: () => {
         return {
             cap: 'An activity tile with its time chip on the left, and without it on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Show',
                     false,
                     '0',
-                    tile(16, 20, 140, {
+                    drawTile(16, 20, 140, {
                         mark: 'time'
                     })
                 ],
@@ -2437,7 +2457,7 @@ const drawings = {
                     'Hide',
                     true,
                     '1',
-                    tile(16, 20, 140, {
+                    drawTile(16, 20, 140, {
                         time: false
                     })
                 ]
@@ -2446,7 +2466,7 @@ const drawings = {
     },
     minutes: () => {
         {
-            let s = r(0, 0, W, H, 'p-page') + t(8, 18, 'Assumed time per activity type', 'x10 b');
+            let s = drawRect(0, 0, W, H, 'p-page') + drawText(8, 18, 'Assumed time per activity type', 'x10 b');
             [
                 ['page', 'Page', '10 min'],
                 ['forum', 'Forum', '10 min'],
@@ -2456,19 +2476,19 @@ const drawings = {
             ].forEach((r, i) => {
                 const y = 30 + i * 21;
                 s +=
-                    r(8, y, 150, 18, 'p-card', 4) +
-                    i(r[0], 13, y + 3, 12, 'ic-b') +
-                    t(30, y + 12.5, r[1], 'x9') +
-                    r(110, y + 3, 42, 12, 'p-chip', 3) +
-                    i('clock', 113, y + 4.5, 9, 'ic-b') +
-                    t(124, y + 12, r[2], 'x8 k2');
+                    drawRect(8, y, 150, 18, 'p-card', 4) +
+                    drawIcon(r[0], 13, y + 3, 12, 'ic-b') +
+                    drawText(30, y + 12.5, r[1], 'x9') +
+                    drawRect(110, y + 3, 42, 12, 'p-chip', 3) +
+                    drawIcon('clock', 113, y + 4.5, 9, 'ic-b') +
+                    drawText(124, y + 12, r[2], 'x8 k2');
             });
-            s += hl(108, 31, 46, 104, 4) + co(176, 40, 'Shown as time chips', 154, 50);
+            s += drawHighlight(108, 31, 46, 104, 4) + drawCallout(176, 40, 'Shown as time chips', 154, 50);
             return {
                 cap: 'Each activity type with its assumed time, and where those times appear in the course index.',
                 svg:
                     s +
-                    index(176, 58, 176, 150, {
+                    drawIndex(176, 58, 176, 150, {
                         mark: 'time'
                     })
             };
@@ -2478,59 +2498,59 @@ const drawings = {
         return {
             cap: 'A 12 question quiz at 2 minutes a question gives a 24 minute time chip.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                r(8, 20, 156, 70, 'p-card', 8) +
-                i('quiz', 16, 28, 16, 'ic-b') +
-                t(38, 40, 'Hazard quiz', 'x11 b') +
-                t(16, 60, '12 questions × 2 min', 'x10') +
-                t(16, 78, '= 24 min', 'x11 b kb') +
-                hl(13, 66, 60, 16, 4) +
-                l(170, 55, 192, 55, 'p-arrow') +
+                drawRect(0, 0, W, H, 'p-page') +
+                drawRect(8, 20, 156, 70, 'p-card', 8) +
+                drawIcon('quiz', 16, 28, 16, 'ic-b') +
+                drawText(38, 40, 'Hazard quiz', 'x11 b') +
+                drawText(16, 60, '12 questions × 2 min', 'x10') +
+                drawText(16, 78, '= 24 min', 'x11 b kb') +
+                drawHighlight(13, 66, 60, 16, 4) +
+                drawLine(170, 55, 192, 55, 'p-arrow') +
                 '<path class="p-arrowh" d="M188 51l6 4-6 4"/>' +
-                index(200, 10, 152, 196, {}) +
-                t(32, 120, 'Questions are counted when', 'x9 k2') +
-                t(32, 133, 'the time is worked out.', 'x9 k2')
+                drawIndex(200, 10, 152, 196, {}) +
+                drawText(32, 120, 'Questions are counted when', 'x9 k2') +
+                drawText(32, 133, 'the time is worked out.', 'x9 k2')
         };
     },
     minutesfallback: () => {
         return {
             cap: 'An activity type with no time of its own, shown with the fallback time.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                t(8, 18, 'Anything not listed', 'x10 b') +
-                r(8, 30, 168, 20, 'p-card', 4) +
-                i('image', 14, 34, 12, 'ic-b') +
-                t(31, 43.5, 'Lesson (no time set)', 'x9') +
-                r(130, 34, 40, 12, 'p-chip', 3) +
-                t(150, 43, '20 min', 'x8 k2', 'm') +
-                hl(127, 32, 46, 16, 4) +
-                co(30, 64, 'Uses the fallback time', 140, 48) +
-                tile(8, 96, 168, {
+                drawRect(0, 0, W, H, 'p-page') +
+                drawText(8, 18, 'Anything not listed', 'x10 b') +
+                drawRect(8, 30, 168, 20, 'p-card', 4) +
+                drawIcon('image', 14, 34, 12, 'ic-b') +
+                drawText(31, 43.5, 'Lesson (no time set)', 'x9') +
+                drawRect(130, 34, 40, 12, 'p-chip', 3) +
+                drawText(150, 43, '20 min', 'x8 k2', 'm') +
+                drawHighlight(127, 32, 46, 16, 4) +
+                drawCallout(30, 64, 'Uses the fallback time', 140, 48) +
+                drawTile(8, 96, 168, {
                     title: 'Lesson',
                     icon: 'image',
                     kind: 'Lesson',
                     mark: 'time',
                     timelabel: '20 min'
                 }) +
-                index(188, 10, 164, 196, {})
+                drawIndex(188, 10, 164, 196, {})
         };
     },
     hidesecondarynav: () => {
         return {
             cap: 'The course tabs (Course, Settings, Participants, Grades, Reports) shown on the left and hidden on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Show',
                     false,
                     '0',
-                    navbar(0, 0, 172) +
-                        t(6, 36, 'WHS for Supervisors', 'x11 b') +
-                        tabs(6, 44, 160) +
-                        hl(4, 42, 164, 20, 3) +
-                        banner(6, 70, 160, 50, {
+                    drawNavbar(0, 0, 172) +
+                        drawText(6, 36, 'WHS for Supervisors', 'x11 b') +
+                        drawTabs(6, 44, 160) +
+                        drawHighlight(4, 42, 164, 20, 3) +
+                        drawBanner(6, 70, 160, 50, {
                             compact: true
                         }) +
-                        card(6, 128, 160, {
+                        drawCard(6, 128, 160, {
                             cta: false
                         })
                 ],
@@ -2538,12 +2558,12 @@ const drawings = {
                     'Hide',
                     true,
                     '1 2',
-                    navbar(0, 0, 172) +
-                        t(6, 36, 'WHS for Supervisors', 'x11 b') +
-                        banner(6, 44, 160, 50, {
+                    drawNavbar(0, 0, 172) +
+                        drawText(6, 36, 'WHS for Supervisors', 'x11 b') +
+                        drawBanner(6, 44, 160, 50, {
                             compact: true
                         }) +
-                        card(6, 102, 160, {
+                        drawCard(6, 102, 160, {
                             cta: false
                         })
                 ]
@@ -2553,18 +2573,18 @@ const drawings = {
     coursenavplace: () => {
         return {
             cap: 'The course tabs under the page title on the left, and moved into the site header beside Home on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Below the banner',
                     false,
                     '0',
-                    navbar(0, 0, 172) +
-                        banner(6, 26, 160, 50, {
+                    drawNavbar(0, 0, 172) +
+                        drawBanner(6, 26, 160, 50, {
                             compact: true
                         }) +
-                        tabs(6, 82, 160) +
-                        hl(4, 80, 164, 20, 3) +
-                        card(6, 106, 160, {
+                        drawTabs(6, 82, 160) +
+                        drawHighlight(4, 80, 164, 20, 3) +
+                        drawCard(6, 106, 160, {
                             cta: false
                         })
                 ],
@@ -2572,14 +2592,14 @@ const drawings = {
                     'In the site header',
                     true,
                     '1',
-                    navbar(0, 0, 172, {
+                    drawNavbar(0, 0, 172, {
                         tabs: true
                     }) +
-                        hl(58, 2, 112, 16, 3) +
-                        banner(6, 26, 160, 50, {
+                        drawHighlight(58, 2, 112, 16, 3) +
+                        drawBanner(6, 26, 160, 50, {
                             compact: true
                         }) +
-                        card(6, 84, 160, {
+                        drawCard(6, 84, 160, {
                             cta: false
                         })
                 ]
@@ -2589,18 +2609,18 @@ const drawings = {
     immersive: () => {
         return {
             cap: 'The site logo band above the navbar, shown on the left and hidden on the right so the course starts higher.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Show',
                     false,
                     '0',
-                    logoband(0, 0, 172) +
-                        hl(1, 1, 170, 24, 2) +
-                        navbar(0, 26, 172) +
-                        banner(6, 52, 160, 50, {
+                    drawLogoband(0, 0, 172) +
+                        drawHighlight(1, 1, 170, 24, 2) +
+                        drawNavbar(0, 26, 172) +
+                        drawBanner(6, 52, 160, 50, {
                             compact: true
                         }) +
-                        card(6, 110, 160, {
+                        drawCard(6, 110, 160, {
                             cta: false
                         })
                 ],
@@ -2608,11 +2628,11 @@ const drawings = {
                     'Hide',
                     true,
                     '1 2',
-                    navbar(0, 0, 172) +
-                        banner(6, 26, 160, 50, {
+                    drawNavbar(0, 0, 172) +
+                        drawBanner(6, 26, 160, 50, {
                             compact: true
                         }) +
-                        card(6, 84, 160, {
+                        drawCard(6, 84, 160, {
                             cta: false
                         })
                 ]
@@ -2622,22 +2642,22 @@ const drawings = {
     hidefooter: () => {
         return {
             cap: 'The site footer with its links at the bottom of a course page, shown on the left and hidden on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Show',
                     false,
                     '0',
-                    card(6, 6, 160, {
+                    drawCard(6, 6, 160, {
                         cta: false
                     }) +
-                        footer(0, 150, 172) +
-                        hl(1, 151, 170, 38, 2)
+                        drawFooter(0, 150, 172) +
+                        drawHighlight(1, 151, 170, 38, 2)
                 ],
                 [
                     'Hide',
                     true,
                     '1 2',
-                    card(6, 6, 160, {
+                    drawCard(6, 6, 160, {
                         cta: true
                     })
                 ]
@@ -2649,17 +2669,17 @@ const drawings = {
             cap:
                 'The breadcrumb trail, Dashboard \u203A My courses \u203A WHS101 \u203A' +
                 ' Spotting hazards, shown on the left and hidden on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Show',
                     false,
                     '0',
-                    navbar(0, 0, 172) +
-                        crumbs(6, 36, 3) +
-                        t(6, 36 + 13, '› Spotting hazards', 'x9 k2') +
-                        hl(3, 26, 166, 28, 3) +
-                        t(6, 72, 'Spotting hazards', 'x13 b') +
-                        banner(6, 82, 160, 48, {
+                    drawNavbar(0, 0, 172) +
+                        drawCrumbs(6, 36, 3) +
+                        drawText(6, 36 + 13, '› Spotting hazards', 'x9 k2') +
+                        drawHighlight(3, 26, 166, 28, 3) +
+                        drawText(6, 72, 'Spotting hazards', 'x13 b') +
+                        drawBanner(6, 82, 160, 48, {
                             compact: true
                         })
                 ],
@@ -2667,12 +2687,12 @@ const drawings = {
                     'Hide',
                     true,
                     '1 2',
-                    navbar(0, 0, 172) +
-                        t(6, 44, 'Spotting hazards', 'x13 b') +
-                        banner(6, 54, 160, 48, {
+                    drawNavbar(0, 0, 172) +
+                        drawText(6, 44, 'Spotting hazards', 'x13 b') +
+                        drawBanner(6, 54, 160, 48, {
                             compact: true
                         }) +
-                        card(6, 110, 160, {
+                        drawCard(6, 110, 160, {
                             cta: false,
                             mh: 30
                         })
@@ -2684,24 +2704,24 @@ const drawings = {
         return {
             cap: 'The Ask Dari panel: a greeting, a learner question, an answer, and three study tools.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                banner(6, 8, 150, 60, {
+                drawRect(0, 0, W, H, 'p-page') +
+                drawBanner(6, 8, 150, 60, {
                     compact: true
                 }) +
-                hl(54, 32, 20, 20, 4) +
-                co(18, 82, 'Opens Ask Dari', 64, 52) +
-                chat(170, 4, 184, 206, {})
+                drawHighlight(54, 32, 20, 20, 4) +
+                drawCallout(18, 82, 'Opens Ask Dari', 64, 52) +
+                drawChat(170, 4, 184, 206, {})
         };
     },
     sendfirstname: () => {
         return {
             cap: 'Ask Dari greeting a learner without their name on the left, and by first name on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Off',
                     false,
                     '0',
-                    chat(4, 4, 164, 186, {
+                    drawChat(4, 4, 164, 186, {
                         name: false,
                         tools: true,
                         mark: 'name'
@@ -2711,7 +2731,7 @@ const drawings = {
                     'On',
                     true,
                     '1',
-                    chat(4, 4, 164, 186, {
+                    drawChat(4, 4, 164, 186, {
                         mark: 'name'
                     })
                 ]
@@ -2722,8 +2742,8 @@ const drawings = {
         return {
             cap: 'Ask Dari answering a learner who is struggling with your wellbeing contacts.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                chat(70, 4, 220, 206, {
+                drawRect(0, 0, W, H, 'p-page') +
+                drawChat(70, 4, 220, 206, {
                     tools: false,
                     question: 'I feel really stressed',
                     answer: [
@@ -2733,15 +2753,15 @@ const drawings = {
                     ],
                     mark: 'answer'
                 }) +
-                co(4, 150, 'Your contacts', 92, 120)
+                drawCallout(4, 150, 'Your contacts', 92, 120)
         };
     },
     maxcontextchars: () => {
         return {
             cap: "Dari sends the question and course content, up to your limit, to your site's AI provider.",
             svg:
-                r(0, 0, W, H, 'p-page') +
-                flow({
+                drawRect(0, 0, W, H, 'p-page') +
+                drawFlow({
                     direct: !!document.getElementById('id_s_format_dari_directendpoint'),
                     mark: 'content'
                 })
@@ -2750,12 +2770,12 @@ const drawings = {
     shareassessmentanswers: () => {
         return {
             cap: "Ask Dari explaining a quiz result without the learner's answers on the left, and using them on the right.",
-            svg: two(
+            svg: drawTwo(
                 [
                     'Never share',
                     false,
                     '0',
-                    chat(4, 4, 164, 186, {
+                    drawChat(4, 4, 164, 186, {
                         tools: false,
                         question: 'Why did I get Q3 wrong?',
                         answer: [
@@ -2769,7 +2789,7 @@ const drawings = {
                     'Share',
                     true,
                     '1',
-                    chat(4, 4, 164, 186, {
+                    drawChat(4, 4, 164, 186, {
                         tools: false,
                         question: 'Why did I get Q3 wrong?',
                         answer: [
@@ -2786,18 +2806,18 @@ const drawings = {
     imagequality: () => {
         return {
             cap: 'An AI image at standard quality on the left and high definition on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Standard',
                     false,
                     'standard',
-                    thumb(8, 8, 156, 120, 'standard') + t(86, 150, 'Faster, cheaper', 'x9 k2', 'm')
+                    drawThumb(8, 8, 156, 120, 'standard') + drawText(86, 150, 'Faster, cheaper', 'x9 k2', 'm')
                 ],
                 [
                     'High definition',
                     true,
                     'hd',
-                    thumb(8, 8, 156, 120, 'hd') + t(86, 150, 'Sharper detail', 'x9 k2', 'm')
+                    drawThumb(8, 8, 156, 120, 'hd') + drawText(86, 150, 'Sharper detail', 'x9 k2', 'm')
                 ]
             )
         };
@@ -2805,18 +2825,18 @@ const drawings = {
     imagestyle: () => {
         return {
             cap: 'An AI image rendered natural on the left and vivid on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Natural',
                     false,
                     'natural',
-                    thumb(8, 8, 156, 120, 'natural') + t(86, 150, 'True-to-life colour', 'x9 k2', 'm')
+                    drawThumb(8, 8, 156, 120, 'natural') + drawText(86, 150, 'True-to-life colour', 'x9 k2', 'm')
                 ],
                 [
                     'Vivid',
                     true,
                     'vivid',
-                    thumb(8, 8, 156, 120, 'vivid') + t(86, 150, 'Bolder, more dramatic', 'x9 k2', 'm')
+                    drawThumb(8, 8, 156, 120, 'vivid') + drawText(86, 150, 'Bolder, more dramatic', 'x9 k2', 'm')
                 ]
             )
         };
@@ -2825,33 +2845,33 @@ const drawings = {
         return {
             cap: 'The art director turns the course name into a detailed scene before the image is made.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                r(4, 30, 106, 50, 'p-card', 8) +
-                t(11, 48, 'Course name', 'x8 k2') +
-                t(11, 64, 'WHS for Supervisors', 'x9 b') +
-                l(112, 55, 124, 55, 'p-arrow') +
+                drawRect(0, 0, W, H, 'p-page') +
+                drawRect(4, 30, 106, 50, 'p-card', 8) +
+                drawText(11, 48, 'Course name', 'x8 k2') +
+                drawText(11, 64, 'WHS for Supervisors', 'x9 b') +
+                drawLine(112, 55, 124, 55, 'p-arrow') +
                 '<path class="p-arrowh" d="M120 51l6 4-6 4"/>' +
-                r(130, 22, 110, 70, 'p-brandsoft', 8) +
-                i('spark', 138, 30, 14, 'ic-bf') +
-                t(156, 41, 'Art director', 'x9 b kb') +
-                t(138, 56, '“A supervisor and', 'x8') +
-                t(138, 67, 'worker reviewing a', 'x8') +
-                t(138, 78, 'site plan at dawn…”', 'x8') +
-                hl(128, 20, 114, 74, 9) +
-                l(244, 55, 262, 55, 'p-arrow') +
+                drawRect(130, 22, 110, 70, 'p-brandsoft', 8) +
+                drawIcon('spark', 138, 30, 14, 'ic-bf') +
+                drawText(156, 41, 'Art director', 'x9 b kb') +
+                drawText(138, 56, '“A supervisor and', 'x8') +
+                drawText(138, 67, 'worker reviewing a', 'x8') +
+                drawText(138, 78, 'site plan at dawn…”', 'x8') +
+                drawHighlight(128, 20, 114, 74, 9) +
+                drawLine(244, 55, 262, 55, 'p-arrow') +
                 '<path class="p-arrowh" d="M258 51l6 4-6 4"/>' +
-                thumb(268, 22, 84, 70, 'photo') +
-                t(310, 108, 'Card image', 'x8 k2', 'm') +
-                t(8, 140, 'Without it, the course name goes to the image model', 'x9 k2') +
-                t(8, 153, 'as it is, and pictures come out more generic.', 'x9 k2')
+                drawThumb(268, 22, 84, 70, 'photo') +
+                drawText(310, 108, 'Card image', 'x8 k2', 'm') +
+                drawText(8, 140, 'Without it, the course name goes to the image model', 'x9 k2') +
+                drawText(8, 153, 'as it is, and pictures come out more generic.', 'x9 k2')
         };
     },
     directendpoint: () => {
         return {
             cap: 'Moodle 4.4: Dari sends requests straight to your OpenAI-compatible endpoint.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                flow({
+                drawRect(0, 0, W, H, 'p-page') +
+                drawFlow({
                     direct: true,
                     mark: 'endpoint'
                 })
@@ -2861,8 +2881,8 @@ const drawings = {
         return {
             cap: 'Moodle 4.4: the API key Dari uses with your endpoint.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                flow({
+                drawRect(0, 0, W, H, 'p-page') +
+                drawFlow({
                     direct: true,
                     mark: 'secret'
                 })
@@ -2872,8 +2892,8 @@ const drawings = {
         return {
             cap: "Moodle 4.4: the model that writes Ask Dari's answers.",
             svg:
-                r(0, 0, W, H, 'p-page') +
-                flow({
+                drawRect(0, 0, W, H, 'p-page') +
+                drawFlow({
                     direct: true,
                     mark: 'textmodel'
                 })
@@ -2883,8 +2903,8 @@ const drawings = {
         return {
             cap: 'Moodle 4.4: the model that draws banners and card images.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                flow({
+                drawRect(0, 0, W, H, 'p-page') +
+                drawFlow({
                     direct: true,
                     mark: 'imagemodel'
                 })
@@ -2893,13 +2913,13 @@ const drawings = {
     tourvoiceover: () => {
         return {
             cap: 'The tour step with narration muted on the left and read aloud on the right.',
-            svg: two(
+            svg: drawTwo(
                 [
                     'Off',
                     false,
                     '0',
-                    r(0, 0, 172, 195, 'p-dim') +
-                        tour(8, 30, 156, {
+                    drawRect(0, 0, 172, 195, 'p-dim') +
+                        drawTour(8, 30, 156, {
                             voice: false,
                             mark: 'voice'
                         })
@@ -2908,8 +2928,8 @@ const drawings = {
                     'On',
                     true,
                     '1',
-                    r(0, 0, 172, 195, 'p-dim') +
-                        tour(8, 30, 156, {
+                    drawRect(0, 0, 172, 195, 'p-dim') +
+                        drawTour(8, 30, 156, {
                             voice: true,
                             mark: 'voice'
                         })
@@ -2921,15 +2941,15 @@ const drawings = {
         return {
             cap: 'A tour step read aloud in the chosen language.',
             svg:
-                r(0, 0, W, H, 'p-page') +
-                banner(8, 8, 344, 52) +
-                r(7, 7, 346, 54, 'pv-spot', 2) +
-                tour(96, 72, 200, {
+                drawRect(0, 0, W, H, 'p-page') +
+                drawBanner(8, 8, 344, 52) +
+                drawRect(7, 7, 346, 54, 'pv-spot', 2) +
+                drawTour(96, 72, 200, {
                     voice: true,
                     lang: 'Narration: English (Australia)'
                 }) +
-                hl(104, 183, 160, 19, 8) +
-                co(276, 188, 'Voice language', 264, 192)
+                drawHighlight(104, 183, 160, 19, 8) +
+                drawCallout(276, 188, 'Voice language', 264, 192)
         };
     }
 };
@@ -3006,8 +3026,8 @@ export const buildSettingPreview = (name, item, t) => {
             ' ' +
             (H + 18) +
             '" focusable="false" role="presentation">' +
-            r(16.5, 0.5, W - 1, H - 1, 'pv-sheet back2', 8) +
-            r(8.5, 6.5, W - 1, H - 1, 'pv-sheet back1', 8) +
+            drawRect(16.5, 0.5, W - 1, H - 1, 'pv-sheet back2', 8) +
+            drawRect(8.5, 6.5, W - 1, H - 1, 'pv-sheet back1', 8) +
             '<svg x="0" y="18" width="' +
             W +
             '" height="' +
@@ -3017,12 +3037,12 @@ export const buildSettingPreview = (name, item, t) => {
             ' ' +
             H +
             '" overflow="hidden">' +
-            r(0, 0, W, H, 'p-page', 8) +
+            drawRect(0, 0, W, H, 'p-page', 8) +
             d.svg +
             '</svg>' +
-            r(0.5, 18.5, W - 1, H - 1, 'pv-sheet-edge', 8) +
-            r(W - 70, 0, 70, 15, 'co-bg', 7.5) +
-            t(W - 35, 10.5, t.allcourses || 'All courses', 'x9 b kw', 'm') +
+            drawRect(0.5, 18.5, W - 1, H - 1, 'pv-sheet-edge', 8) +
+            drawRect(W - 70, 0, 70, 15, 'co-bg', 7.5) +
+            drawText(W - 35, 10.5, t.allcourses || 'All courses', 'x9 b kw', 'm') +
             '</svg>';
     } else {
         svg =
@@ -3038,7 +3058,7 @@ export const buildSettingPreview = (name, item, t) => {
             '" overflow="hidden">' +
             d.svg +
             '</svg>' +
-            r(0.5, 0.5, W - 1, H - 1, 'pv-sheet-edge', 8) +
+            drawRect(0.5, 0.5, W - 1, H - 1, 'pv-sheet-edge', 8) +
             '</svg>';
     }
     fig.innerHTML = svg;

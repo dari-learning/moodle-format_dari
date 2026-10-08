@@ -8,8 +8,8 @@
 | Provider | Dari Learning |
 | Plugin type | Course format |
 | Frankenstyle component | `format_dari` |
-| Version | `1.0.5` |
-| Version code | `2026100805` |
+| Version | `1.0.6` — unreleased correction candidate |
+| Version code | `2026100806` |
 | Repository | https://github.com/dari-learning/moodle-format_dari |
 | Bug tracker | https://github.com/dari-learning/moodle-format_dari/issues |
 | Documentation | https://darilearning.com/docs |
@@ -21,6 +21,11 @@
 Do not claim an approved listing URL or compatibility verified by this
 repository setup. Confirm the website documentation is current and reachable
 before submitting.
+
+The supplied 1.0.5 installation ZIP and `v1.0.5` tag remain unchanged. Runtime
+corrections are a separate 1.0.6 candidate in [the CI correction pull request](https://github.com/dari-learning/moodle-format_dari/pull/2).
+Check its actual matrix results before merging or packaging it. Do not upload
+the old 1.0.5 archive as though it contained these corrections.
 
 ## Short description
 

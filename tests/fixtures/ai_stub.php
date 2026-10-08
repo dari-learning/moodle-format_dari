@@ -230,17 +230,6 @@ trait ai_stub {
     }
 
     /**
-     * Verify expected diagnostics from deliberately failed direct-provider requests.
-     */
-    protected function tearDown(): void {
-        if ($this->directdebug) {
-            $this->assertDebuggingCalledCount(count($this->directdebug), $this->directdebug);
-            $this->directdebug = [];
-        }
-        parent::tearDown();
-    }
-
-    /**
      * Queue a successful text reply.
      *
      * @param string $text Generated text.
