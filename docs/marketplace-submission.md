@@ -79,10 +79,11 @@ Prepared in the repository:
 - [x] Issue forms, support/contribution guidance, and private security reporting.
 - [x] CI configuration for selected Moodle™ versions and two database types.
 - [x] Genuine supplied screenshots in `docs/screenshots/`.
-- [x] Tagged source and draft release containing the original installation ZIP.
+- [x] Tagged source and draft release record.
 
 Maintainer actions still required:
 
+- [ ] Attach the correctly structured original installation ZIP to the draft release and verify its checksum.
 - [ ] Review the first CI results and fix any failures; rerun affected checks.
 - [ ] Confirm supported-version claims with installation/upgrade tests.
 - [ ] Verify backup/restore, uninstall, privacy export/deletion, roles, accessibility,
