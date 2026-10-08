@@ -5,7 +5,8 @@
 - Version code: `2026100806`. The supplied 1.0.5 ZIP and its release tag remain unchanged.
 - Correct Moodle coding standards and PHPDoc errors without relaxing validation.
 - Refactor JavaScript helpers and rich-text parsing to satisfy the existing lint limits;
-  regenerate the affected AMD builds and source maps.
+  regenerate the complete AMD build and source-map set with the actual Moodle CI
+  compiler, including previously stale builds from the supplied package.
 - Format CSS, replace embedded data URLs with bundled assets, and remove redundant
   overrides from the final scoped course rules.
 - Pin the CSS grammar validator to 3.1.0 so container queries and other valid modern
