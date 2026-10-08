@@ -49,10 +49,10 @@ namespace format_dari\local;
  */
 class cardprompt {
     /** @var string Identifies the card recipe in the service's logs. */
-    public const VERSION = 'card-2';
+    public const VERSION = 'card-3';
 
     /** @var string Identifies the banner recipe in the service's logs. */
-    public const BANNER_VERSION = 'banner-1';
+    public const BANNER_VERSION = 'banner-2';
 
     /** @var string Image kind for a section or activity card. */
     public const KIND_CARD = 'card';
@@ -431,17 +431,34 @@ class cardprompt {
         }
         $topic = $iscourse ? $coursetopic : self::strip_number_prefix($title);
 
-        [$scenekey, $scene] = self::scene($iscourse ? '' : $topic, $in['modname'], $school);
-        if ($scenekey === 'general') {
-            $scene = $iscourse
-                ? self::general_course_scene($coursetopic, $school)
-                : self::general_scene($topic, $coursetopic, $school);
-        }
-
         $contents = array_values(array_filter(array_map(
             fn($c) => self::strip_number_prefix(self::clean((string) $c)),
             (array) ($in['contents'] ?? [])
         )));
+        $coursesummary = self::excerpt(self::html_plain((string) ($course->summary ?? '')));
+
+        // The course's field (safety, finance, nursing...) gives a real person, place, task and props.
+        // Without one an image model is left to picture "work in <title>", which is what makes a
+        // generic stock image.
+        $field = imagefields::course_field($coursename . ' ' . $category, $coursesummary);
+        $props = [];
+        $fieldname = '';
+        [$scenekey, $scene] = self::scene($iscourse ? '' : $topic, $in['modname'], $school);
+        if ($scenekey === 'general' && $field !== null) {
+            $seed = $course->id . '|' . $topic . '|' . $in['modname'] . '|' . $in['partname'];
+            $picked = imagefields::scene($field, $iscourse ? '' : $topic . ' ' . $detail . ' ' . implode(' ', $contents),
+                $imagekind === self::KIND_BANNER, $school, $seed);
+            $scenekey = 'field:' . $field;
+            $scene = $picked['scene'];
+            $props = $picked['props'];
+            $fieldname = $picked['name'];
+        } else if ($scenekey === 'general') {
+            $scene = $iscourse
+                ? self::general_course_scene($coursetopic, $school)
+                : self::general_scene($topic, $coursetopic, $school);
+        } else if ($field !== null) {
+            $fieldname = imagefields::scene($field, '', false, $school, '')['name'];
+        }
         $teacher = self::clean($in['teacher']);
         $colourhex = $in['colour'] !== '' ? strtoupper($in['colour']) : '';
         $colourname = $colourhex !== '' ? self::colour_name($colourhex) : '';
@@ -460,12 +477,19 @@ class cardprompt {
         $sentences[] = 'Create a premium, professional eLearning course image for ' . $what
             . ($category !== '' && !$school ? ' (' . $category . ')' : '') . ', for ' . $audience . '.';
         $sentences[] = 'Show ' . self::scene_sentence($scene) . '.';
-        $refs = $contents;
-        if ($detail !== '') {
-            array_unshift($refs, self::first_sentence($detail));
-        }
-        if ($refs) {
-            $sentences[] = 'Include subtle visual references to ' . self::human_list(array_slice($refs, 0, 6)) . '.';
+        if ($props) {
+            // Concrete objects an image model can draw. Titles stay out of the picture: models tend to
+            // paint quoted names as lettering.
+            $sentences[] = 'Include subtle visual references to ' . self::human_list($props) . '.';
+        } else {
+            $refs = $contents;
+            if ($detail !== '') {
+                array_unshift($refs, self::first_sentence($detail));
+            }
+            if ($refs) {
+                $sentences[] = 'Hint at ' . self::human_list(array_slice($refs, 0, 4))
+                    . ' through the objects, setting and activity, never as written words.';
+            }
         }
         if ($teacher !== '') {
             $sentences[] = self::sentence($teacher);
@@ -479,12 +503,12 @@ class cardprompt {
                 . 'title overlay.'
             : 'Leave some uncluttered space for an optional title overlay.';
         $sentences[] = 'No logos, no readable text, no watermarks.';
-        $sentences[] = 'Suitable for a professional online learning platform.';
-        $sentences[] = 'Wide landscape composition, 16:9 aspect ratio, high detail, ' . self::FINISH[$style] . '.';
+        $sentences[] = 'Suitable for a professional ' . ($fieldname !== '' ? $fieldname . ' ' : '')
+            . 'online learning platform.';
+        $sentences[] = 'Wide landscape composition, high detail, ' . self::FINISH[$style] . '.';
 
         $head = implode(' ', $sentences);
-        $tail = 'No logos, no readable text, no watermarks. Wide landscape composition, 16:9 aspect ratio, high detail, '
-            . self::FINISH[$style] . '.';
+        $tail = 'No logos, no readable text, no watermarks. Wide landscape composition, high detail, ' . self::FINISH[$style] . '.';
         if (\core_text::strlen($head) > self::PROMPT_MAX) {
             $head = \core_text::substr($head, 0, self::PROMPT_MAX);
         }
@@ -506,7 +530,8 @@ class cardprompt {
                 'courseName' => $coursename,
                 'courseTopic' => $coursetopic,
                 'courseCategory' => $category,
-                'courseSummary' => $iscourse ? $detail : self::excerpt(self::html_plain((string) ($course->summary ?? ''))),
+                'courseSummary' => $iscourse ? $detail : $coursesummary,
+                'field' => $fieldname,
                 'audience' => $school ? 'school students' : 'adult learners',
                 'sceneKey' => $scenekey,
                 'sceneIdea' => $scene,
@@ -820,6 +845,12 @@ class cardprompt {
         $colour = trim((string) ($options['accentcolour'] ?? ''));
         if ($colour === '') {
             $colour = trim((string) get_config('format_dari', 'defaultaccentcolour'));
+        }
+        if ($colour === '') {
+            // The site's own primary colour, so images sit with the rest of the site.
+            global $PAGE;
+            $theme = isset($PAGE->theme->name) ? (string) $PAGE->theme->name : 'boost';
+            $colour = trim((string) (get_config('theme_' . $theme, 'brandcolor') ?: get_config('theme_boost', 'brandcolor')));
         }
         $forced = trim((string) get_config('format_dari', 'forceaccentcolour'));
         if ($forced !== '') {

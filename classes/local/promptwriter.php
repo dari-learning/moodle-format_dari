@@ -265,7 +265,7 @@ class promptwriter {
                 ? '"Keep the main subject in the right half and leave the left third uncluttered for the course title overlay."'
                 : '"Leave some uncluttered space for optional course-title overlay."'),
             '6. "No logos, no readable text, no watermarks. Suitable for a professional <field> online learning platform. '
-                . 'Wide landscape composition, 16:9 aspect ratio, high detail, ' . $finish . '."',
+                . 'Wide landscape composition, high detail, ' . $finish . '."',
             '',
             'FACTS:',
             '- Course: ' . (string) ($brief['courseName'] ?? ''),
@@ -273,6 +273,7 @@ class promptwriter {
         foreach ([
             'courseCategory' => 'Course category',
             'courseSummary' => 'Course summary',
+            'field' => 'Field',
             'audience' => 'Learners',
             'title' => $isbanner ? 'Banner for' : 'This ' . $target . "'s title",
             'partName' => 'Part of',
@@ -339,8 +340,8 @@ class promptwriter {
         if ($isbanner && stripos($prompt, 'left third') === false) {
             $prompt .= ' Keep the main subject in the right half and the left third uncluttered for the course title overlay.';
         }
-        if (stripos($prompt, 'aspect ratio') === false) {
-            $prompt .= ' Wide landscape composition, 16:9 aspect ratio, high detail, ' . $finish . '.';
+        if (stripos($prompt, 'landscape composition') === false) {
+            $prompt .= ' Wide landscape composition, high detail, ' . $finish . '.';
         }
         return \core_text::substr($prompt, 0, self::PROMPT_MAX);
     }

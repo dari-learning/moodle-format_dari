@@ -112,14 +112,14 @@ if ($hassiteconfig) {
             'format_dari/directtextmodel',
             get_string('directtextmodel', 'format_dari'),
             get_string('directtextmodel_desc', 'format_dari'),
-            'gpt-4o-mini',
+            'gpt-6-astra',
             PARAM_TEXT
         ));
         $settings->add(new admin_setting_configtext(
             'format_dari/directimagemodel',
             get_string('directimagemodel', 'format_dari'),
             get_string('directimagemodel_desc', 'format_dari'),
-            'gpt-image-1',
+            'gpt-image-2.5-sunburst',
             PARAM_TEXT
         ));
     }
@@ -160,7 +160,7 @@ if ($hassiteconfig) {
         'format_dari/imagequality',
         get_string('imagequality', 'format_dari'),
         get_string('imagequality_desc', 'format_dari'),
-        'standard',
+        'hd',
         [
             'standard' => get_string('imagequality_standard', 'format_dari'),
             'hd' => get_string('imagequality_hd', 'format_dari'),

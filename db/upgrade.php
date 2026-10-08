@@ -40,5 +40,20 @@ function xmldb_format_dari_upgrade($oldversion) {
         }
         upgrade_plugin_savepoint(true, 2026100805, 'format', 'dari');
     }
+    if ($oldversion < 2026100807) {
+        // Stronger defaults for images and for the model that writes image prompts. Only sites
+        // still on the earlier shipped defaults are moved; a model an admin chose is left alone.
+        $moves = [
+            'directtextmodel' => ['gpt-4o-mini', 'gpt-6-astra'],
+            'directimagemodel' => ['gpt-image-1', 'gpt-image-2.5-sunburst'],
+            'imagequality' => ['standard', 'hd'],
+        ];
+        foreach ($moves as $name => [$old, $new]) {
+            if ((string) get_config('format_dari', $name) === $old) {
+                set_config($name, $new, 'format_dari');
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026100807, 'format', 'dari');
+    }
     return true;
 }

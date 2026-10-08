@@ -122,8 +122,8 @@ Moodle™ 4.4 has no AI settings of its own. Go to *Site administration > Plugin
 |---|---|---|
 | `directendpoint`: API endpoint | The base URL of any OpenAI-compatible API, ending before `/chat/completions`. For example `https://api.openai.com/v1`, an Azure OpenAI v1 endpoint, `https://generativelanguage.googleapis.com/v1beta/openai` (Gemini), `https://openrouter.ai/api/v1`, a LiteLLM gateway, or `http://your-server:11434/v1` (Ollama or vLLM) | empty |
 | `directapikey`: API key | Your school's own key. Leave empty for a self-hosted server that needs none. | empty |
-| `directtextmodel`: Text model | The model Ask Dari uses, for example `gpt-4o-mini`, `gemini-2.5-flash` or `llama3.1:8b`. Leave empty to turn Ask Dari off. | `gpt-4o-mini` |
-| `directimagemodel`: Image model | The model for banners and card images, for example `gpt-image-1` or `dall-e-3`. Leave empty to turn AI images off. | `gpt-image-1` |
+| `directtextmodel`: Text model | The model Ask Dari uses, for example `gpt-6-astra`, `gpt-6.1-sol`, `gemini-2.5-flash` or `llama3.1:8b`. It also writes the image prompts. Leave empty to turn Ask Dari off. | `gpt-6-astra` |
+| `directimagemodel`: Image model | The model for banners and card images, for example `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare` or `gpt-image-2`. Leave empty to turn AI images off. | `gpt-image-2.5-sunburst` |
 
 Requests go through Moodle™'s own HTTP client, so your proxy settings apply. Moodle™'s HTTP security settings also apply, so a server on your own network may need adding to the allowed hosts under *Site administration > General > Security > HTTP security*. These settings only appear on Moodle™ 4.4. After an upgrade to 4.5 or later, set up a provider in Moodle™'s AI settings instead.
 

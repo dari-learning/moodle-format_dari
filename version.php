@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component    = 'format_dari';
-$plugin->version      = 2026100806;
+$plugin->version      = 2026100807;
 // Supports Moodle 4.4 to 5.3. Moodle 4.4 is the minimum: the hero banner and Ask Dari are injected
 // through the footer hook added in 4.4. On 4.5 and later all AI goes through Moodle's AI subsystem;
 // on 4.4, which has none, Dari uses the school's own OpenAI-compatible connection set in its settings.
