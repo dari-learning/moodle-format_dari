@@ -91,6 +91,7 @@ const STRING_KEYS = [
     'cardimage_all_scope_all', 'cardimage_all_scope_sections', 'cardimage_all_scope_activities',
     'cardimage_all_onlymissing', 'cardimage_all_counting', 'cardimage_all_none',
     'cardimage_all_desc', 'cardimage_all_capped', 'cardimage_all_queued', 'cardimage_menu', 'ai_notready_title',
+    'cardimage_promptused', 'cardimage_promptused_ai', 'cardimage_promptused_template',
     'cardimage_dialogtitle', 'save', 'cancel',
 ];
 
@@ -484,6 +485,23 @@ const generate = async(media) => {
             el('span', {'class': 'dari-cardimage-cost', 'text': fill('cardimage_cost', config.cost)}),
         ]),
     ]);
+    // The prompt Dari sent last time for this card, so the teacher can see exactly what the image
+    // model was asked for, and refine it with their own words above.
+    const used = el('details', {'class': 'dari-cardimage-promptused', 'hidden': 'hidden'}, [
+        el('summary', {'text': str.cardimage_promptused}),
+        el('p', {'class': 'dari-cardimage-promptused-source small text-muted'}),
+        el('pre', {'class': 'dari-cardimage-promptused-text'}),
+    ]);
+    body.appendChild(used);
+    call('get_image_prompt', {courseid: config.courseid, targettype: target.type, targetid: target.id}).then((result) => {
+        if (result && result.prompt) {
+            used.querySelector('.dari-cardimage-promptused-text').textContent = result.prompt;
+            used.querySelector('.dari-cardimage-promptused-source').textContent =
+                result.source === 'artdirector' ? str.cardimage_promptused_ai : str.cardimage_promptused_template;
+            used.hidden = false;
+        }
+        return result;
+    }).catch(() => null);
 
     const modal = await ModalSaveCancel.create({
         title: str.cardimage_title,

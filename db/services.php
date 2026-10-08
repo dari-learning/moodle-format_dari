@@ -214,4 +214,12 @@ $functions = [
         'ajax' => true,
         'capabilities' => 'moodle/course:update',
     ],
+    'format_dari_get_image_prompt' => [
+        'classname' => 'format_dari\\external\\get_image_prompt',
+        'methodname' => 'execute',
+        'description' => 'The prompt last sent to the image model for a card or banner.',
+        'type' => 'read',
+        'ajax' => true,
+        'capabilities' => 'moodle/course:update',
+    ],
 ];

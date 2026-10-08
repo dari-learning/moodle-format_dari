@@ -101,12 +101,12 @@ class promptwriter {
         try {
             $courseid = (int) $context->instanceid;
             $art = self::art_direction($courseid, $brief, $context, $userid);
-            $scene = self::scene($courseid, $brief, $art, $context, $userid);
-            if ($scene === '') {
+            $prompt = self::full_prompt($courseid, $brief, $art, $context, $userid);
+            if ($prompt === '') {
                 return $template;
             }
-            self::remember_scene($courseid, $scene);
-            return self::assemble($scene, $art, $brief, (string) ($composed['promptTail'] ?? ''));
+            self::remember_scene($courseid, self::show_sentence($prompt));
+            return $prompt;
         } catch (\Throwable $e) {
             debugging('format_dari art director failed, using the template prompt: ' . $e->getMessage(), DEBUG_DEVELOPER);
             return $template;
@@ -208,123 +208,154 @@ class promptwriter {
         return $art;
     }
 
+    /** @var string The house style the text model is shown: one paragraph, in this order. */
+    public const HOUSE_EXAMPLE = 'Create a premium, professional eLearning course image for BAR – Business '
+        . 'Analysis & Reporting, part of a US CPA exam preparation course. Show a modern financial analyst or CPA '
+        . 'professional working at a desk with multiple screens displaying financial statements, business performance '
+        . 'dashboards, charts, forecasts, variance analysis and data visualisations. Include subtle visual references to '
+        . 'advanced financial reporting, business analysis, budgeting and strategic decision-making. Modern corporate '
+        . 'office environment, sophisticated accounting and finance atmosphere, realistic photography, clean '
+        . 'composition, polished professional lighting, navy blue, white and subtle gold accents. Leave some uncluttered '
+        . 'space for optional course-title overlay. No logos, no readable text, no watermarks. Suitable for a '
+        . 'professional CPA online learning platform. Wide landscape composition, 16:9 aspect ratio, high detail, '
+        . 'photorealistic.';
+
+    /** @var string[] Medium words per course image style, for the model and the finishing check. */
+    protected const STYLE_WORDS = [
+        'photo' => ['realistic photography', 'photorealistic'],
+        'illustration' => ['modern editorial illustration', 'crisp illustration'],
+        'render3d' => ['polished 3D render', 'high-quality 3D render'],
+        'flat' => ['flat vector illustration', 'crisp vector art'],
+    ];
+
     /**
-     * Write the scene for one image.
+     * Have the text model write the complete image prompt in the house style.
      *
      * @param int $courseid The course.
      * @param array $brief The image brief.
      * @param array $art The course's art direction.
      * @param \context $context The course context.
      * @param int $userid The teacher.
-     * @return string One paragraph, or '' when the reply was unusable.
+     * @return string The finished prompt, or '' when the reply was unusable.
      */
-    protected static function scene(int $courseid, array $brief, array $art, \context $context, int $userid): string {
+    protected static function full_prompt(int $courseid, array $brief, array $art, \context $context, int $userid): string {
         $isbanner = ($brief['imageKind'] ?? '') === cardprompt::KIND_BANNER;
         $target = (string) ($brief['target'] ?? 'section');
+        $style = (string) ($brief['style'] ?? 'photo');
+        [$medium, $finish] = self::STYLE_WORDS[$style] ?? self::STYLE_WORDS['photo'];
         $used = self::recent_scenes($courseid);
 
         $lines = [
-            'You write prompts for an AI image generator. Write the SCENE for one image in a matching set of '
-                . 'course images.',
+            'You are an expert art director writing an image-generation prompt for one image in an online course. '
+                . 'Write it in exactly the style and order of this example, but entirely about THIS course and THIS '
+                . ($isbanner ? 'banner' : $target) . ' (do not reuse the example\'s subject):',
             '',
-            'THE COURSE\'S VISUAL WORLD (keep to it):',
+            'EXAMPLE: ' . self::HOUSE_EXAMPLE,
+            '',
+            'THE ORDER TO FOLLOW, as one paragraph of 120 to 170 words:',
+            '1. "Create a premium, professional eLearning course image for <title>, part of <course and what it prepares '
+                . 'learners for>."',
+            '2. "Show <a specific person by role, e.g. a site supervisor, a registered nurse, a CPA> <doing a specific '
+                . 'real task> <with the specific equipment, documents or screens of that task>."',
+            '3. "Include subtle visual references to <four to six concrete things this ' . ($isbanner ? 'course' : $target)
+                . ' covers, taken from the facts below>."',
+            '4. "<Environment>, <atmosphere>, ' . $medium . ', clean composition, polished professional lighting, '
+                . '<a named three-colour palette>."',
+            '5. ' . ($isbanner
+                ? '"Keep the main subject in the right half and leave the left third uncluttered for the course title overlay."'
+                : '"Leave some uncluttered space for optional course-title overlay."'),
+            '6. "No logos, no readable text, no watermarks. Suitable for a professional <field> online learning platform. '
+                . 'Wide landscape composition, 16:9 aspect ratio, high detail, ' . $finish . '."',
+            '',
+            'FACTS:',
+            '- Course: ' . (string) ($brief['courseName'] ?? ''),
         ];
+        foreach ([
+            'courseCategory' => 'Course category',
+            'courseSummary' => 'Course summary',
+            'audience' => 'Learners',
+            'title' => $isbanner ? 'Banner for' : 'This ' . $target . "'s title",
+            'partName' => 'Part of',
+            'detail' => 'What it covers',
+            'activityType' => 'Activity type',
+            'teacherDirection' => 'The teacher asks for (must be honoured)',
+        ] as $key => $label) {
+            $value = trim((string) ($brief[$key] ?? ''));
+            if ($value !== '') {
+                $lines[] = '- ' . $label . ': ' . \core_text::substr($value, 0, 500);
+            }
+        }
+        $contents = array_filter((array) ($brief['contents'] ?? []));
+        if ($contents) {
+            $lines[] = '- ' . ($isbanner && ($brief['target'] ?? '') === 'course' ? 'Its sections' : 'Activities in it')
+                . ': ' . implode('; ', array_slice($contents, 0, 8));
+        }
+        $lines[] = '';
+        $lines[] = 'THE COURSE\'S VISUAL WORLD (keep every image in the course consistent with it):';
         foreach ($art as $key => $value) {
             if ($value !== '') {
                 $lines[] = '- ' . ucfirst($key) . ': ' . $value;
             }
         }
-        $lines[] = '';
-        $lines[] = 'THIS IMAGE:';
-        $lines[] = '- It is ' . ($isbanner ? 'the wide banner for the whole course' : 'the image for one ' . $target) . '.';
-        foreach ([
-            'topic' => 'Topic',
-            'title' => 'Title',
-            'detail' => 'What it covers',
-            'partName' => 'Part of',
-            'activityType' => 'Activity type',
-            'teacherDirection' => 'The teacher asks for',
-            'sceneIdea' => 'A starting idea you may improve on',
-        ] as $key => $label) {
-            $value = trim((string) ($brief[$key] ?? ''));
-            if ($value !== '') {
-                $lines[] = '- ' . $label . ': ' . \core_text::substr($value, 0, 400);
-            }
+        if (($brief['colourName'] ?? '') !== '') {
+            $lines[] = '- Brand accent: ' . $brief['colourName'] . ' (use it as one of the palette colours)';
         }
         if ($used) {
             $lines[] = '';
-            $lines[] = 'SCENES OTHER IMAGES IN THIS COURSE ALREADY SHOW (choose a clearly different moment, place or '
-                . 'angle):';
+            $lines[] = 'OTHER IMAGES IN THIS COURSE ALREADY SHOW (pick a clearly different person, task, place or angle):';
             foreach ($used as $prior) {
                 $lines[] = '- ' . $prior;
             }
         }
         $lines[] = '';
-        $lines[] = 'WRITE ONE PARAGRAPH OF 60 TO 110 WORDS that describes a single, specific, believable moment:';
-        $lines[] = '- who is in it (role, age, clothing, expression, what their hands are doing),';
-        $lines[] = '- what they are doing, shown through action rather than a symbol for the idea,';
-        $lines[] = '- where they are and the specific objects, tools or equipment around them,';
-        $lines[] = '- foreground, middle ground and background, so the picture has depth.';
-        $lines[] = 'Show the topic concretely: a real task, place or situation from the subject, never an abstract '
-            . 'metaphor (no lightbulbs, puzzle pieces, handshakes, thumbs up, floating icons or people pointing at '
-            . 'screens).';
-        if (($brief['audience'] ?? '') === 'school students') {
-            $lines[] = 'The learners are school students: keep everyone age-appropriate and the setting school-safe.';
-        }
-        if ($isbanner) {
-            $lines[] = 'Banner: keep the main subject in the right half and the left third calm and simple, because '
-                . 'the course title is printed over it.';
-        }
-        $lines[] = 'Do NOT mention art style, medium, camera, colours, text, words, signs, logos, brand names or the '
-            . 'course title. Do not use quotation marks. Reply with the paragraph only.';
+        $lines[] = 'RULES: Be specific and accurate to the real work of this subject (correct equipment, clothing and '
+            . 'safety gear). Screens and documents may show charts, forms and layouts, but nothing readable. No '
+            . 'abstract metaphors (lightbulbs, puzzle pieces, handshakes, thumbs up, floating icons). People look natural '
+            . 'and diverse.' . (($brief['audience'] ?? '') === 'school students'
+                ? ' The learners are school students: keep people age-appropriate and settings school-safe.' : '')
+            . ' Never put the course title or any words in quotation marks. Reply with the prompt paragraph only.';
 
         $reply = ai::generate_text($context, $userid, implode("\n", $lines))['text'];
-        $scene = self::clean($reply, 1200);
-        // Drop a leading label some models add ("Scene:", "Prompt:").
-        $scene = preg_replace('~^(scene|prompt|image|description)\s*:\s*~i', '', $scene);
-        return \core_text::strlen($scene) >= 40 ? $scene : '';
+        return self::finalise($reply, $isbanner, $finish);
     }
 
     /**
-     * Put the final prompt together: subject first, then the course's look, then the fixed rules.
+     * Check and complete a model-written prompt; '' when it is unusable.
      *
-     * @param string $scene The scene paragraph.
-     * @param array $art The art direction.
-     * @param array $brief The image brief.
-     * @param string $tail cardprompt's fixed style, colour, composition and no-text rules.
+     * @param string $reply The model's reply.
+     * @param bool $isbanner Whether this is a banner.
+     * @param string $finish The closing finish word for the style.
      * @return string
      */
-    public static function assemble(string $scene, array $art, array $brief, string $tail): string {
-        $style = (string) ($brief['style'] ?? 'photo');
-        $parts = [$scene];
-        $look = [];
-        if (($art['light'] ?? '') !== '') {
-            $look[] = 'Lighting: ' . rtrim($art['light'], '.') . '.';
+    public static function finalise(string $reply, bool $isbanner, string $finish): string {
+        $prompt = self::clean($reply, self::PROMPT_MAX);
+        $prompt = preg_replace('~^(image )?(generation )?prompt\s*:\s*~i', '', $prompt);
+        if (str_word_count($prompt) < 40) {
+            return '';
         }
-        if (($art['palette'] ?? '') !== '') {
-            $look[] = 'Palette: ' . rtrim($art['palette'], '.') . '.';
+        if (stripos($prompt, 'no readable text') === false) {
+            $prompt .= ' No logos, no readable text, no watermarks.';
         }
-        if (($art['mood'] ?? '') !== '') {
-            $look[] = 'Mood: ' . rtrim($art['mood'], '.') . '.';
+        if ($isbanner && stripos($prompt, 'left third') === false) {
+            $prompt .= ' Keep the main subject in the right half and the left third uncluttered for the course title overlay.';
         }
-        if ($look) {
-            $parts[] = implode(' ', $look);
+        if (stripos($prompt, 'aspect ratio') === false) {
+            $prompt .= ' Wide landscape composition, 16:9 aspect ratio, high detail, ' . $finish . '.';
         }
-        $parts[] = self::MEDIUM[$style] ?? self::MEDIUM['photo'];
-        $parts[] = 'People look natural and unposed, with realistic hands and faces, and reflect a diverse mix of '
-            . 'ages and backgrounds that fits the setting. Equipment, clothing and safety gear are accurate for the '
-            . 'real-world task.';
-        if ($tail !== '') {
-            $parts[] = trim($tail);
+        return \core_text::substr($prompt, 0, self::PROMPT_MAX);
+    }
+
+    /**
+     * The "Show ..." sentence of a prompt, remembered so later images choose something different.
+     *
+     * @param string $prompt The prompt.
+     * @return string
+     */
+    protected static function show_sentence(string $prompt): string {
+        if (preg_match('~\bShow\s[^.]+\.~', $prompt, $m)) {
+            return $m[0];
         }
-        if (($art['avoid'] ?? '') !== '') {
-            $parts[] = 'Keep out: ' . rtrim($art['avoid'], '.') . '.';
-        }
-        $prompt = implode("\n\n", $parts);
-        if (\core_text::strlen($prompt) > self::PROMPT_MAX) {
-            $prompt = \core_text::substr($prompt, 0, self::PROMPT_MAX);
-        }
-        return $prompt;
+        return preg_split('~(?<=[.!?])\s~', $prompt, 2)[0] ?? $prompt;
     }
 
     /**

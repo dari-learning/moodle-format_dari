@@ -81,6 +81,9 @@ function($, Str, Ajax, Notification, AiPolicy) {
         bannergenCostdetail: 'Generated with your school\'s own AI connection',
         aipolicydeclined: 'You need to accept the AI usage policy before using AI features.',
         ainotreadytitle: 'AI images are not set up yet',
+        promptused: 'Prompt used last time',
+        promptusedai: 'Written by the AI art director.',
+        promptusedtemplate: 'Built from Dari\'s template (the AI art director was off or unavailable).',
         bannergenGenerate: 'Generate banner',
         bannergenLoadingtitle: 'Generating your banner',
         bannergenLoadingsub: 'AI is crafting a photorealistic banner for your course. ' +
@@ -133,6 +136,9 @@ function($, Str, Ajax, Notification, AiPolicy) {
         ['bannergenCostdetail', {key: 'bannergen_costdetail', component: 'format_dari'}],
         ['aipolicydeclined', {key: 'aiassistant_policydeclined', component: 'format_dari'}],
         ['ainotreadytitle', {key: 'ai_notready_title', component: 'format_dari'}],
+        ['promptused', {key: 'cardimage_promptused', component: 'format_dari'}],
+        ['promptusedai', {key: 'cardimage_promptused_ai', component: 'format_dari'}],
+        ['promptusedtemplate', {key: 'cardimage_promptused_template', component: 'format_dari'}],
         ['bannergenExtralabel', {key: 'bannergen_extralabel', component: 'format_dari'}],
         ['bannergenExtraph', {key: 'bannergen_extraph', component: 'format_dari'}],
         ['bannergenExtrahint', {key: 'bannergen_extrahint', component: 'format_dari'}],
@@ -1793,6 +1799,11 @@ function($, Str, Ajax, Notification, AiPolicy) {
                     + '<p class="dari-bgen-extra-hint" id="dari-bgen-extra-hint">'
                     + escapeHtml(STR.bannergenExtrahint) + '</p>'
                     + '</div>'
+                    + '<details class="dari-cardimage-promptused" id="dari-bgen-promptused" hidden>'
+                    + '<summary>' + escapeHtml(STR.promptused) + '</summary>'
+                    + '<p class="dari-cardimage-promptused-source small text-muted"></p>'
+                    + '<pre class="dari-cardimage-promptused-text"></pre>'
+                    + '</details>'
                     + '<div class="dari-bgen-cost-box">'
                     + '<div class="dari-bgen-cost-amount">' + escapeHtml(STR.bannergenCost) + '</div>'
                     + '<div class="dari-bgen-cost-detail">'
@@ -1911,6 +1922,21 @@ function($, Str, Ajax, Notification, AiPolicy) {
                 var targetname = btn.data('targetname');
                 $('#dari-bgen-cname').text(targetname || btn.data('coursename') || '');
                 setState('confirm');
+                // Show the prompt Dari sent last time for this banner, if it has made one.
+                var used = $('#dari-bgen-promptused');
+                used.prop('hidden', true);
+                callExternal('get_image_prompt', {
+                    courseid: parseInt(btn.data('courseid'), 10),
+                    targettype: 'banner',
+                    targetid: parseInt(btn.data('sectionid'), 10) || 0
+                }).done(function(result) {
+                    if (result && result.prompt) {
+                        used.find('.dari-cardimage-promptused-text').text(result.prompt);
+                        used.find('.dari-cardimage-promptused-source').text(
+                            result.source === 'artdirector' ? STR.promptusedai : STR.promptusedtemplate);
+                        used.prop('hidden', false);
+                    }
+                });
                 openDialog(overlayEl, {
                     labelledby: titleId,
                     trigger: btn[0],

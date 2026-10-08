@@ -98,6 +98,8 @@ class generate_banner extends \core\task\adhoc_task {
                 (int) ($data->userid ?? 0)
             );
             generate_banner_image::set_status($courseid, 'done', $url, $sectionid);
+            \format_dari\local\cardimage::set_prompt($courseid, \format_dari\local\cardimage::TYPE_BANNER, $sectionid,
+                \format_dari\local\ai::$lastprompt['prompt'], \format_dari\local\ai::$lastprompt['source']);
         } catch (\Throwable $e) {
             // A section deleted between queueing and running lands here too: generate_and_store()
             // re-checks the target, so the teacher is told the section is gone rather than an

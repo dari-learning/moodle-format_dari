@@ -69,6 +69,22 @@ class cardprompt {
     /** @var int Longest topic, when a summary has to stand in for a missing title. */
     private const TOPIC_MAX = 120;
 
+    /** @var string[] Setting and medium phrase per style, in the house prompt. */
+    private const SETTING = [
+        'photo' => 'Modern, realistic real-world environment, realistic photography',
+        'illustration' => 'Modern editorial illustration with confident shapes, soft gradients and subtle texture',
+        'render3d' => 'Polished 3D render with soft studio lighting and smooth matte materials',
+        'flat' => 'Flat vector illustration with bold clean geometric shapes and a limited harmonious palette',
+    ];
+
+    /** @var string[] The closing finish word per style. */
+    private const FINISH = [
+        'photo' => 'photorealistic',
+        'illustration' => 'crisp illustration',
+        'render3d' => 'high-quality 3D render',
+        'flat' => 'crisp vector art',
+    ];
+
     /** @var string[] How each style's prompt opens. */
     private const STYLE_LEAD = [
         'photo' => 'A realistic professional photograph',
@@ -103,8 +119,7 @@ class cardprompt {
     ];
 
     /** @var string The rule against text, written so screens and papers can still appear. */
-    private const NO_TEXT = 'No visible text, letters, numbers or logos anywhere; screens, documents and '
-        . 'signs show only abstract shapes and soft blurred lines.';
+    private const NO_TEXT = 'No logos, no readable text, no watermarks.';
 
     /** @var array Hue upper bounds, in degrees, and the colour word for each band. */
     private const HUES = [
@@ -322,9 +337,14 @@ class cardprompt {
             $colour = cardimage::get_colour((int) $course->id, cardimage::TYPE_SECTION, (int) $target->id);
         }
 
+        $contents = $type === cardimage::TYPE_CM
+            ? self::section_contents($course, (int) $target->sectionnum, (int) $target->id)
+            : self::section_contents($course, (int) $target->section);
+
         return self::build(self::KIND_CARD, $course, [
             'title' => $title,
             'detail' => $detail,
+            'contents' => $contents,
             'kind' => $kind,
             'modname' => $modname,
             'partname' => $partname,
@@ -363,9 +383,14 @@ class cardprompt {
             $colour = '';
         }
 
+        $contents = $section
+            ? self::section_contents($course, (int) $section->section)
+            : self::course_section_names($course);
+
         return self::build(self::KIND_BANNER, $course, [
             'title' => $title,
             'detail' => $detail,
+            'contents' => $contents,
             'kind' => $kind,
             'modname' => '',
             'partname' => '',
@@ -413,50 +438,59 @@ class cardprompt {
                 : self::general_scene($topic, $coursetopic, $school);
         }
 
-        // Part 1: the scene. Titles are never put in quotes: image models tend to letter quoted words
-        // into the picture.
-        $lead = self::STYLE_LEAD[$style];
-        if ($iscourse) {
-            $head = $lead . ' for the banner of an online course in ' . $coursetopic . '.';
-        } else {
-            $part = $in['partname'] !== '' ? ', within ' . self::strip_number_prefix($in['partname']) : '';
-            $head = $topic === $coursetopic
-                // Nothing but the course to go on: say so once, not twice.
-                ? $lead . ' for ' . self::article($in['kind']) . ' ' . $in['kind'] . ' of an online course in '
-                    . $coursetopic . $part . '.'
-                : $lead . ' representing ' . $topic . ', ' . self::article($in['kind']) . ' ' . $in['kind']
-                    . ' in an online course in ' . $coursetopic . $part . '.';
-        }
-        $head .= ' It shows ' . $scene . '.';
-        if ($detail !== '') {
-            $head .= ' The ' . ($iscourse ? 'course' : 'topic') . ' covers: ' . self::sentence($detail);
-        }
+        $contents = array_values(array_filter(array_map(
+            fn($c) => self::strip_number_prefix(self::clean((string) $c)),
+            (array) ($in['contents'] ?? [])
+        )));
         $teacher = self::clean($in['teacher']);
-        if ($teacher !== '') {
-            $head .= ' The teacher asks for: ' . self::sentence($teacher);
-        }
-
-        // Part 2: the tail, the same for every image in the course.
         $colourhex = $in['colour'] !== '' ? strtoupper($in['colour']) : '';
         $colourname = $colourhex !== '' ? self::colour_name($colourhex) : '';
-        $tail = 'Style: ' . self::STYLE_DIRECTION[$style] . '.' . "\n";
-        $tail .= $colourhex !== ''
-            ? 'Colour: ' . $colourname . ' (' . $colourhex . ') as the signature accent, in clothing, objects or '
-                . 'light, set against fresh, bright natural tones.' . "\n"
-            : 'Colour: fresh, natural, well-balanced colour with bright highlights.' . "\n";
-        $tail .= self::COMPOSITION[$imagekind] . "\n";
-        $tail .= self::NO_TEXT;
+        $audience = $school ? 'school students' : 'adult learners';
 
-        // Only the scene part can be long (titles and descriptions are the teacher's), so it is the
-        // part shortened; the tail always survives whole.
-        $over = \core_text::strlen($head) + 2 + \core_text::strlen($tail) - self::PROMPT_MAX;
-        if ($over > 0) {
-            $keep = max(80, \core_text::strlen($head) - $over - 1);
-            $head = rtrim(\core_text::substr($head, 0, $keep)) . '…';
+        // The prompt, written the way a good art director writes one: a single confident paragraph
+        // that names the purpose and quality, a specific person doing specific work, concrete
+        // references to what the course or section covers, the setting, the medium, a palette, room
+        // for the title, the no-text rule and the format. Image models follow plain descriptive prose
+        // far better than labelled rule lists.
+        $what = $iscourse
+            ? 'the ' . $coursetopic . ' online course'
+            : $topic . ($topic === $coursetopic ? '' : ', ' . self::article($in['kind']) . ' ' . $in['kind']
+                . ' in the ' . $coursetopic . ' online course');
+        $sentences = [];
+        $sentences[] = 'Create a premium, professional eLearning course image for ' . $what
+            . ($category !== '' && !$school ? ' (' . $category . ')' : '') . ', for ' . $audience . '.';
+        $sentences[] = 'Show ' . self::scene_sentence($scene) . '.';
+        $refs = $contents;
+        if ($detail !== '') {
+            array_unshift($refs, self::first_sentence($detail));
+        }
+        if ($refs) {
+            $sentences[] = 'Include subtle visual references to ' . self::human_list(array_slice($refs, 0, 6)) . '.';
+        }
+        if ($teacher !== '') {
+            $sentences[] = self::sentence($teacher);
+        }
+        $sentences[] = self::SETTING[$style] . ', clean composition, polished professional lighting, '
+            . ($colourhex !== ''
+                ? $colourname . ' accents with white and soft neutral tones'
+                : 'a refined palette of soft neutrals with one confident accent colour') . '.';
+        $sentences[] = $imagekind === self::KIND_BANNER
+            ? 'Keep the main subject in the right half and leave the left third calm and uncluttered for the course '
+                . 'title overlay.'
+            : 'Leave some uncluttered space for an optional title overlay.';
+        $sentences[] = 'No logos, no readable text, no watermarks.';
+        $sentences[] = 'Suitable for a professional online learning platform.';
+        $sentences[] = 'Wide landscape composition, 16:9 aspect ratio, high detail, ' . self::FINISH[$style] . '.';
+
+        $head = implode(' ', $sentences);
+        $tail = 'No logos, no readable text, no watermarks. Wide landscape composition, 16:9 aspect ratio, high detail, '
+            . self::FINISH[$style] . '.';
+        if (\core_text::strlen($head) > self::PROMPT_MAX) {
+            $head = \core_text::substr($head, 0, self::PROMPT_MAX);
         }
 
         return [
-            'prompt' => $head . "\n\n" . $tail,
+            'prompt' => $head,
             'promptTail' => $tail,
             'negativePrompt' => self::NEGATIVE . ($style === 'photo' ? self::NEGATIVE_PHOTO : ''),
             'promptVersion' => $imagekind === self::KIND_BANNER ? self::BANNER_VERSION : self::VERSION,
@@ -466,6 +500,7 @@ class cardprompt {
                 'title' => $in['title'],
                 'topic' => $topic,
                 'detail' => $detail,
+                'contents' => $contents,
                 'activityType' => $in['modname'],
                 'partName' => $in['partname'],
                 'courseName' => $coursename,
@@ -522,9 +557,8 @@ class cardprompt {
     private static function general_scene(string $topic, string $coursetopic, bool $school): string {
         $within = $topic === $coursetopic ? '' : ' (part of ' . $coursetopic . ')';
         return self::people(
-            '{one} actively engaged in ' . $topic . $within . ' in a realistic, modern '
-                . 'setting that clearly belongs to this subject, surrounded by the tools, materials and details someone '
-                . 'working on it would really use; focused, capable and absorbed in the task',
+            '{pro} doing real, hands-on work in ' . $topic . $within . ', in the kind of place this work really '
+                . 'happens, with the equipment, documents and materials of the job around them',
             $school
         );
     }
@@ -538,11 +572,98 @@ class cardprompt {
      */
     private static function general_course_scene(string $coursetopic, bool $school): string {
         return self::people(
-            '{many} putting what they learn in ' . $coursetopic . ' into practice in a '
-                . 'realistic, modern setting that clearly belongs to this field, with the tools, equipment and details '
-                . 'of the subject around them, one of them in the foreground engaged and confident',
+            '{pros} at work in ' . $coursetopic . ', in the kind of place this work really happens, with the '
+                . 'equipment and materials of the field around them and one of them in the foreground, engaged and '
+                . 'confident',
             $school
         );
+    }
+
+    /**
+     * A scene fragment as the object of "Show ...".
+     *
+     * @param string $scene Scene text, possibly starting with a capital or ending with a full stop.
+     * @return string
+     */
+    private static function scene_sentence(string $scene): string {
+        $scene = rtrim(trim($scene), '.');
+        return \core_text::strtolower(\core_text::substr($scene, 0, 1)) . \core_text::substr($scene, 1);
+    }
+
+    /**
+     * "a, b and c".
+     *
+     * @param string[] $items Items.
+     * @return string
+     */
+    private static function human_list(array $items): string {
+        $items = array_values(array_unique(array_map(fn($i) => rtrim($i, '.'), $items)));
+        if (count($items) < 2) {
+            return (string) ($items[0] ?? '');
+        }
+        $last = array_pop($items);
+        return implode(', ', $items) . ' and ' . $last;
+    }
+
+    /**
+     * Names of the visible activities in a section, for concrete visual references.
+     *
+     * @param \stdClass $course The course.
+     * @param int $sectionnum Section number.
+     * @param int $exclude Course module to leave out (the card's own activity), or 0.
+     * @return string[]
+     */
+    public static function section_contents(\stdClass $course, int $sectionnum, int $exclude = 0): array {
+        $names = [];
+        try {
+            $modinfo = get_fast_modinfo($course);
+            $context = \context_course::instance($course->id);
+            foreach ($modinfo->sections[$sectionnum] ?? [] as $cmid) {
+                $cm = $modinfo->get_cm($cmid);
+                if ((int) $cmid === $exclude || !$cm->visible || $cm->deletioninprogress
+                        || in_array($cm->modname, ['label', 'subsection'], true)) {
+                    continue;
+                }
+                $name = self::clean(text::plain((string) $cm->name, $context));
+                if ($name !== '' && !self::is_numbered_only($name)) {
+                    $names[] = $name;
+                }
+                if (count($names) >= 8) {
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {
+            return [];
+        }
+        return $names;
+    }
+
+    /**
+     * Names of the course's sections, for a course banner.
+     *
+     * @param \stdClass $course The course.
+     * @return string[]
+     */
+    public static function course_section_names(\stdClass $course): array {
+        $names = [];
+        try {
+            $context = \context_course::instance($course->id);
+            foreach (get_fast_modinfo($course)->get_section_info_all() as $section) {
+                if ((int) $section->section === 0 || !$section->visible || trim((string) $section->name) === '') {
+                    continue;
+                }
+                $name = self::clean(text::plain((string) $section->name, $context));
+                if (!self::is_numbered_only($name)) {
+                    $names[] = self::strip_number_prefix($name);
+                }
+                if (count($names) >= 8) {
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {
+            return [];
+        }
+        return $names;
     }
 
     /**
@@ -555,7 +676,9 @@ class cardprompt {
     private static function people(string $scene, bool $school): string {
         $one = $school ? 'a secondary school student' : 'an adult learner';
         $many = $school ? 'school students' : 'adult learners';
-        return str_replace(['{one}', '{many}'], [$one, $many], $scene);
+        $pro = $school ? 'a secondary school student with their teacher' : 'a skilled professional';
+        $pros = $school ? 'school students and their teacher' : 'skilled professionals';
+        return str_replace(['{one}', '{many}', '{pro}', '{pros}'], [$one, $many, $pro, $pros], $scene);
     }
 
     /**

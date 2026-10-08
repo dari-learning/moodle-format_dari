@@ -118,6 +118,9 @@ class ai {
         return self::$memo[$key];
     }
 
+    /** @var array The last image prompt written this request: prompt and source (artdirector|template). */
+    public static array $lastprompt = ['prompt' => '', 'source' => ''];
+
     /** @var array Per-request memo of unavailable_reason(). */
     protected static array $memo = [];
 
@@ -330,11 +333,14 @@ class ai {
     public static function image_prompt(array $composed, \context $context, int $userid): string {
         // The art director writes the prompt with the site's text model when it can; otherwise the
         // template prompt from cardprompt is used as it is.
+        // No separate "Avoid:" list: image models follow plain description better, and naming the
+        // unwanted things ("text, letters") tends to put them in the picture. The no-text rule is
+        // part of the prompt itself.
         $prompt = promptwriter::write($composed, $context, $userid);
-        $avoid = (string) ($composed['negativePrompt'] ?? '');
-        if ($avoid !== '') {
-            $prompt .= "\nAvoid: " . $avoid . '.';
-        }
+        self::$lastprompt = [
+            'prompt' => $prompt,
+            'source' => $prompt === (string) ($composed['prompt'] ?? '') ? 'template' : 'artdirector',
+        ];
         return $prompt;
     }
 

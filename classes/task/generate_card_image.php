@@ -84,6 +84,8 @@ class generate_card_image extends \core\task\adhoc_task {
                 (int) ($data->userid ?? 0)
             );
             cardimage::set_status($courseid, $type, $id, 'done', $url);
+            cardimage::set_prompt($courseid, $type, $id, \format_dari\local\ai::$lastprompt['prompt'],
+                \format_dari\local\ai::$lastprompt['source']);
         } catch (\Throwable $e) {
             cardimage::set_status($courseid, $type, $id, 'failed', $e->getMessage());
         }
