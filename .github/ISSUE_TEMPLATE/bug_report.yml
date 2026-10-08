@@ -10,7 +10,7 @@ body:
     id: plugin
     attributes:
       label: Dari version
-      placeholder: "1.0.5"
+      placeholder: "2.0.0"
     validations:
       required: true
   - type: input
