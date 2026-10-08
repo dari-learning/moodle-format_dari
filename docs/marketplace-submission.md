@@ -8,8 +8,8 @@
 | Provider | Dari Learning |
 | Plugin type | Course format |
 | Frankenstyle component | `format_dari` |
-| Version | `1.0.5` |
-| Version code | `2026100805` |
+| Version | `2.0.5` |
+| Version code | `2026100905` |
 | Repository | https://github.com/dari-learning/moodle-format_dari |
 | Bug tracker | https://github.com/dari-learning/moodle-format_dari/issues |
 | Documentation | https://darilearning.com/docs |
@@ -24,36 +24,58 @@ before submitting.
 
 ## Short description
 
-Dari makes Moodle™ courses visual and easy to navigate with course cards, a
-course player, progress displays, and optional course-aware AI study support.
+Visual course cards, a course player, progress tracking, Ask Dari (a course-aware AI study assistant) and AI-generated course images, all in one Moodle™ course format.
 
 ## Full description
 
-Dari Course Format by Dari Learning turns courses into a clear, visual learning
-experience. Teachers can organise section and activity cards, choose images and
-icons, set estimated times, customise banners, and guide learners with tours.
-Learners can navigate course, section, and activity pages through a course index
-and course player.
+## Dari Course Format
 
-Appearance can follow the site's primary colour, with optional overrides,
-light/dark modes, locally bundled DM Sans, and optional Google Fonts.
+Dari turns any Moodle™ course into a clear, visual learning experience. Learners see where they are, what's next and how far they've come. Teachers get modern course design without writing code.
 
-Ask Dari offers course-aware explanations, practice questions, and real-world
-examples. Academic-integrity controls guide learners instead of completing
-assessments. Teachers can review conversations, ratings, and corrections;
-administrators have site reporting and CSV export.
+### For learners
+- **Course cards.** Sections and activities appear as image cards with progress, estimated time and completion status.
+- **Course player.** Move through sections and activities in order, with a course index always to hand.
+- **Progress at a glance.** Progress rings, progress bars and activity numbering on every page.
+- **Ask Dari study assistant.** Explanations, worked examples and interactive practice questions drawn from the course's own content.
+  - It guides learners with hints instead of giving assessment answers.
+  - It pauses automatically during graded quizzes and after an assignment is submitted.
 
-AI-generated banners and card images use the site's configured provider.
-On Moodle™ 4.5 and later, requests use its AI subsystem. On Moodle™ 4.4, Dari
-uses an administrator-configured OpenAI-compatible connection. AI features need
-a configured provider and may incur that provider's charges. Non-AI features
-work without an AI provider. Dari does not operate a separate hosted AI service.
+### For teachers
+- **Banners, images and icons.** A custom banner, card images, icons and card colours for each section and activity.
+- **AI course images.** Dari plans every image for the course together, so each card shows its own topic instead of a generic stock scene.
+  - Activity cards show what the learner actually does there, such as preparing for an exam, practising, discussing or submitting work.
+  - Teachers can preview the plan and every image prompt before any image is generated.
+- **Estimated times and guided tours.** Set estimated times, and walk learners through the course with guided tours.
+- **Ask Dari report.** Review learners' questions, see their ratings, and correct any answer. Ask Dari then follows your correction from then on.
+
+### For administrators
+- **Branding.** Follows your site's primary colour, with optional overrides, light and dark modes, and a locally bundled font.
+- **Reporting.** Site-wide Ask Dari reporting with CSV export, and an image-generation log with timings for each step.
+- **Privacy.** Full Privacy API support covering export and deletion of everything the plugin stores.
+
+### AI requirements
+- **Your own provider.** AI features use your site's own AI provider: Moodle's AI subsystem on Moodle 4.5 and later, or an OpenAI-compatible connection you configure on Moodle 4.4. Dari runs no hosted AI service of its own.
+- **Image models.** Google Nano Banana 2.1 is the default, or GPT Image 2.5 Sunburst. Dari only ever uses the one model you choose.
+- **Costs.** AI features may incur your provider's charges.
+- **Everything else works without AI.**
+
+### Compatibility
+Moodle™ 4.4 to 5.3. GNU GPL v3 or later.
+
+## Release notes (2.0.5)
+
+See [release-notes-2.0.5.md](release-notes-2.0.5.md). Paste it into the version's release notes field. It covers every change since 2.0.0.
 
 ## External services and privacy disclosures
 
-- AI requests go to the institution's configured provider. Review the package's
-  privacy provider and the documentation for exactly which context/data is sent,
-  retention, permissions, export, and deletion controls.
+- AI requests go to the institution's configured provider. Ask Dari sends the
+  course content index and the learner's question; image generation sends section
+  and activity titles and descriptions. Review the package's privacy provider and
+  the documentation for exactly which context/data is sent, retention,
+  permissions, export, and deletion controls.
+- The image diagnostics log (`format_dari_imagelog`) stores image-job timings and,
+  for course editors only, browser errors on Dari pages. It is kept 30 days, can
+  be turned off in the plugin settings, and is covered by the privacy provider.
 - DM Sans is bundled locally by default. Selecting a Google Font creates
   browser requests to Google Fonts; this must be disclosed to administrators.
 - Include the GPL licence, `thirdpartylibs.xml`, and `fonts/OFL.txt`.
@@ -79,7 +101,8 @@ Prepared in the repository:
 - [x] Issue forms, support/contribution guidance, and private security reporting.
 - [x] CI configuration for selected Moodle™ versions and two database types.
 - [x] Genuine supplied screenshots in `docs/screenshots/`.
-- [x] Tagged source and draft release record.
+- [x] Source for 2.0.5 on `main` (commit for release 2026100905).
+- [ ] Create the `v2.0.5` tag and GitHub release (Releases, then Draft a new release, then new tag `v2.0.5` on `main`).
 
 Maintainer actions still required:
 
@@ -88,7 +111,8 @@ Maintainer actions still required:
 - [ ] Confirm supported-version claims with installation/upgrade tests.
 - [ ] Verify backup/restore, uninstall, privacy export/deletion, roles, accessibility,
   mobile behaviour, and AI-provider configuration in real test environments.
-- [ ] Verify the website and documentation, including the 1.0.5 primary-colour
+- [ ] Verify the website and documentation reflect 2.0.5, including the image engine
+  (Google Nano Banana 2.1 default), Image plan preview, diagnostics log, primary-colour
   and Google Fonts details.
 - [ ] Read the current Marketplace submission guidelines while signed in.
 - [ ] Choose free/paid listing terms and confirm provider/legal details in Marketplace.
