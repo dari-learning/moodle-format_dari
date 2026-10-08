@@ -299,7 +299,9 @@ trait ai_stub {
                         true
                     ) ?: 'landscape')
                     : (array_search($body['size'] ?? '', \format_dari\local\imagemodel::DIRECT_SIZES, true) ?: 'landscape'),
-                    'quality' => $body['quality'] ?? null,
+                    // Google has no quality setting; its image size stands in for it.
+                    'quality' => $google ? ($body['generationConfig']['imageConfig']['imageSize'] ?? null)
+                        : ($body['quality'] ?? null),
                     'style' => null, 'numimages' => $body['n'] ?? 1]
             );
             $reply = $this->reply_to_action($action);

@@ -221,8 +221,13 @@ final class ai_test extends \advanced_testcase {
         $this->assertSame(0, $this->count_draft_files((int) $this->teacher->id));
         $action = $this->aiactions[0];
         $this->assertSame('square', $action->get_configuration('aspectratio'));
-        $this->assertSame('hd', $action->get_configuration('quality'));
-        $this->assertSame('natural', $action->get_configuration('style'));
+        if (ai::subsystem_present()) {
+            $this->assertSame('hd', $action->get_configuration('quality'));
+            $this->assertSame('natural', $action->get_configuration('style'));
+        } else {
+            // Moodle 4.4, Google engine (the default): Gemini's largest size is asked for.
+            $this->assertSame(imagemodel::GOOGLE_IMAGE_SIZE, $action->get_configuration('quality'));
+        }
         $this->assertSame(1, $action->get_configuration('numimages'));
 
         // An unknown aspect ratio falls back to landscape.
