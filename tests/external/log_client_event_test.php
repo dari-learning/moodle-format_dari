@@ -18,6 +18,7 @@ namespace format_dari\external;
 
 use format_dari\local\imagelog;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\log_client_event::class)]
 /**
  * Tests for recording browser errors in the diagnostics log.
  *
@@ -27,7 +28,6 @@ use format_dari\local\imagelog;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\external\log_client_event
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\external\log_client_event::class)]
 final class log_client_event_test extends \advanced_testcase {
     /**
      * A real stack trace (with <anonymous> frames) is stored as sent; learners cannot write to the

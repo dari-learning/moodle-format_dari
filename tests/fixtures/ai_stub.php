@@ -292,7 +292,14 @@ trait ai_stub {
                 : ($isimage ? $body['prompt'] : $body['messages'][0]['content']);
             $action = new \format_dari\test\direct_action(
                 $isimage ? generate_image::class : generate_text::class,
-                ['prompttext' => $prompt, 'aspectratio' => 'landscape', 'quality' => $body['quality'] ?? null,
+                ['prompttext' => $prompt, 'aspectratio' => $google
+                    ? (array_search(
+                        $body['generationConfig']['imageConfig']['aspectRatio'] ?? '',
+                        \format_dari\local\imagemodel::GOOGLE_RATIOS,
+                        true
+                    ) ?: 'landscape')
+                    : (array_search($body['size'] ?? '', \format_dari\local\imagemodel::DIRECT_SIZES, true) ?: 'landscape'),
+                    'quality' => $body['quality'] ?? null,
                     'style' => null, 'numimages' => $body['n'] ?? 1]
             );
             $reply = $this->reply_to_action($action);

@@ -18,6 +18,7 @@ namespace format_dari\local;
 
 use core_ai\aiactions\generate_image;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\imagemodel::class)]
 /**
  * Tests for the image engine and its single model.
  *
@@ -27,7 +28,6 @@ use core_ai\aiactions\generate_image;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_dari\local\imagemodel
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\format_dari\local\imagemodel::class)]
 final class imagemodel_test extends \advanced_testcase {
     /**
      * Google is the default engine; an unknown value falls back to it.
