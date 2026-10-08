@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation and setup guides
+    url: https://darilearning.com/docs
+    about: Installation, AI setup, course design, and privacy guidance.
+  - name: Security vulnerabilities
+    url: https://github.com/dari-learning/moodle-format_dari/security/advisories/new
+    about: Report security issues privately. Never disclose learner data or credentials in a public issue.
+  - name: Moodle™ Marketplace
+    url: https://marketplace.moodle.com/
+    about: The public plugin acquisition channel. The Dari listing is not approved yet.

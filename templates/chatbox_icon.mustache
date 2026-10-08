@@ -1,0 +1,31 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template format_dari/chatbox_icon
+
+    One decorative study-tool icon for Ask Dari. Exactly one of the flags is set; the icon is
+    aria-hidden because the button it sits in carries the visible label.
+
+    Context variables required for this template:
+    * isstructure, isconcepts, isworkplace, ispractice, ischecklist bool Which icon to draw.
+
+    Example context (json):
+    {
+        "ispractice": true
+    }
+}}
+<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="20" height="20">{{#isstructure}}<rect x="3.75" y="3.75" width="7" height="7" rx="1.75" fill="currentColor" fill-opacity=".16"/><rect x="13.25" y="3.75" width="7" height="7" rx="1.75"/><rect x="3.75" y="13.25" width="7" height="7" rx="1.75"/><path d="M16.75 13.25v7M13.25 16.75h7"/>{{/isstructure}}{{#isconcepts}}<path d="M12 6.5C10.1 5 7.4 4.5 4.25 4.75v13c3.15-.25 5.85.25 7.75 1.75 1.9-1.5 4.6-2 7.75-1.75v-13C16.6 4.5 13.9 5 12 6.5z" fill="currentColor" fill-opacity=".16"/><path d="M12 6.5v13"/>{{/isconcepts}}{{#isworkplace}}<rect x="4.75" y="3.75" width="10" height="16.5" rx="1.5" fill="currentColor" fill-opacity=".16"/><path d="M14.75 9.25h3a1.5 1.5 0 0 1 1.5 1.5v9.5"/><path d="M8 7.75h3.5M8 11.25h3.5M8 14.75h3.5M3.25 20.25h17.5"/>{{/isworkplace}}{{#ispractice}}<circle cx="12" cy="12" r="8.25" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="12" r="4.25"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>{{/ispractice}}{{#ischecklist}}<rect x="3.75" y="4.5" width="4" height="4" rx="1" fill="currentColor" fill-opacity=".16"/><rect x="3.75" y="10" width="4" height="4" rx="1" fill="currentColor" fill-opacity=".16"/><rect x="3.75" y="15.5" width="4" height="4" rx="1" fill="currentColor" fill-opacity=".16"/><path d="M10.75 6.5h9.5M10.75 12h9.5M10.75 17.5h6.5"/>{{/ischecklist}}</svg>

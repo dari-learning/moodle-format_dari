@@ -1,0 +1,172 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Shared fixture for the format_dari external function tests.
+ *
+ * @package    format_dari
+ * @category   test
+ * @copyright  2026 Dari Learning
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+namespace format_dari\external;
+
+defined('MOODLE_INTERNAL') || die();
+
+require_once(__DIR__ . '/../fixtures/ai_stub.php');
+
+/**
+ * Shared fixture for the format_dari external function tests.
+ *
+ * Provides a course in the Dari course format with an editing teacher, a non-editing teacher, a
+ * student and a user enrolled in nothing, plus helpers for capability manipulation and for
+ * driving a function the way lib/ajax/service.php does.
+ *
+ * Moodle's AI manager is replaced with a mock (see \format_dari\tests\ai_stub) offering both
+ * text and image generation, and the teacher and student have accepted the AI policy, so nothing
+ * here ever reaches a network. Tests that need another configuration call stub_ai() again.
+ *
+ * @package    format_dari
+ * @category   test
+ * @copyright  2026 Dari Learning
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+abstract class external_testcase extends \advanced_testcase {
+    use \format_dari\tests\ai_stub;
+
+    /** @var \stdClass Course using the Dari course format. */
+    protected $course;
+
+    /** @var \context_course Context of the course. */
+    protected $context;
+
+    /** @var \stdClass An editing teacher in the course. */
+    protected $teacher;
+
+    /** @var \stdClass A student in the course. */
+    protected $student;
+
+    /** @var \stdClass A user enrolled in nothing. */
+    protected $outsider;
+
+    /**
+     * Build the shared fixture.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+
+        $this->resetAfterTest();
+
+        $this->course = $this->getDataGenerator()->create_course(
+            ['format' => 'dari', 'numsections' => 3],
+            ['createsections' => true]
+        );
+        $this->context = \context_course::instance($this->course->id);
+        $this->teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'editingteacher');
+        $this->student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->outsider = $this->getDataGenerator()->create_user();
+
+        $this->stub_ai();
+        $this->accept_ai_policy((int) $this->teacher->id);
+        $this->accept_ai_policy((int) $this->student->id);
+    }
+
+    /**
+     * Prohibit a capability for an archetype role inside the fixture course.
+     *
+     * @param string $capability Capability name.
+     * @param string $shortname Role shortname, e.g. 'student'.
+     * @return void
+     */
+    protected function prohibit_capability(string $capability, string $shortname): void {
+        global $DB;
+
+        $roleid = $DB->get_field('role', 'id', ['shortname' => $shortname], MUST_EXIST);
+        assign_capability($capability, CAP_PROHIBIT, $roleid, $this->context->id, true);
+        accesslib_clear_all_caches_for_unit_testing();
+    }
+
+    /**
+     * Call an external function the way lib/ajax/service.php does, so parameter validation, the
+     * 'ajax' => true flag and the session key check all run.
+     *
+     * @param string $function Name of the external function.
+     * @param array $args Raw arguments, exactly as a browser would send them.
+     * @return array The ['error' => bool, 'data' => mixed, 'exception' => stdClass] response.
+     */
+    protected function call_function(string $function, array $args): array {
+        global $USER;
+
+        // Moodle's call_external_function() invokes require_sesskey() for any function with
+        // loginrequired set, and confirm_sesskey() reads the key from the request. Rather than
+        // forging a request, use the bypass Moodle provides for exactly this situation:
+        // confirm_sesskey() returns true immediately when $USER->ignoresesskey is set (see
+        // lib/sessionlib.php). That is the same mechanism the web service layer itself uses, so
+        // no superglobal is touched and the rest of the call path is unchanged.
+        $previous = $USER->ignoresesskey ?? null;
+        $USER->ignoresesskey = true;
+        try {
+            return \core_external\external_api::call_external_function($function, $args, true);
+        } finally {
+            if ($previous === null) {
+                unset($USER->ignoresesskey);
+            } else {
+                $USER->ignoresesskey = $previous;
+            }
+        }
+    }
+
+    /**
+     * Assert that calling an external function over AJAX fails with a given error code.
+     *
+     * @param string $expectederrorcode The errorcode the client should receive.
+     * @param string $function Name of the external function.
+     * @param array $args Raw arguments, exactly as a browser would send them.
+     * @return void
+     */
+    protected function assert_call_fails(string $expectederrorcode, string $function, array $args): void {
+        $result = $this->call_function($function, $args);
+
+        $this->assertTrue($result['error'], 'Expected ' . $function . ' to fail.');
+        $this->assertSame($expectederrorcode, $result['exception']->errorcode);
+    }
+
+    /**
+     * Assert that a callable throws a moodle_exception carrying a given error code.
+     *
+     * Note: use this rather than expectExceptionMessageMatches(). Matching on the
+     * rendered message asserts on English prose from the language pack, so the test breaks when
+     * a string is reworded for clarity and fails outright under a different language pack. The
+     * error code is the stable contract -- it is what the client branches on.
+     *
+     * @param string $expectederrorcode The errorcode the exception should carry.
+     * @param callable $callable The call under test.
+     * @return void
+     */
+    protected function assert_throws_errorcode(string $expectederrorcode, callable $callable): void {
+        try {
+            $callable();
+        } catch (\moodle_exception $e) {
+            $this->assertSame($expectederrorcode, $e->errorcode);
+            return;
+        }
+        $this->fail(
+            'Expected a moodle_exception with errorcode ' . $expectederrorcode
+                . ', but nothing was thrown.'
+        );
+    }
+}

@@ -1,0 +1,129 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template format_dari/content
+
+    The Dari course format course home page: the General section rendered inline, followed by the
+    grid of section cards and, for a teacher with edit mode on, the "Add section" card and the
+    icon picker modal.
+
+    The container is a named landmark region and the grid carries list semantics, so a screen
+    reader announces the number of sections. The list roles are dropped in edit mode because the
+    "Add section" <button> is a grid child and a role="list" may only contain listitem children.
+
+    Classes required for JS:
+    * dari-cards-container - the element amd/src/local/cardcontent.js registers with the
+      reactive course editor; it is also the element core's action dispatcher delegates from, so
+      every data-action inside it (including the core action menus the General section renders in
+      edit mode) reaches the matching core mutation.
+    * drf-grid--sections - the reorderable section list.
+
+    Data attributes required for JS:
+    * data-for="course_sectionlist" - lets core_courseformat's reactive state manager find the
+      section list so section move/visibility mutations can update the grid.
+
+    Context variables required for this template:
+    * regionlabel string Accessible name of the cards region (plain text).
+    * courseid int Course ID.
+    * isediting bool True when the teacher has edit mode turned on.
+    * uselistroles bool True when role="list"/role="listitem" should be emitted (never in edit mode).
+    * generalsection object|null Context for format_dari/general_section, or null when section 0
+      is not visible to this user.
+    * sections array List of contexts for format_dari/section_card.
+    * iconpicker string|null PRE-ESCAPED HTML for the icon picker modal, produced by the
+      \format_dari\output\courseformat\iconpicker renderable. Rendered with a triple mustache
+      because it is already a rendered template; null when edit mode is off.
+    * bulkedittools object|null Context for core_courseformat/local/content/bulkedittools, the
+      sticky action bar Moodle's "Bulk actions" header button drives; null outside edit mode.
+
+    Example context (json):
+    {
+        "regionlabel": "Course sections",
+        "courseid": 2,
+        "isediting": false,
+        "uselistroles": true,
+        "generalsection": {
+            "hasoutput": true,
+            "usecoresection": false,
+            "headingclass": "dari-general-heading accesshide",
+            "sectionname": "General",
+            "hassummary": true,
+            "summary": "<p>Welcome to the course.</p>",
+            "activitycards": null
+        },
+        "sections": [
+            {
+                "sectionid": 35,
+                "sectionnum": 1,
+                "courseid": 2,
+                "sectionurl": "https://example.org/course/section.php?id=35",
+                "sectionname": "Module 1: Foundations",
+                "isediting": false,
+                "uselistroles": true,
+                "showeditbuttons": false,
+                "sectionbulk": null,
+                "media": null,
+                "cardstyle": "",
+                "cardstate": "progress",
+                "eyebrow": "Module 1",
+                "hastime": true,
+                "estimatedtime": "25 min",
+                "cardlinklabel": "Module 1: Foundations, 3 activities, Estimated time 25 min, 33% complete",
+                "hassummary": true,
+                "summary": "What machine learning is and why it matters.",
+                "hascount": true,
+                "counttext": "3 activities",
+                "hasprogress": true,
+                "percentnum": 33,
+                "donetext": "1 of 3 done",
+                "statustext": "33% complete",
+                "ctastate": "continue",
+                "ctatext": "Continue",
+                "hasactivities": false,
+                "activities": [],
+                "moreactivities": null
+            }
+        ],
+        "iconpicker": null,
+        "bulkedittools": null
+    }
+}}
+<div class="drf-cards dari-cards-container" role="region" aria-label="{{regionlabel}}">
+{{#generalsection}}
+{{> format_dari/general_section }}
+{{/generalsection}}
+<h2 class="accesshide">{{regionlabel}}</h2>
+{{#aiimages}}
+<div class="drf-toolbar">
+<button type="button" class="drf-btn drf-btn--ai" data-action="dari-cardimage-all" data-aiready="{{#aiready}}1{{/aiready}}{{^aiready}}0{{/aiready}}" data-aireason="{{aireason}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="16" height="16"><path d="M10.5 3.5c.5 4.1 2.9 6.5 7 7-4.1.5-6.5 2.9-7 7-.5-4.1-2.9-6.5-7-7 4.1-.5 6.5-2.9 7-7z" fill="currentColor" fill-opacity=".16"/><path d="M18.25 14.25c.2 1.6.9 2.3 2.5 2.5-1.6.2-2.3.9-2.5 2.5-.2-1.6-.9-2.3-2.5-2.5 1.6-.2 2.3-.9 2.5-2.5z" fill="currentColor" stroke="none"/></svg>{{#str}} cardimage_all_button, format_dari {{/str}}</button>
+</div>
+{{/aiimages}}
+<div class="drf-grid drf-grid--sections"{{#uselistroles}} role="list"{{/uselistroles}} data-for="course_sectionlist">
+{{#sections}}
+{{> format_dari/section_card }}
+{{/sections}}
+{{#isediting}}
+{{> format_dari/add_section_card }}
+{{/isediting}}
+</div>
+{{{iconpicker}}}
+{{#bulkedittools}}
+{{$ core_courseformat/local/content/bulkedittools }}
+{{> core_courseformat/local/content/bulkedittools }}
+{{/ core_courseformat/local/content/bulkedittools }}
+{{/bulkedittools}}
+</div>

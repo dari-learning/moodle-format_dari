@@ -1,0 +1,176 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+namespace format_dari\local;
+
+/**
+ * Capability and site setting helpers for the Dari course format.
+ *
+ * Stateless service class: every method is static and none of them produce output.
+ *
+ * @package    format_dari
+ * @copyright  2026 Dari Learning
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class permissions {
+    /**
+     * Memoised results of {@see self::is_grader()}, keyed on "contextid_userid".
+     *
+     * @var array<string, bool>
+     */
+    private static $gradercache = [];
+
+    /**
+     * FIX-GRADER-ARCHETYPE (v1.7.62): Centralised grader detection using role archetypes.
+     *
+     * Capability checks alone are unreliable — Moodle sites frequently customise roles and
+     * strip capabilities from non-editing teachers. The ONLY truly reliable test is checking
+     * the role archetype stored in the {role} table, which is set at role creation and is
+     * almost never changed by site admins.
+     *
+     * Moodle archetypes for teacher-type roles:
+     *   editingteacher  — Teacher (can edit course)
+     *   teacher         — Non-editing teacher
+     *   manager         — Manager
+     *   coursecreator   — Course creator
+     *
+     * We also include a capability fallback for custom roles that may have teacher-like
+     * permissions but a non-standard archetype (e.g., archetype='student' on a custom role).
+     *
+     * @param \context_course $context Course context to check against.
+     * @param bool $diag When true, emits developer debugging output.
+     * @return bool True if the current user should be treated as a grader/teacher.
+     */
+    public static function is_grader($context, $diag = false) {
+        global $USER, $DB;
+
+        // Note: Memoise per contextid+userid. This function runs two uncached DB queries
+        // (get_user_roles + the {role} lookup) and is called 3-4 times per page render
+        // (page_set_course, format.php, the footer hook, extend_navigation_course).
+        // Note: the switched role is part of the identity being cached, otherwise a
+        // value computed before a switch could be reused after one within the same request.
+        $rsw = '';
+        if (!empty($USER->access['rsw']) && is_array($USER->access['rsw'])) {
+            $rsw = ':rsw' . implode(',', $USER->access['rsw']);
+        }
+        $cachekey = $context->id . '_' . $USER->id . $rsw;
+        if (array_key_exists($cachekey, self::$gradercache)) {
+            return self::$gradercache[$cachekey];
+        }
+
+        $graderarchetypes = ['teacher', 'editingteacher', 'manager', 'coursecreator'];
+
+        // Note: honour "Switch role to...".
+        //
+        // The archetype branch below used to carry a comment claiming that get_user_roles()
+        // respects $SESSION->role_switch. It does not. get_user_roles() reads the user's real
+        // entries in {role_assignments}; role switching is applied by has_capability() through
+        // $USER->access['rsw'], and leaves role assignments untouched.
+        //
+        // The effect was that a teacher who switched to Student was still reported as a grader
+        // while correctly losing moodle/course:update. format.php renders the hero only when
+        // (!$isgrader || $canedit), which then evaluated false — so the hero banner vanished in
+        // student view. That is precisely the view whose whole purpose is to show what a student
+        // sees, and a student does see the hero.
+        //
+        // When a role switch is active the archetype branch is therefore skipped entirely and the
+        // capability checks below decide the answer, because those do respect the switch.
+        $coursecontext = $context->get_course_context(false);
+        $roleswitched = $coursecontext && is_role_switched($coursecontext->instanceid);
+
+        $roles = $roleswitched ? [] : get_user_roles($context, $USER->id, true);
+        $recs = [];
+
+        if (!empty($roles)) {
+            $roleids = [];
+            foreach ($roles as $role) {
+                $roleids[$role->roleid] = $role->roleid;
+            }
+            $roleids = array_values($roleids);
+
+            [$insql, $inparams] = $DB->get_in_or_equal($roleids);
+            $recs = $DB->get_records_sql("SELECT id, archetype FROM {role} WHERE id $insql", $inparams);
+
+            foreach ($recs as $rec) {
+                if (in_array($rec->archetype, $graderarchetypes, true)) {
+                    // Note: was an unconditional echo of a raw <script>console.log(...)</script>
+                    // block into the page. Diagnostics now go through debugging() and only fire for
+                    // developers.
+                    if ($diag) {
+                        debugging('[dari] grader: archetype=' . $rec->archetype, DEBUG_DEVELOPER);
+                    }
+                    self::$gradercache[$cachekey] = true;
+                    return true;
+                }
+            }
+        }
+
+        // FALLBACK: capability check for custom roles with teacher-like perms but non-standard archetype.
+        $cap1 = has_capability('moodle/grade:viewall', $context, null, false);
+        $cap2 = has_capability('moodle/course:manageactivities', $context, null, false);
+        $cap3 = has_capability('moodle/course:viewhiddenactivities', $context, null, false);
+        $result = $cap1 || $cap2 || $cap3;
+
+        if ($diag && debugging('', DEBUG_DEVELOPER)) {
+            $archetypelist = [];
+            foreach ($recs as $rec) {
+                $archetypelist[] = $rec->archetype;
+            }
+            debugging('[dari] grader check: ' . json_encode([
+                'role_archetypes'                    => $archetypelist,
+                'moodle/grade:viewall'               => $cap1,
+                'moodle/course:manageactivities'     => $cap2,
+                'moodle/course:viewhiddenactivities' => $cap3,
+                'isgrader'                           => $result,
+            ]), DEBUG_DEVELOPER);
+        }
+
+        self::$gradercache[$cachekey] = $result;
+        return $result;
+    }
+
+    /**
+     * Return true if Ask Dari should be offered.
+     *
+     * It needs both this plugin's own switch (default on) and a working text provider in Moodle's
+     * AI subsystem (Site administration > General > AI). Without a provider the bubble is not
+     * drawn at all, rather than drawn and then failing on every question. When a context is given,
+     * a course or activity that has AI tools switched off (Moodle 5.x) hides the tutor too.
+     *
+     * @param \context|null $context The course or module context, if known.
+     * @return bool True when Ask Dari should be offered to users.
+     */
+    public static function is_tutor_enabled(?\context $context = null): bool {
+        if (!self::is_tutor_switched_on()) {
+            return false;
+        }
+        return ai::is_available(ai::FEATURE_TEXT, $context);
+    }
+
+    /**
+     * Whether the site administrator's Ask Dari switch (format_dari/enabletutor) is on.
+     *
+     * Only the plugin's own switch, not provider availability. Web services check this first and
+     * then \format_dari\local\ai::require_available(), so a site with no text provider is told
+     * exactly that, rather than that an administrator turned the tutor off.
+     *
+     * @return bool
+     */
+    public static function is_tutor_switched_on(): bool {
+        $val = get_config('format_dari', 'enabletutor');
+        return $val === false || !empty($val);
+    }
+}

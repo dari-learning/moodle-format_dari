@@ -1,0 +1,77 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template format_dari/card_media
+
+    The top of a section card or an activity card (2.5.0).
+
+    With an image it shows the picture, and a status chip when the status says something
+    (In progress, Completed). Without an image it is a panel in the card's colour (the course accent
+    unless the teacher picked one) carrying the card's label and title in large type, with the
+    section's icon or the activity's module icon. The panel is always in the markup and hidden by
+    CSS while an image is shown, so the edit-mode tools can switch between the two in place.
+
+    The whole element is decorative for assistive technology apart from the edit tools: the
+    card's title link carries its name and state.
+
+    Classes / attributes required for JS (format_dari/cardimage):
+    * drf-media root with data-cardtype, data-cardid, data-courseid, data-cardname,
+      data-imagesource, data-colour, data-eyebrow.
+    * drf-tools__btn buttons with data-action upload | ai | colour | remove.
+
+    Context variables required for this template:
+    * cardtype string section or cm. cardid, courseid int. cardname string plain text.
+    * hasimage bool / imageurl string / imagesource string card, banner or empty.
+    * colour string #rrggbb or empty. islight bool Colour is light: panel text is dark.
+    * covereyebrow string Panel label, e.g. "Module 2"; empty for activities.
+    * covertitle string PRE-ESCAPED card name (format_string()); triple mustache.
+    * hasplaceholdersvg bool / placeholdersvg string PRE-ESCAPED icon markup from the plugin's own
+      icon library, never user input. hasplaceholdericon bool / placeholdericonurl string.
+    * hasstatus bool / status string progress or complete / statuslabel string.
+    * isediting bool / canremove bool / uploadlabel, ailabel, colourlabel, removelabel string.
+
+    Example context (json):
+    {
+        "cardtype": "section", "cardid": 35, "courseid": 2, "cardname": "Measuring Performance",
+        "hasimage": false, "imageurl": "", "imagesource": "", "colour": "#0f766e", "islight": false,
+        "covereyebrow": "Module 4", "covertitle": "Measuring Performance",
+        "hasplaceholdersvg": false, "placeholdersvg": "", "hasplaceholdericon": false,
+        "placeholdericonurl": "", "hasstatus": false, "status": "", "statuslabel": "",
+        "isediting": false, "canremove": false
+    }
+}}
+<div class="drf-media{{#hasimage}} drf-media--image{{/hasimage}}{{#islight}} drf-media--light{{/islight}}" data-cardtype="{{cardtype}}" data-cardid="{{cardid}}" data-courseid="{{courseid}}" data-cardname="{{cardname}}" data-eyebrow="{{covereyebrow}}" data-imagesource="{{imagesource}}" data-colour="{{colour}}">
+<div class="drf-media__panel" aria-hidden="true">
+<div class="drf-media__top">{{!
+}}{{#hasplaceholdersvg}}<span class="drf-media__icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">{{{placeholdersvg}}}</svg></span>{{/hasplaceholdersvg}}{{!
+}}{{#hasplaceholdericon}}<span class="drf-media__icon"><img src="{{placeholdericonurl}}" alt=""></span>{{/hasplaceholdericon}}{{!
+}}{{#covereyebrow}}<span class="drf-media__eyebrow">{{covereyebrow}}</span>{{/covereyebrow}}{{!
+}}</div>
+<span class="drf-media__title">{{{covertitle}}}</span>
+</div>
+{{#hasimage}}<img class="drf-media__img" src="{{imageurl}}" alt="" loading="lazy" decoding="async">{{/hasimage}}
+{{#hasstatus}}<span class="drf-status drf-status--{{status}}" aria-hidden="true">{{#iscomplete}}<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><path d="M5.75 12.5 10 16.75 18.25 8.25" stroke-width="2"/></svg>{{/iscomplete}}{{^iscomplete}}<span class="drf-status__dot"></span>{{/iscomplete}}{{statuslabel}}</span>{{/hasstatus}}
+{{#isediting}}
+<div class="drf-tools">{{!
+}}<button type="button" class="drf-tools__btn" data-action="upload" aria-label="{{uploadlabel}}" title="{{#str}} cardimage_upload, format_dari {{/str}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><path d="M4.75 14.25v3.5a2.5 2.5 0 0 0 2.5 2.5h9.5a2.5 2.5 0 0 0 2.5-2.5v-3.5" fill="currentColor" fill-opacity=".16"/><path d="M12 15V4.75M8 8.75l4-4 4 4"/></svg></button>{{!
+}}{{#aiimages}}<button type="button" class="drf-tools__btn drf-tools__btn--ai" data-action="ai" aria-label="{{ailabel}}" title="{{#str}} cardimage_ai, format_dari {{/str}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><path d="M10.5 3.5c.5 4.1 2.9 6.5 7 7-4.1.5-6.5 2.9-7 7-.5-4.1-2.9-6.5-7-7 4.1-.5 6.5-2.9 7-7z" fill="currentColor" fill-opacity=".16"/><path d="M18.25 14.25c.2 1.6.9 2.3 2.5 2.5-1.6.2-2.3.9-2.5 2.5-.2-1.6-.9-2.3-2.5-2.5 1.6-.2 2.3-.9 2.5-2.5z" fill="currentColor" stroke="none"/></svg></button>{{/aiimages}}{{!
+}}<button type="button" class="drf-tools__btn" data-action="colour" aria-haspopup="dialog" aria-label="{{colourlabel}}" title="{{#str}} cardimage_colour, format_dari {{/str}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><path d="M12 3.5s6 6.2 6 10.5a6 6 0 0 1-12 0c0-4.3 6-10.5 6-10.5z" fill="currentColor" fill-opacity=".16"/><path d="M9.25 14.5a2.75 2.75 0 0 0 2.75 2.75"/></svg></button>{{!
+}}<button type="button" class="drf-tools__btn drf-tools__btn--remove" data-action="remove"{{^canremove}} hidden{{/canremove}} aria-label="{{removelabel}}" title="{{#str}} cardimage_remove, format_dari {{/str}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><path d="M6.5 6.75l.85 11.6a2 2 0 0 0 2 1.85h5.3a2 2 0 0 0 2-1.85l.85-11.6" fill="currentColor" fill-opacity=".16"/><path d="M4.75 6.75h14.5M9.75 6.75v-2.5h4.5v2.5"/></svg></button>{{!
+}}</div>
+<div class="drf-media__busy" hidden><span class="drf-media__spinner" aria-hidden="true"></span><span class="drf-media__busytext"></span></div>
+{{/isediting}}
+</div>

@@ -1,0 +1,60 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template format_dari/activity_card
+
+    One activity card on a section page (2.5.0 card component). The whole card is one link.
+
+    Completion is never shown by colour alone: the link's accessible name says it in words, and the
+    status chip on the image says it visibly when there is something to say (In progress,
+    Completed). "Not started" is not printed on every card.
+
+    Data attributes required for JS:
+    * data-for="cmitem" and data-id - core_courseformat's reactive state manager.
+    * data-cmid, data-status - amd/src/courseformat.js.
+
+    Context variables required for this template:
+    * issubsection bool Links to a delegated mod_subsection section.
+    * cmid int. url string Unescaped. status string completed, in_progress or not_started.
+    * haslabel bool / cardlabel string Accessible name.
+    * name string PRE-ESCAPED (format_string()); triple mustache.
+    * typename string Localised module type. iconurl string Module icon.
+    * hastime bool / estimatedtime string / timelabel string.
+    * media object Context for format_dari/card_media. cardstyle string.
+
+    Example context (json):
+    {
+        "issubsection": false, "cmid": 12, "url": "https://example.org/mod/page/view.php?id=12",
+        "status": "completed", "haslabel": true, "cardlabel": "Recognition that works (Completed)",
+        "name": "Recognition that works", "typename": "Page",
+        "iconurl": "https://example.org/theme/image.php/boost/page/1/monologo",
+        "hastime": true, "estimatedtime": "10 min", "timelabel": "Estimated time: 10 min",
+        "media": null, "cardstyle": ""
+    }
+}}
+<a href="{{url}}" class="drf-card drf-card--activity{{^media.hasimage}} drf-card--noimage{{/media.hasimage}}"{{#cardstyle}} style="{{cardstyle}}"{{/cardstyle}} data-status="{{status}}" data-cmid="{{cmid}}"{{#haslabel}} aria-label="{{cardlabel}}"{{/haslabel}} data-for="cmitem" data-id="{{cmid}}">
+{{#media}}
+{{> format_dari/card_media }}
+{{/media}}
+<div class="drf-card__body">
+<h3 class="drf-card__title">{{{name}}}</h3>
+<span class="drf-card__meta">{{!
+}}<span class="drf-card__metaitem">{{#issubsection}}<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><rect x="3.75" y="4.25" width="16.5" height="6.5" rx="2" fill="currentColor" fill-opacity=".16"/><rect x="3.75" y="13.25" width="16.5" height="6.5" rx="2"/></svg>{{/issubsection}}{{^issubsection}}<img class="drf-card__typeicon" src="{{iconurl}}" alt="" aria-hidden="true">{{/issubsection}}{{typename}}</span>{{!
+}}{{#hastime}}<span class="drf-card__metaitem drf-card__time" title="{{timelabel}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><circle cx="12" cy="13.25" r="7" fill="currentColor" fill-opacity=".16"/><path d="M12 9.75v3.5l2.25 1.5M9.75 3.75h4.5"/></svg><span class="accesshide">{{timelabel}}</span><span aria-hidden="true">{{estimatedtime}}</span></span>{{/hastime}}{{!
+}}</span>
+</div>
+</a>

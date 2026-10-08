@@ -1,0 +1,68 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template format_dari/chatbox_message
+
+    One turn in Ask Dari conversation: either the learner's question or the tutor's answer.
+    Rendered client-side by format_dari/chatbox and appended to the role="log" message list, so
+    every turn is announced as it arrives.
+
+    SECURITY: `content` is either what the learner typed, something replayed out of sessionStorage
+    or the raw answer returned by the third-party AI service. It is NEVER trusted and is always
+    rendered with a double mustache, so any markup in it is escaped to text. There is no
+    triple-mustache value in this template. For a tutor answer, format_dari/chatbox then
+    replaces that text with nodes built by format_dari/local/richtext, which also never
+    parses HTML.
+
+    Classes required for JS:
+    * dari-ai-message-content - the text, replaced by the rich rendering for tutor answers.
+    * dari-ai-copy-btn - copies the answer's original text.
+    * dari-ai-rating - the rating control; format_dari/chatbox reads data-chatid from it
+      and replaces its contents with a thank-you once a rating has been sent.
+    * dari-ai-rate-btn - a rating button.
+
+    Data attributes required for JS:
+    * data-chatid - on .dari-ai-rating, the id of the stored chat message being rated.
+    * data-rate - on each rating button, 1 for helpful and -1 for not helpful.
+
+    Context variables required for this template:
+    * content string The message text. Untrusted; always escaped.
+    * isuser bool True for the learner's own message, false for a tutor answer.
+    * iserror bool True when this is an error raised in place of an answer.
+    * rateable bool True when thumbs up / thumbs down should be offered.
+    * chatid string The id used when submitting a rating. Only used when rateable is true.
+    * helpfullabel string Accessible name and tooltip of the thumbs up button.
+    * nothelpfullabel string Accessible name and tooltip of the thumbs down button.
+    * copylabel string Accessible name and visible text of the copy button.
+    * restored bool True when this answer was replayed from the stored conversation.
+    * restoredlabel string The "restored from history" note. Only used when restored is true.
+
+    Example context (json):
+    {
+        "content": "Start by summarising the brief in your own words.",
+        "isuser": false,
+        "iserror": false,
+        "rateable": true,
+        "chatid": "42",
+        "helpfullabel": "This answer was helpful",
+        "nothelpfullabel": "This answer was not helpful",
+        "copylabel": "Copy",
+        "restored": false,
+        "restoredlabel": "Restored from history"
+    }
+}}
+<div class="dari-ai-message {{#isuser}}dari-ai-message-user{{/isuser}}{{^isuser}}dari-ai-message-bot{{/isuser}}{{#iserror}} dari-ai-message-error{{/iserror}}">{{^isuser}}<span class="dari-ai-avatar" aria-hidden="true"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="16" height="16"><path d="M10.5 3.5c.5 4.1 2.9 6.5 7 7-4.1.5-6.5 2.9-7 7-.5-4.1-2.9-6.5-7-7 4.1-.5 6.5-2.9 7-7z" fill="currentColor" stroke="none"/><path d="M18.25 14.25c.2 1.6.9 2.3 2.5 2.5-1.6.2-2.3.9-2.5 2.5-.2-1.6-.9-2.3-2.5-2.5 1.6-.2 2.3-.9 2.5-2.5z" fill="currentColor" stroke="none" fill-opacity=".6"/></svg></span>{{/isuser}}<div class="dari-ai-message-body"><div class="dari-ai-message-content" dir="auto">{{content}}</div>{{^isuser}}{{^iserror}}<div class="dari-ai-message-tools"><button type="button" class="dari-ai-tool-btn dari-ai-copy-btn" title="{{copylabel}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="15" height="15"><rect x="5.25" y="4.75" width="13.5" height="15.5" rx="2.5" fill="currentColor" fill-opacity=".16"/><path d="M9.25 4.75v-1h5.5v1M8.75 10.25h6.5M8.75 14.25h4.5"/></svg><span class="dari-ai-copy-text">{{copylabel}}</span></button>{{#rateable}}<div class="dari-ai-rating" data-chatid="{{chatid}}"><button type="button" class="dari-ai-tool-btn dari-ai-rate-btn" data-rate="1" title="{{helpfullabel}}" aria-label="{{helpfullabel}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="8.25" fill="currentColor" fill-opacity=".16"/><path d="m8.5 13.5 3.5-3.5 3.5 3.5"/></svg></button><button type="button" class="dari-ai-tool-btn dari-ai-rate-btn" data-rate="-1" title="{{nothelpfullabel}}" aria-label="{{nothelpfullabel}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="8.25" fill="currentColor" fill-opacity=".16"/><path d="m8.5 10.5 3.5 3.5 3.5-3.5"/></svg></button></div>{{/rateable}}{{#restored}}<span class="dari-ai-rating-done">{{restoredlabel}}</span>{{/restored}}</div>{{/iserror}}{{/isuser}}</div></div>

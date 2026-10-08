@@ -1,0 +1,27 @@
+t_welcome	Welcome to the Dari course format. A two-minute look at what Dari adds to this course. Leave whenever you like.
+t_banner	The banner. It holds the course name, progress and quick actions. Upload your own image in course settings, or generate one.
+t_generate	Make a banner. Creates a banner image from the course name in the background, using your site's AI provider. Keep working while it runs.
+t_ring	Completion ring. It counts only activities with completion tracking turned on. If it looks low, check which activities track completion.
+t_index	Course map. You can show the course map separately on the course page, on section pages and on activity pages (course settings).
+t_cards	Sections as blocks. Each section is a block showing its activities and learner progress. Give each an icon and choose a grid or list layout in course settings.
+t_icons	Choosing icons. While editing, select a section's icon to change it. Sections without one show a plain placeholder.
+t_time	Time estimates. Each activity has an estimated time, and section totals add them up. Defaults are in the site settings; quiz times are worked out from their questions.
+t_activities	Activity lists. Each block lists its activities and marks the finished ones. Limit the list or turn it off in course settings.
+t_sidebar	Player panel. When it is turned on, the course map becomes a player panel: logo, course, progress ring, total time, and one row per activity with its time and a tick.
+t_grades	Gradebook shortcut. Goes straight to the gradebook. Learners see the same button, but only their own grades.
+t_tutor	Ask Dari. Learners ask questions here. It reads this course's content, so its answers are about your material.
+t_studentview	Preview as a learner. Learners see a simpler page: the Course, Settings and Participants tabs and all editing controls are hidden by default.
+t_report	Tutor insights. The course menu has a report on how learners use the tutor: what they ask, where they get stuck, and which activities raise the most questions.
+t_settings	Where the settings are. Everything in this tour is configurable per course under Settings, and site-wide under Plugins, Course formats, Dari course format.
+t_done	End of tour. Restart it any time from your preferences. Try the learner view next.
+s_welcome	Let's get you started. A one-minute look at how this course works. Skip it whenever you like.
+s_progress	Progress so far. The ring and bar show how much of the course you have completed, and they update as you go.
+s_ring	Your completion. The ring counts only the activities your teacher tracks, so it may not include everything you can see.
+s_index	The course map. Every section and activity is listed here. Pick any of them to go straight there.
+s_cards	Sections. Each block is one section of the course. It shows what is inside and how much of it you have done.
+s_time	Time to allow. Every activity shows an estimated time, and each section adds them up. Use it to plan your study time.
+s_status	Done and still to do. A filled square means finished; an empty one is still waiting. Some activities finish themselves; others you mark yourself.
+s_sidebar	Everything in one panel. This panel lists the whole course. Each row shows about how long it takes, and gets a tick when you finish. The ring at the top shows your overall progress.
+s_grades	Your marks. Opens your grades for this course. Only you can see them.
+s_tutor	Your Ask Dari. Stuck? Ask the tutor. It knows this course and helps you work things out instead of just giving you the answer.
+s_done	All set. Choose a section to begin.

@@ -1,0 +1,136 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template format_dari/section_card
+
+    One section card on the course home page (2.5.0 card component).
+
+    The card is a self-contained component: every class it uses starts with "drf-", so none of the
+    earlier card rules in styles.css can reach it. Behaviour hooks are data attributes, not classes,
+    so styling and behaviour can change independently.
+
+    The title link is the one named, focusable way into the section. Its box is stretched over the
+    whole card in CSS, so the card is one click target; the time, count, progress and call to
+    action repeat what the link's accessible name already says and are aria-hidden.
+
+    With an image, the image area shows it. Without one, the same area is a panel in the card's
+    colour carrying the section label and title (see format_dari/card_media); the body then
+    hides its own eyebrow and title visually, and the title stays for assistive technology.
+
+    Data attributes required for JS:
+    * data-for="section", data-id, data-number on the root; data-for="section_title" on the title -
+      core_courseformat's reactive state manager binds to these.
+    * data-section, data-sectionid, data-courseid - read by amd/src/courseformat.js.
+    * data-drag-type="section" and data-action="moveSection" on the move handle - core's drag and
+      drop and keyboard move dialogue.
+    * data-drf-action="section-icon" | "duplicate-section" | "delete-section" - the edit buttons,
+      bound by amd/src/courseformat.js.
+    * data-drf-ring on .drf-progress - animated by amd/src/cards.js.
+    * data-for="sectionBulkSelect" (core partial) - core's bulk editing.
+
+    Context variables required for this template:
+    * sectionid, sectionnum, courseid int.
+    * sectionurl string Unescaped section URL.
+    * sectionname string PRE-ESCAPED (format_string()) section name; triple mustache.
+    * cardlinklabel string Accessible name of the title link.
+    * uselistroles bool Emit role="listitem".
+    * sectionbulk object|null Context for core_courseformat/local/content/section/bulkselect.
+    * isediting, showeditbuttons bool.
+    * editsectionurl, editsectionlabel, editsectiontitle, duplicatelabel, duplicatetitle, deletelabel,
+      deletetitle, movelabel, movetitle, iconbuttonlabel, iconbuttontitle string (edit mode only).
+    * media object Context for format_dari/card_media.
+    * cardstyle string Inline style with the card's own colour, or empty.
+    * cardstate string notstarted, progress or complete.
+    * eyebrow string e.g. "Module 1".
+    * hassummary bool / summary string Plain text.
+    * hascount bool / counttext string e.g. "3 activities".
+    * hastime bool / estimatedtime string e.g. "25 min".
+    * hasprogress bool / percentnum int / donetext string e.g. "1 of 3".
+    * statustext string e.g. "34% complete".
+    * ctastate string start, continue, review or view. ctatext string.
+    * hasactivities bool / activities array / moreactivities object|null - the optional activity
+      list ("Show activities on cards"): url and name PRE-ESCAPED, label, state (completed,
+      in_progress, not_started, none), cmid, modname, iconurl, hastime, timetext, istracked.
+
+    Example context (json):
+    {
+        "sectionid": 35, "sectionnum": 1, "courseid": 2,
+        "sectionurl": "https://example.org/course/section.php?id=35",
+        "sectionname": "Foundations of Leadership",
+        "cardlinklabel": "Foundations of Leadership, 3 activities, Estimated time 25 min",
+        "uselistroles": true, "sectionbulk": null, "isediting": false, "showeditbuttons": false,
+        "media": null, "cardstyle": "", "cardstate": "notstarted", "eyebrow": "Module 1",
+        "hassummary": true, "summary": "What great leaders do differently.",
+        "hascount": true, "counttext": "3 activities", "hastime": true, "estimatedtime": "25 min",
+        "hasprogress": false, "percentnum": 0, "donetext": "", "statustext": "Not started",
+        "ctastate": "start", "ctatext": "Start",
+        "hasactivities": false, "activities": [], "moreactivities": null
+    }
+}}
+<div class="drf-card drf-card--section drf-card--{{cardstate}}{{^media.hasimage}} drf-card--noimage{{/media.hasimage}}"{{#cardstyle}} style="{{cardstyle}}"{{/cardstyle}}{{#uselistroles}} role="listitem"{{/uselistroles}} data-for="section" data-id="{{sectionid}}" data-number="{{sectionnum}}" data-section="{{sectionnum}}" data-sectionid="{{sectionid}}" data-courseid="{{courseid}}">
+{{#sectionbulk}}
+<div class="drf-card__bulk">
+{{> core_courseformat/local/content/section/bulkselect }}
+</div>
+{{/sectionbulk}}
+{{#showeditbuttons}}
+<div class="drf-card__admin">{{!
+}}<button type="button" class="drf-card__adminbtn" data-action="moveSection" data-id="{{sectionid}}" data-drag-type="section" aria-label="{{movelabel}}" title="{{movetitle}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><path d="M12 3.75v16.5M3.75 12h16.5"/><path d="m9.5 6.25 2.5-2.5 2.5 2.5M9.5 17.75l2.5 2.5 2.5-2.5M6.25 9.5 3.75 12l2.5 2.5M17.75 9.5l2.5 2.5-2.5 2.5"/></svg></button>{{!
+}}<button type="button" class="drf-card__adminbtn" data-drf-action="section-icon" data-courseid="{{courseid}}" data-sectionid="{{sectionid}}" aria-label="{{iconbuttonlabel}}" title="{{iconbuttontitle}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><circle cx="7.75" cy="7.75" r="3.5" fill="currentColor" fill-opacity=".16"/><rect x="13" y="4.25" width="7" height="7" rx="1.75"/><rect x="13" y="13" width="7" height="7" rx="3.5" fill="currentColor" fill-opacity=".16"/><path d="M7.75 13.25 11.5 20H4z"/></svg></button>{{!
+}}<a href="{{editsectionurl}}" class="drf-card__adminbtn" aria-label="{{editsectionlabel}}" title="{{editsectiontitle}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><path d="M11 4.75H6.25a1.5 1.5 0 0 0-1.5 1.5v11.5a1.5 1.5 0 0 0 1.5 1.5h11.5a1.5 1.5 0 0 0 1.5-1.5V13"/><path d="M17.5 3.75l2.75 2.75-7.5 7.5H10v-2.75z" fill="currentColor" fill-opacity=".16"/></svg></a>{{!
+}}<button type="button" class="drf-card__adminbtn" data-drf-action="duplicate-section" data-sectionid="{{sectionid}}" data-courseid="{{courseid}}" aria-label="{{duplicatelabel}}" title="{{duplicatetitle}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><rect x="8.75" y="8.75" width="11.5" height="11.5" rx="2.5" fill="currentColor" fill-opacity=".16"/><path d="M15.25 5.5v-.25a1.5 1.5 0 0 0-1.5-1.5h-8.5a1.5 1.5 0 0 0-1.5 1.5v8.5a1.5 1.5 0 0 0 1.5 1.5h.25"/><path d="M14.5 11.75v5.5M11.75 14.5h5.5"/></svg></button>{{!
+}}<button type="button" class="drf-card__adminbtn drf-card__adminbtn--danger" data-drf-action="delete-section" data-sectionid="{{sectionid}}" data-courseid="{{courseid}}" data-sectionnum="{{sectionnum}}" aria-label="{{deletelabel}}" title="{{deletetitle}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><path d="M6.5 6.75l.85 11.6a2 2 0 0 0 2 1.85h5.3a2 2 0 0 0 2-1.85l.85-11.6" fill="currentColor" fill-opacity=".16"/><path d="M4.75 6.75h14.5M9.75 6.75v-2.5h4.5v2.5"/></svg></button>{{!
+}}</div>
+{{/showeditbuttons}}
+{{#media}}
+{{> format_dari/card_media }}
+{{/media}}
+<div class="drf-card__body">
+<span class="drf-card__eyebrow" aria-hidden="true">{{eyebrow}}</span>
+<a href="{{sectionurl}}" class="drf-card__link" aria-label="{{cardlinklabel}}"><h3 class="drf-card__title" data-for="section_title" data-id="{{sectionid}}" data-number="{{sectionnum}}">{{{sectionname}}}</h3></a>
+{{#hassummary}}
+<p class="drf-card__summary">{{summary}}</p>
+{{/hassummary}}
+{{#hascount}}
+<div class="drf-card__meta" aria-hidden="true">{{!
+}}<span class="drf-card__metaitem"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><rect x="3.75" y="5" width="3" height="3" rx="1" fill="currentColor" fill-opacity=".16"/><rect x="3.75" y="10.5" width="3" height="3" rx="1" fill="currentColor" fill-opacity=".16"/><rect x="3.75" y="16" width="3" height="3" rx="1" fill="currentColor" fill-opacity=".16"/><path d="M9.75 6.5h10.5M9.75 12h10.5M9.75 17.5h7"/></svg>{{counttext}}</span>{{!
+}}{{#hastime}}<span class="drf-card__metaitem drf-card__time"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><circle cx="12" cy="13.25" r="7" fill="currentColor" fill-opacity=".16"/><path d="M12 9.75v3.5l2.25 1.5M9.75 3.75h4.5"/></svg>{{estimatedtime}}</span>{{/hastime}}{{!
+}}</div>
+{{/hascount}}
+{{#hasactivities}}
+<ul class="drf-list">
+{{#activities}}
+<li class="drf-list__item" data-cmid="{{cmid}}" data-modname="{{modname}}"><a href="{{{url}}}" class="drf-list__link" aria-label="{{label}}">{{!
+}}<img class="drf-list__icon" src="{{iconurl}}" alt="" aria-hidden="true" loading="lazy">{{!
+}}<span class="drf-list__name">{{{name}}}</span>{{!
+}}{{#hastime}}<span class="drf-list__time" aria-hidden="true">{{timetext}}</span>{{/hastime}}{{!
+}}{{#istracked}}<span class="drf-list__state drf-list__state--{{state}}" aria-hidden="true"></span>{{/istracked}}{{!
+}}</a></li>
+{{/activities}}
+{{#moreactivities}}
+<li class="drf-list__item"><a href="{{url}}" class="drf-list__more" aria-label="{{label}}" title="{{label}}">+{{remaining}}</a></li>
+{{/moreactivities}}
+</ul>
+{{/hasactivities}}
+<div class="drf-card__foot" aria-hidden="true">
+{{#hasprogress}}
+<div class="drf-progress" data-drf-ring="{{percentnum}}"><span class="drf-progress__track"><span class="drf-progress__fill" style="width:{{percentnum}}%"></span></span><span class="drf-progress__count">{{donetext}}</span></div>
+{{/hasprogress}}
+<div class="drf-card__cta"><span class="drf-card__status">{{statustext}}</span><span class="drf-card__action drf-card__action--{{ctastate}}">{{ctatext}}<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round"><path d="M4 12h15.25M14.25 7l5 5-5 5" stroke-width="1.75"/></svg></span></div>
+</div>
+</div>
+</div>

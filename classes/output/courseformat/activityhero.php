@@ -1,0 +1,401 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+namespace format_dari\output\courseformat;
+
+use context_course;
+use core\output\named_templatable;
+use format_dari\local\activityinfo;
+use format_dari\local\banner;
+use format_dari\local\navigation;
+use format_dari\local\permissions;
+use moodle_url;
+use renderable;
+use renderer_base;
+use stdClass;
+
+/**
+ * The activity page hero banner, showing completion requirements for one activity.
+ *
+ * Renders format_dari/activity_hero. The banner shows the owning section name, the activity
+ * name, previous/next activity chevrons, and a completion indicator that is either a clickable
+ * manual-completion toggle, a static tick, the current grade, or an empty ring.
+ *
+ * Pre-escaped values in the exported context — these are the ONLY values the template may render
+ * with a triple mustache, and each is documented again in templates/activity_hero.mustache:
+ *
+ *  - cmname, sectionlabel  {@see format_string()} output.
+ *  - prevurl, nexturl, backurl, gradesurl, homeurl  {@see moodle_url::out()} output (ampersands
+ *    already entity-encoded).
+ *  - completionlabel, requirementstext, gradetext  {@see get_string()} output, joined for display.
+ *    They contain no caller-supplied data — only language pack text and numbers formatted with
+ *    {@see format_float()}.
+ *
+ * Everything else in the context is plain text or an integer and is escaped by the template with
+ * a double mustache, which is exactly the `s()` call the pre-template string builder applied.
+ *
+ * @package    format_dari
+ * @copyright  2026 Dari Learning
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class activityhero implements named_templatable, renderable {
+    /** @var stdClass Course record. */
+    protected $course;
+
+    /** @var array Course format options. */
+    protected $options;
+
+    /** @var \cm_info|stdClass Course module the hero describes. */
+    protected $cm;
+
+    /**
+     * Constructor.
+     *
+     * @param stdClass $course Course record.
+     * @param array $options Course format options.
+     * @param \cm_info|stdClass $cm Course module the hero describes.
+     */
+    public function __construct(stdClass $course, array $options, $cm) {
+        $this->course = $course;
+        $this->options = $options;
+        $this->cm = $cm;
+    }
+
+    /**
+     * Name of the template this renderable renders with.
+     *
+     * @param renderer_base $renderer The renderer requesting the template name.
+     * @return string Template name.
+     */
+    public function get_template_name(renderer_base $renderer): string {
+        return 'format_dari/activity_hero';
+    }
+
+    /**
+     * Export the activity hero banner data for the template.
+     *
+     * @param renderer_base $output The renderer.
+     * @return stdClass Template context.
+     */
+    public function export_for_template(renderer_base $output): stdClass {
+        global $USER;
+
+        $course = $this->course;
+        $options = $this->options;
+        $cm = $this->cm;
+
+        // An activity inherits the banner of the SECTION it lives in, so moving between
+        // the activities of one section keeps you visually inside that section instead of
+        // snapping back to the course banner the moment you click into something. Same chain as
+        // the section page, resolved by the same method: section, then course, then overview.
+        //
+        // The section is taken from the cm's section ID, not its section NUMBER: the file is
+        // filed under course_sections.id and the two are not interchangeable.
+        //
+        // Both shapes of $cm have to be handled. The class docblock says cm_info|stdClass and it
+        // means it: the footer hook builds this hero from get_coursemodule_from_id(), which
+        // returns a plain record with no get_section_info() on it, while other callers pass a
+        // real cm_info. Guarding on `instanceof cm_info` alone silently produced the COURSE
+        // banner on every activity page -- the fallback is legitimate behaviour, so nothing
+        // failed, nothing was logged, and the section banner simply never appeared.
+        $sectionid = null;
+        if ($cm instanceof \cm_info) {
+            $cmsection = $cm->get_section_info();
+            $sectionid = $cmsection ? (int) $cmsection->id : null;
+        } else if (!empty($cm->section)) {
+            // The `section` column on course_modules holds the section's ID, not its number,
+            // in both Moodle 4.4 and 5.x.
+            $sectionid = (int) $cm->section;
+        }
+        $resolved = banner::resolve($course, $sectionid);
+        $imageurl = $resolved['url'];
+
+        $navdata = navigation::get_nav_links($course, $USER->id);
+        $currentsection = navigation::get_current_section($course, $USER->id);
+
+        // Get completion info for this activity.
+        $completioninfo = activityinfo::get_activity_completion_info($course, $cm, $USER->id);
+
+        // Note: dead code removed — $iconurl was computed here (costing a get_fast_modinfo()
+        // and a get_icon_url()) and never used anywhere in this function.
+
+        // Image mode: adds a class to trigger tall immersive CSS and skips the max-height constraint.
+        // Note: a11y — named landmark region, same as the course/section hero.
+        $data = (object) [
+            // Note: see the note in hero.php - the banner carries its own copy of
+            // the accent custom properties because it sits outside the content container.
+            'accentstyle' => \format_dari::get_accent_style($options),
+            'cmname' => format_string($cm->name),
+            // Note: the activity title gets the same size tier the course and section
+            // titles get.
+            //
+            // This is why "the activity heading is small again" kept coming back and why no amount
+            // of CSS ever fixed it. The hero template gives its title span both the shared
+            // dari-hero-title class and an dari-title-N tier class taken from titlesize,
+            // whereas the activity hero template gave it the shared class alone and no tier,
+            // because this exporter never computed one. Every tier rule in the
+            // stylesheet is keyed to `.dari-title-*`, so the activity title fell through to the
+            // base size -- 26px against the course title's 34px -- on every activity page, at every
+            // title length, permanently. A class that is never emitted cannot be styled.
+            //
+            // Same thresholds and same helper as hero.php, so the two page types step down together
+            // rather than drifting apart the next time the scale is tuned.
+            'titlesize' => hero::size_tier(
+                \core_text::strlen(html_to_text(format_string($cm->name), 0, false)),
+                [28 => 'xl', 48 => 'lg', 72 => 'md', 104 => 'sm']
+            ),
+            'hasimage' => !empty($imageurl),
+            'imageurl' => (string) $imageurl,
+            'hassection' => !empty($currentsection),
+            'sectionlabel' => '',
+            // The target the hero's banner buttons act on: this activity's section.
+            'bannersectionid' => (int) ($sectionid ?? 0),
+            'bannertargetname' => '',
+        ];
+
+        if (!empty($currentsection)) {
+            // Note: i18n — single placeholder string instead of "Section" . ' ' . number.
+            $data->sectionlabel = format_string($this->section_name($currentsection));
+            $data->bannertargetname = \format_dari\local\text::plain(
+                $data->sectionlabel,
+                \context_course::instance($course->id)
+            );
+        }
+
+        // Whether the image on screen belongs to this page's own target, which is what decides
+        // if a "remove" button may be offered. An activity showing an inherited course banner
+        // must not offer to remove it from here.
+        $ownsbanner = ($sectionid !== null && $sectionid > 0)
+            ? ($resolved['source'] === 'section')
+            : ($resolved['source'] === 'course');
+
+        $this->export_nav($data, $navdata);
+        $this->export_completion($data, $completioninfo);
+        $this->export_icons($data, $currentsection, $ownsbanner);
+
+        return $data;
+    }
+
+    /**
+     * Display name of the section an activity belongs to.
+     *
+     * @param array $currentsection Section descriptor with 'num' and 'name' keys.
+     * @return string Section name, or the "Section N" fallback when the section is unnamed.
+     */
+    protected function section_name(array $currentsection): string {
+        return !empty($currentsection['name'])
+            ? $currentsection['name']
+            : get_string('sectionnumber', 'format_dari', $currentsection['num']);
+    }
+
+    /**
+     * Add the previous/next activity chevrons to the context.
+     *
+     * Note: a11y — direction-aware accessible name (previousactivity/nextactivity were
+     * defined in the lang pack for exactly this and never used).
+     *
+     * @param stdClass $data Context being built, modified in place.
+     * @param array $navdata Navigation links with 'prev' and 'next' keys.
+     * @return void
+     */
+    protected function export_nav(stdClass $data, array $navdata): void {
+        $data->hasprev = !empty($navdata['prev']);
+        $data->prevurl = '';
+        $data->prevname = '';
+        $data->prevlabel = '';
+        if ($data->hasprev) {
+            $data->prevurl = $navdata['prev']['url'];
+            $data->prevname = $navdata['prev']['name'];
+            $data->prevlabel = get_string('previousactivitynamed', 'format_dari', $navdata['prev']['name']);
+        }
+
+        $data->hasnext = !empty($navdata['next']);
+        $data->nexturl = '';
+        $data->nextname = '';
+        $data->nextlabel = '';
+        if ($data->hasnext) {
+            $data->nexturl = $navdata['next']['url'];
+            $data->nextname = $navdata['next']['name'];
+            $data->nextlabel = get_string('nextactivitynamed', 'format_dari', $navdata['next']['name']);
+        }
+    }
+
+    /**
+     * Add the completion tick, the manual completion toggle and the requirements text.
+     *
+     * Note: a11y — the toggle previously always read "Mark as done", even when the activity
+     * was already complete, and had no pressed state. aria-pressed now reflects the real state and
+     * the accessible name includes the activity name.
+     *
+     * @param stdClass $data Context being built, modified in place.
+     * @param array $completioninfo Completion detail from activityinfo::get_activity_completion_info().
+     * @return void
+     */
+    protected function export_completion(stdClass $data, array $completioninfo): void {
+        $ismanual = !empty($completioninfo['ismanual']);
+        $hascompletion = !empty($completioninfo['hascompletion']);
+        $iscompleted = !empty($completioninfo['completed']);
+
+        // Note: publish hascompletion so the template can tell "not finished yet" apart
+        // from "completion is not tracked here". Without it the ring block fell through to its
+        // pending state for any activity whose completion is switched off, showing a learner an
+        // empty circle that means "you still have this to do" for something that will never be
+        // marked complete. The value was already computed here and simply never exported.
+        $data->hascompletion = $hascompletion;
+        $data->ismanualtoggle = ($ismanual && $hascompletion);
+        $data->iscompleted = $iscompleted;
+        $data->cmid = !empty($completioninfo['cmid']) ? (int) $completioninfo['cmid'] : 0;
+        $data->completedflag = $iscompleted ? '1' : '0';
+        $data->pressed = $iscompleted ? 'true' : 'false';
+        $data->togglelabel = $iscompleted
+            ? get_string('markasdoneundo', 'format_dari', $data->cmname)
+            : get_string('markasdonefor', 'format_dari', $data->cmname);
+        $data->manualtitle = get_string('completionrequirement_manual', 'format_dari');
+
+        // Requires a grade but has not passed yet — show the current grade instead of a grey tick.
+        $data->showgrade = (!$iscompleted
+            && !empty($completioninfo['requiresgrade'])
+            && !empty($completioninfo['gradetext']));
+        $data->gradetext = (string) $completioninfo['gradetext'];
+
+        if ($data->ismanualtoggle) {
+            $data->completionlabel = $iscompleted
+                ? get_string('completed', 'format_dari')
+                : get_string('completionrequirement_manual', 'format_dari');
+        } else if (!empty($completioninfo['requirements'])) {
+            // Note: i18n — the hardcoded ' • ' join is bidi-hostile in RTL. Use a
+            // translatable list separator so language packs can choose their own.
+            $sep = get_string('listseparator', 'format_dari');
+            $data->completionlabel = implode($sep, $completioninfo['requirements']);
+        } else {
+            $data->completionlabel = get_string('nocompletion', 'format_dari');
+        }
+    }
+
+    /**
+     * Add the icon rail: back to section, grades, AI assistant, home and the banner buttons.
+     *
+     * FIX-GRADES-LINK: Teachers (grade/report:viewall) go to the grader report; everyone
+     * else goes to their own user grade report.
+     *
+     * @param stdClass $data Context being built, modified in place.
+     * @param array|null $currentsection Section descriptor with 'num' and 'name', or null.
+     * @param mixed $currentsection The section the activity sits in, for the section label.
+     * @param bool $ownsbanner Whether the image on screen belongs to this page's own target.
+     * @return void
+     */
+    protected function export_icons(stdClass $data, $currentsection, bool $ownsbanner): void {
+        global $PAGE;
+
+        $course = $this->course;
+        $context = context_course::instance($course->id);
+
+        $data->hasback = !empty($currentsection);
+        $data->backurl = '';
+        $data->backlabel = '';
+        if ($data->hasback) {
+            // Note: i18n — one placeholder string instead of a translated fragment,
+            // ' - ' and data.
+            $sectionurl = new moodle_url('/course/view.php', [
+                'id' => $course->id,
+                'section' => $currentsection['num'],
+            ]);
+            $data->backurl = $sectionurl->out();
+            $data->backlabel = get_string(
+                'returntosectionnamed',
+                'format_dari',
+                format_string($this->section_name($currentsection))
+            );
+        }
+
+        if (has_capability('moodle/grade:viewall', $context, null, false)) {
+            $gradesurl = new moodle_url('/grade/report/grader/index.php', ['id' => $course->id]);
+        } else {
+            $gradesurl = new moodle_url('/grade/report/user/index.php', ['id' => $course->id]);
+        }
+
+        $data->courseid = (int) $course->id;
+        $data->sesskey = sesskey();
+        $data->gradesurl = $gradesurl->out();
+        $data->gradeslabel = get_string('grades', 'format_dari');
+        $data->showtutor = permissions::is_tutor_enabled($context);
+        // The banner's "Generate with AI" button appears only when the site's AI subsystem has an
+        // image provider enabled and AI tools are allowed in this course.
+        $data->aiassistantlabel = get_string('aiassistant', 'format_dari');
+        $data->homeurl = (new moodle_url('/course/view.php', ['id' => $course->id]))->out();
+        $data->homelabel = get_string('gotocourse', 'format_dari');
+
+        // The collapse toggle. Assembled in one place because both hero templates render
+        // the same control, and because the label on load has to agree with the body class the
+        // page is about to carry -- see \format_dari\local\herocollapse.
+        foreach (\format_dari\local\herocollapse::export() as $key => $value) {
+            $data->$key = $value;
+        }
+
+        // AI Generate Banner button — editors only. The delete button additionally needs an
+        // uploaded custom banner AND Moodle to be in edit mode.
+        //
+        // On an activity page the buttons act on the SECTION the activity is in, because
+        // that is now whose banner is on screen. The rule everywhere is that these buttons act
+        // on the image you can see: a generate button that quietly replaced the course banner
+        // while showing a section's would be a trap. Remove appears only when this section owns
+        // the image; when it is inheriting the course banner there is nothing here to remove,
+        // and doing it from the course home page is unambiguous.
+        $sectionid = (int) ($data->bannersectionid ?? 0);
+        $data->canedit = has_capability('moodle/course:update', $context);
+        // The banner's "Generate with AI" button is always offered to editors. When the AI
+        // service is not ready it explains why (and where to fix it) instead of generating.
+        $data->aiimages = $data->canedit;
+        if ($data->aiimages) {
+            $hint = \format_dari\local\ai::image_hint(\context_course::instance($course->id));
+            $data->aiready = $hint['ready'];
+            $data->aireason = $hint['reason'];
+        }
+        // Teachers get a link to Dari's documentation, marked with the Dari elephant.
+        if ($data->canedit) {
+            $data->docsurl = \format_dari\local\docs::URL;
+            $data->docsiconurl = \format_dari\local\docs::icon_url();
+            $data->docslabel = get_string('docslink_label', 'format_dari');
+        }
+        $data->showremovebanner = ($data->canedit && $ownsbanner && $PAGE->user_is_editing());
+        $data->removebannerlabel = ($sectionid > 0)
+            ? get_string('removesectionbannerimage', 'format_dari')
+            : get_string('removebannerimage', 'format_dari');
+        $data->generatebannerlabel = ($sectionid > 0)
+            ? get_string('generatesectionbannerimage', 'format_dari')
+            : get_string('generatebannerimage', 'format_dari');
+        // Note: plain text. This is read back out of data-coursename by
+        // courseformat.js and written into the modal with jQuery .text(), which does not parse
+        // markup -- the escaped form showed as "&amp;" in the Generate AI banner dialog.
+        $data->coursename = \format_dari\local\text::plain($course->fullname, $context);
+        $data->shortname = $course->shortname;
+    }
+
+    /**
+     * Render the activity hero banner.
+     *
+     * The AI Assistant chatbox markup is appended after the banner, exactly where the pre-template
+     * string builder emitted it. It is a sibling of the hero <section>, not a child, so it stays
+     * out of the hero template and keeps its own renderable.
+     *
+     * @return string HTML.
+     */
+    public function out(): string {
+        global $OUTPUT;
+
+        return $OUTPUT->render($this) . (new chatbox())->out();
+    }
+}

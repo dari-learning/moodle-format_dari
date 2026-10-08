@@ -1,0 +1,193 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template format_dari/activity_hero
+
+    The Dari course format hero banner shown on an activity page.
+
+    The banner is a named landmark region. It has two visual modes: gradient mode (no image, which
+    also applies the configured max-height) and image mode, which adds the dari-hero-has-image
+    class, a dedicated background-image child and no height cap. It shows the owning section name,
+    the activity name, previous/next activity chevrons and one of four completion indicators:
+
+      1. a clickable manual-completion toggle (aria-pressed reflects the real state);
+      2. a static green tick for an already-completed activity;
+      3. the user's current grade, when completion depends on a grade that is not yet passed;
+      4. an empty ring for anything else.
+
+    Every line of literal markup is joined to the next with an empty Mustache comment, so the
+    banner is emitted without any inter-tag whitespace: the completion label and the grade text
+    are inline elements whose spacing is controlled entirely by styles.css.
+
+    Classes required for JS:
+    * dari-hero-completion-toggle - toggles manual completion for data-cmid.
+    * dari-ai-toggle - opens the AI assistant chatbox.
+    * dari-ai-generate-banner - starts AI banner generation (only when the site has an AI image provider).
+    * dari-ai-delete-banner - removes the uploaded custom banner.
+
+    Data attributes required for JS:
+    * data-dari-hero - marks the banner so the format's JS can find it.
+    * data-cmid - the course module id the completion toggle acts on.
+    * data-completed - "1" or "0", the completion state the toggle starts from.
+    * data-courseid - the course id, on every AI button.
+    * data-sesskey - session key for the AI web service calls.
+    * data-coursename, data-shortname - seed text for AI banner generation.
+
+    Context variables required for this template:
+    * cmname string PRE-ESCAPED activity name (format_string). Rendered with a triple mustache in
+      the heading and re-escaped with a double mustache in the region's aria-label, which is
+      exactly what the pre-template string builder did.
+    * hasimage bool True when a custom banner or course overview image was found.
+    * imageurl string Absolute image URL; escaped by the template into the inline background-image.
+    Note: the "Hero banner height" course setting is GONE, and with it heroheight and
+    data-height. See the note in hero.mustache.
+    * hassection bool True when the activity's section could be resolved.
+    * sectionlabel string PRE-ESCAPED section name (format_string).
+    * hasprev bool True when a previous activity chevron should be shown.
+    * prevurl string PRE-ESCAPED moodle_url::out() of the previous activity.
+    * prevname string Plain-text name of the previous activity.
+    * prevlabel string Direction-aware accessible name for the previous chevron.
+    * hasnext bool, nexturl string (PRE-ESCAPED), nextname string, nextlabel string - as above.
+    * ismanualtoggle bool True when this activity uses manual completion, so the tick is a button.
+    * iscompleted bool True when the activity is complete or complete-with-pass.
+    * cmid int Course module id.
+    * completedflag string "1" or "0" for data-completed.
+    * pressed string "true" or "false" for aria-pressed.
+    * togglelabel string Accessible name of the completion toggle, naming the activity.
+    * manualtitle string Tooltip of the completion toggle ("Mark as done").
+    * showgrade bool True when the current grade replaces the pending ring.
+      When it does, the container also carries dari-ring-container-grade: the container
+      is otherwise a fixed square sized for the RING, and a grade chip is wider than tall.
+    * gradetext string PRE-ESCAPED language string, e.g. "7 / 10". Language pack text and numbers
+      formatted with format_float() only - never caller-supplied data.
+    * completionlabel string PRE-ESCAPED language string: either the manual completion label, the
+      requirements joined with the translatable list separator, or "No completion tracking".
+      Language pack text only - never caller-supplied data.
+    * hasback bool True when the "back to section" link should be shown.
+    * backurl string PRE-ESCAPED moodle_url::out() of the section page.
+    * backlabel string Accessible name of the "back to section" link.
+    * courseid int Course id.
+    * sesskey string Session key.
+    * gradesurl string PRE-ESCAPED moodle_url::out() of the grade report for this user.
+    * gradeslabel string Accessible name of the grades link.
+    * showtutor bool True when Ask Dari is enabled site-wide.
+    * aiassistantlabel string Accessible name of the AI assistant toggle.
+    * homeurl string PRE-ESCAPED moodle_url::out() of the course home page.
+    * homelabel string Accessible name of the home link.
+    * canedit bool True when the user holds moodle/course:update.
+    * showremovebanner bool True when a custom banner exists and edit mode is on.
+    * removebannerlabel string Accessible name of the remove banner button.
+    * generatebannerlabel string Accessible name of the generate banner button.
+    * coursename string Plain-text course full name, seeded into data-coursename.
+    * shortname string Plain-text course short name, seeded into data-shortname.
+
+    Example context (json):
+    {
+        "cmname": "Quiz: Linear regression",
+        "hasimage": false,
+        "imageurl": "",
+        "hassection": true,
+        "sectionlabel": "Module 2: Regression",
+        "hasprev": true,
+        "prevurl": "https://example.org/mod/page/view.php?id=41",
+        "prevname": "Reading: least squares",
+        "prevlabel": "Previous activity: Reading: least squares",
+        "hasnext": true,
+        "nexturl": "https://example.org/mod/assign/view.php?id=43",
+        "nextname": "Assignment: fit a model",
+        "nextlabel": "Next activity: Assignment: fit a model",
+        "ismanualtoggle": false,
+        "iscompleted": false,
+        "cmid": 42,
+        "completedflag": "0",
+        "pressed": "false",
+        "togglelabel": "Mark Quiz: Linear regression as done",
+        "manualtitle": "Mark as done",
+        "showgrade": true,
+        "gradetext": "7 / 10",
+        "completionlabel": "Receive a grade",
+        "hasback": true,
+        "backurl": "https://example.org/course/view.php?id=2&amp;section=2",
+        "backlabel": "Back to Module 2: Regression",
+        "courseid": 2,
+        "sesskey": "aBcDeFgHiJ",
+        "gradesurl": "https://example.org/grade/report/user/index.php?id=2",
+        "gradeslabel": "Grades",
+        "showtutor": true,
+        "aiassistantlabel": "AI assistant",
+        "homeurl": "https://example.org/course/view.php?id=2",
+        "homelabel": "Go to course home",
+        "canedit": false,
+        "showremovebanner": false,
+        "removebannerlabel": "Remove banner image",
+        "generatebannerlabel": "Generate banner image with AI",
+        "coursename": "Introduction to Machine Learning",
+        "shortname": "ML101",
+        "hascompletion": true,
+        "titlesize": "md",
+        "accentstyle": "",
+        "bannersectionid": 0,
+        "bannertargetname": "",
+        "aiimages": false,
+        "herocollapsed": false,
+        "herotogglelabel": "Collapse banner",
+        "collapselabel": "Collapse banner",
+        "expandlabel": "Expand banner"
+    }
+}}
+<section class="dari-hero-sticky-wrap" data-dari-hero="1" aria-label="{{cmname}}" style="{{{accentstyle}}}">{{!
+}}<div class="dari-hero-banner{{#hasimage}} dari-hero-has-image{{/hasimage}}" id="dari-hero-banner">{{!
+    }}{{#hasimage}}<div class="dari-hero-bg-img" style="background-image: url('{{imageurl}}');"></div>{{/hasimage}}{{!
+    }}<div class="dari-hero-overlay"></div>{{!
+    }}<div class="dari-hero-content">{{!
+        }}<div class="dari-hero-title-group">{{!
+            }}{{#hassection}}<span class="dari-hero-section-label">{{{sectionlabel}}}</span>{{/hassection}}{{!
+            }}<div class="dari-hero-title-wrap"><span class="dari-hero-title dari-title-{{titlesize}}">{{{cmname}}}</span></div>{{!
+        }}</div>{{!
+        }}<div class="dari-hero-nav-progress">{{!
+            }}{{#hasprev}}<a href="{{{prevurl}}}" class="dari-hero-nav dari-hero-nav-prev" aria-label="{{prevlabel}}" title="{{prevname}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="24" height="24"><circle cx="12" cy="12" r="9.25" fill="currentColor" fill-opacity=".16" stroke="none"/><path d="M13.75 7.5 9.25 12l4.5 4.5"/></svg></a>{{/hasprev}}{{!
+            }}{{^hasprev}}<div class="dari-hero-nav-spacer"></div>{{/hasprev}}{{!
+            }}<div class="dari-hero-progress">{{!
+                }}{{#ismanualtoggle}}<button type="button" class="dari-hero-completion-toggle {{#iscompleted}}dari-hero-completion-done{{/iscompleted}}{{^iscompleted}}dari-hero-completion-pending{{/iscompleted}}" data-cmid="{{cmid}}" data-completed="{{completedflag}}" aria-pressed="{{pressed}}" aria-label="{{togglelabel}}" title="{{manualtitle}}">{{!
+                    }}<div class="dari-completion-ring-container{{^iscompleted}}{{#showgrade}} dari-ring-container-grade{{/showgrade}}{{/iscompleted}}">{{!
+                        }}{{#iscompleted}}<svg aria-hidden="true" focusable="false" class="dari-completion-ring dari-completion-done" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#357a32" stroke-width="2.5"/><path d="M17 25 L22 30 L33 19" fill="none" stroke="#357a32" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter"/></svg>{{/iscompleted}}{{!
+                        }}{{^iscompleted}}<svg aria-hidden="true" focusable="false" class="dari-completion-ring dari-completion-pending" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5"/><path d="M17 25 L22 30 L33 19" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter"/></svg>{{/iscompleted}}{{!
+                    }}</div>{{!
+                }}</button>{{/ismanualtoggle}}{{!
+                }}{{^ismanualtoggle}}{{#hascompletion}}<div class="dari-completion-ring-container{{^iscompleted}}{{#showgrade}} dari-ring-container-grade{{/showgrade}}{{/iscompleted}}">{{!
+                    }}{{#iscompleted}}<svg aria-hidden="true" focusable="false" class="dari-completion-ring dari-completion-done" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#357a32" stroke-width="2.5"/><path d="M17 25 L22 30 L33 19" fill="none" stroke="#357a32" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter"/></svg>{{/iscompleted}}{{!
+                    }}{{^iscompleted}}{{#showgrade}}<div class="dari-grade-display"><span class="dari-grade-text">{{{gradetext}}}</span></div>{{/showgrade}}{{^showgrade}}<svg aria-hidden="true" focusable="false" class="dari-completion-ring dari-completion-pending" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"/></svg>{{/showgrade}}{{/iscompleted}}{{!
+                }}</div>{{/hascompletion}}{{/ismanualtoggle}}{{!
+                }}<div class="dari-completion-requirements">{{!
+                    }}{{#ismanualtoggle}}<span class="dari-completion-label dari-completion-clickable">{{{completionlabel}}}</span>{{/ismanualtoggle}}{{!
+                    }}{{^ismanualtoggle}}<span class="dari-completion-label">{{{completionlabel}}}</span>{{/ismanualtoggle}}{{!
+                }}</div>{{!
+            }}</div>{{!
+            }}{{#hasnext}}<a href="{{{nexturl}}}" class="dari-hero-nav dari-hero-nav-next" aria-label="{{nextlabel}}" title="{{nextname}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="24" height="24"><circle cx="12" cy="12" r="9.25" fill="currentColor" fill-opacity=".16" stroke="none"/><path d="M10.25 7.5 14.75 12l-4.5 4.5"/></svg></a>{{/hasnext}}{{!
+            }}{{^hasnext}}<div class="dari-hero-nav-spacer"></div>{{/hasnext}}{{!
+        }}</div>{{!
+        }}<div class="dari-hero-icons">{{!
+            }}{{#hasback}}<a href="{{{backurl}}}" class="dari-hero-back" aria-label="{{backlabel}}" title="{{backlabel}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="24" height="24"><path d="M9 14.25 4.75 10 9 5.75"/><path d="M4.75 10h9.5a5 5 0 0 1 0 10h-3.5"/></svg></a>{{/hasback}}{{!
+            }}<a href="{{{gradesurl}}}" class="dari-hero-grades" aria-label="{{gradeslabel}}" title="{{gradeslabel}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="24" height="24"><rect x="3.75" y="3.75" width="16.5" height="16.5" rx="4" fill="currentColor" fill-opacity=".16"/><path d="M8.25 16.5v-3.75M12 16.5V7.5M15.75 16.5v-6" stroke-width="1.75"/></svg></a>{{!
+            }}{{#showtutor}}<button type="button" class="dari-hero-ai-btn dari-ai-toggle" aria-label="{{aiassistantlabel}}" aria-expanded="false" aria-controls="dari-ai-chatbox" title="{{aiassistantlabel}}" data-courseid="{{courseid}}" data-sesskey="{{sesskey}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="22" height="22"><path d="M5.25 4.25h13.5a2 2 0 0 1 2 2v8.75a2 2 0 0 1-2 2H11.5l-4.75 3.5v-3.5h-1.5a2 2 0 0 1-2-2V6.25a2 2 0 0 1 2-2z" fill="currentColor" fill-opacity=".16"/><path d="M12 6.75c.3 2.05 1.2 2.95 3.25 3.25-2.05.3-2.95 1.2-3.25 3.25-.3-2.05-1.2-2.95-3.25-3.25 2.05-.3 2.95-1.2 3.25-3.25z" fill="currentColor" stroke="none"/></svg></button>{{/showtutor}}{{!
+            }}<a href="{{{homeurl}}}" class="dari-hero-home" aria-label="{{homelabel}}" title="{{homelabel}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="24" height="24"><path d="M5.75 9v11.25h12.5V9" fill="currentColor" fill-opacity=".16"/><path d="M3.5 10.75 12 3.75l8.5 7"/><path d="M10 20.25v-5.5h4v5.5"/></svg></a>{{!
+            }}{{#canedit}}{{#docsurl}}<a href="{{{docsurl}}}" class="dari-hero-docs" target="_blank" rel="noopener" aria-label="{{docslabel}}" title="{{docslabel}}"><img src="{{{docsiconurl}}}" alt="" class="dari-hero-docs-icon" width="24" height="24"></a>{{/docsurl}}{{#showremovebanner}}<button type="button" class="dari-hero-ai-btn dari-ai-delete-banner" aria-label="{{removebannerlabel}}" title="{{removebannerlabel}}" data-courseid="{{courseid}}" data-sectionid="{{bannersectionid}}" data-targetname="{{bannertargetname}}" data-sesskey="{{sesskey}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="18" height="18"><rect x="3.75" y="5.25" width="16.5" height="13.5" rx="3" fill="currentColor" fill-opacity=".16"/><path d="m9.5 9.5 5 5m0-5-5 5"/></svg></button>{{/showremovebanner}}{{#aiimages}}<button type="button" class="dari-hero-ai-btn dari-ai-generate-banner" data-aiready="{{#aiready}}1{{/aiready}}{{^aiready}}0{{/aiready}}" data-aireason="{{aireason}}" aria-label="{{generatebannerlabel}}" title="{{generatebannerlabel}}" data-courseid="{{courseid}}" data-sectionid="{{bannersectionid}}" data-targetname="{{bannertargetname}}" data-coursename="{{coursename}}" data-shortname="{{shortname}}" data-sesskey="{{sesskey}}"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="20" height="20"><rect x="3.75" y="6.25" width="13.5" height="13.5" rx="3" fill="currentColor" fill-opacity=".16"/><path d="m3.75 16.5 4-3.5 3.25 2.75 2.5-2 3.75 3"/><path d="M19 2.75c.25 1.75 1 2.5 2.75 2.75-1.75.25-2.5 1-2.75 2.75-.25-1.75-1-2.5-2.75-2.75 1.75-.25 2.5-1 2.75-2.75z" fill="currentColor" stroke="none"/></svg></button>{{/aiimages}}{{/canedit}}{{!
+        }}</div>{{!
+    }}</div>{{!
+}}</div>{{!
+}}<button type="button" class="dari-hero-collapse" id="dari-hero-collapse" aria-controls="dari-hero-banner" aria-expanded="{{^herocollapsed}}true{{/herocollapsed}}{{#herocollapsed}}false{{/herocollapsed}}" aria-label="{{herotogglelabel}}" title="{{herotogglelabel}}" data-collapselabel="{{collapselabel}}" data-expandlabel="{{expandlabel}}">{{!}}<svg class="dari-hero-collapse-icon" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" width="18" height="18"><path d="m7 12.5 5-5 5 5" stroke-width="1.75"/><path d="m7 17.5 5-5 5 5" stroke-opacity=".45" stroke-width="1.75"/></svg>{{!}}</button>{{!
+}}</section>

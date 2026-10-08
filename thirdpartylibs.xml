@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<libraries>
+    <library>
+        <location>fonts</location>
+        <name>DM Sans</name>
+        <description>The DM Sans variable font (Latin, Latin Extended, italic), served locally so nothing is loaded from a CDN.</description>
+        <version>5.3.0</version>
+        <license>OFL</license>
+        <licenseversion>1.1</licenseversion>
+        <repository>https://github.com/googlefonts/dm-fonts</repository>
+        <copyrights>
+            <copyright>2014 The DM Sans Project Authors</copyright>
+        </copyrights>
+    </library>
+</libraries>

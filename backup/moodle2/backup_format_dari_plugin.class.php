@@ -1,0 +1,161 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Backup support for the Dari course format.
+ *
+ * The format's own settings live in {course_format_options} and are backed up by core without
+ * any help from this class. The one thing core cannot know about is the banner image, which the
+ * plugin stores as a file in the course context under the 'bannerimage' file area. Without the
+ * annotation below the banner is silently dropped from every backup, so a restored or duplicated
+ * course loses it while keeping every setting that refers to it.
+ *
+ * @package    format_dari
+ * @copyright  2026 Dari Learning
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * Backup plugin class for the Dari course format.
+ *
+ * @package    format_dari
+ * @copyright  2026 Dari Learning
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class backup_format_dari_plugin extends backup_format_plugin {
+    // Every define_*_plugin_structure() below asks for its element with the format condition
+    // ($this->get_format_condition(), 'dari'). Core offers every installed format's backup plugin
+    // the same optigroup for every course, and that optigroup is not "multiple": the first element
+    // whose condition matches wins and the rest are dropped. Without the condition this plugin's
+    // element matched for courses in ANY format, and any format sorting before "dari" that did the
+    // same claimed every Dari course's section and activity data -- so section banners, card
+    // images and card colours silently vanished from backups, restores and duplicates.
+    /**
+     * Define the plugin structure attached to the course element.
+     *
+     * A wrapper element is emitted even though the plugin stores no extra tables, for two
+     * reasons. Files can only be annotated against a nested element that actually produces a
+     * row, and on the restore side a plugin is only asked to run its after_restore_course()
+     * hook if it registered at least one path element -- which it can only do if this element
+     * exists in the backup file.
+     *
+     * @return backup_plugin_element The plugin element.
+     */
+    protected function define_course_plugin_structure() {
+        $plugin = $this->get_plugin_element(null, $this->get_format_condition(), 'dari');
+
+        $pluginwrapper = new backup_nested_element($this->get_recommended_name());
+        $plugin->add_child($pluginwrapper);
+
+        $banner = new backup_nested_element('banner', ['id'], ['courseid']);
+        $pluginwrapper->add_child($banner);
+
+        $banner->set_source_array([
+            (object) [
+                'id' => 1,
+                'courseid' => $this->task->get_courseid(),
+            ],
+        ]);
+
+        // Item id is passed as null on purpose: backup_structure_dbops::annotate_files() then
+        // Omits the itemid clause entirely and picks up every banner file in the course context.
+        // That keeps backups correct on a site that has not yet run the 2.1.5 upgrade step, where
+        // The file may still sit under itemid = courseid rather than 0.
+        $banner->annotate_files('format_dari', 'bannerimage', null);
+
+        // Activity card images. They are filed in the COURSE context under the cm id, so
+        // they cannot be annotated from the module structure -- a module task annotates against
+        // the module's own context and would find nothing. They are collected here, all at once,
+        // and translated through core's 'course_module' mapping on restore (see
+        // restore_format_dari_plugin::after_restore_course()). An activity left out of the
+        // backup has no mapping, so its image is not restored against anything.
+        $banner->annotate_files('format_dari', 'cmcardimage', null);
+
+        return $plugin;
+    }
+
+    /**
+     * Define the plugin structure attached to each section element.
+     *
+     * Section banners. These cannot be handled the way the course banner above is.
+     * The course banner is annotated with a null item id so every file in the area is swept up
+     * and copied verbatim, which is safe precisely because that area only ever holds one file
+     * under one fixed item id. A section banner's item id is the section, so the files have to
+     * be collected per section and, on the way back in, the old section id has to be translated
+     * into the restored course's new one -- otherwise every banner would be filed under an item
+     * id nothing points at, and the images would be present in the backup, restored into the
+     * file pool, and invisible.
+     *
+     * @return backup_plugin_element The plugin element.
+     */
+    protected function define_section_plugin_structure() {
+        $plugin = $this->get_plugin_element(null, $this->get_format_condition(), 'dari');
+
+        $pluginwrapper = new backup_nested_element($this->get_recommended_name());
+        $plugin->add_child($pluginwrapper);
+
+        $banner = new backup_nested_element('sectionbanner', ['id'], ['sectionid']);
+        $pluginwrapper->add_child($banner);
+
+        $banner->set_source_array([
+            (object) [
+                'id' => 1,
+                'sectionid' => $this->task->get_sectionid(),
+            ],
+        ]);
+
+        // Third argument is the name of the element supplying the item id, not an item id: the
+        // files collected are those whose itemid equals this element's 'sectionid' value.
+        $banner->annotate_files('format_dari', 'sectionbannerimage', 'sectionid');
+
+        // The section card's own image and colour. The image area is keyed by section id
+        // exactly like the section banner, so it is collected and mapped the same way.
+        $banner->annotate_files('format_dari', 'sectioncardimage', 'sectionid');
+
+        $card = new backup_nested_element('sectioncard', ['id'], ['colour']);
+        $pluginwrapper->add_child($card);
+        $card->set_source_table('format_dari_cardstyle', [
+            'targettype' => backup_helper::is_sqlparam('section'),
+            'targetid' => backup::VAR_SECTIONID,
+        ]);
+
+        return $plugin;
+    }
+
+    /**
+     * Define the plugin structure attached to each activity.
+     *
+     * The activity card's colour. It travels with the activity, so it also survives
+     * duplicating one activity. The card IMAGE is not here; see define_course_plugin_structure().
+     *
+     * @return backup_plugin_element The plugin element.
+     */
+    protected function define_module_plugin_structure() {
+        $plugin = $this->get_plugin_element(null, $this->get_format_condition(), 'dari');
+
+        $pluginwrapper = new backup_nested_element($this->get_recommended_name());
+        $plugin->add_child($pluginwrapper);
+
+        $card = new backup_nested_element('cmcard', ['id'], ['colour']);
+        $pluginwrapper->add_child($card);
+        $card->set_source_table('format_dari_cardstyle', [
+            'targettype' => backup_helper::is_sqlparam('cm'),
+            'targetid' => backup::VAR_MODID,
+        ]);
+
+        return $plugin;
+    }
+}
