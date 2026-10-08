@@ -158,7 +158,13 @@ final class ai_test extends \advanced_testcase {
 
         $result = ai::generate_text($this->context, (int) $this->teacher->id, 'Prompt here');
 
-        $this->assertSame(['text' => 'The answer.', 'finishreason' => 'length', 'model' => 'test-model'], $result);
+        // Moodle 4.5's response object does not retain model metadata; direct and newer APIs do.
+        $probe = self::text_response('metadata probe');
+        $data = is_array($probe) ? $probe : $probe->get_response_data();
+        $this->assertSame(
+            ['text' => 'The answer.', 'finishreason' => 'length', 'model' => $data['model'] ?? ''],
+            $result
+        );
         $this->assertSame('Prompt here', $this->aiactions[0]->get_configuration('prompttext'));
         if (\format_dari\local\ai::subsystem_present()) {
             $this->assertSame($this->context->id, $this->aiactions[0]->get_configuration('contextid'));

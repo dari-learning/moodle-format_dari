@@ -75,6 +75,11 @@ jobs:
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}
+      - name: Validate modern CSS grammar without relaxing lint rules
+        run: |
+          npm --prefix moodle install --no-save --ignore-scripts --no-audit --no-fund stylelint-csstree-validator@3.1.0
+          cd moodle
+          node ../plugin/.github/check-css-grammar.cjs
       - name: PHP syntax
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci phplint
