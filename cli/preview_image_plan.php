@@ -36,13 +36,7 @@ require_once($CFG->libdir . '/clilib.php');
 );
 
 if ($options['help'] || empty($options['courseid'])) {
-    echo "Print Dari's image plan and prompts for a course, without generating images.\n\n"
-        . "Options:\n"
-        . "  -c, --courseid=ID  The course (required)\n"
-        . "  -r, --replan       Discard the stored plan and plan again\n"
-        . "  -a, --activities   Also plan every activity card\n"
-        . "      --json         Output JSON\n"
-        . "  -h, --help         This help\n";
+    echo get_string('cli_previewplan_help', 'format_dari') . "\n";
     exit(empty($options['courseid']) && !$options['help'] ? 1 : 0);
 }
 
@@ -69,18 +63,26 @@ foreach ($rows as $row) {
     echo str_repeat('=', 78) . "\n" . $row['title'] . "  [" . $row['key'] . "]\n" . str_repeat('-', 78) . "\n";
     if (str_starts_with((string) $row['key'], 'cm:')) {
         $facts = \format_dari\local\imageplanner::item_facts($course, (string) $row['key']);
-        echo 'Activity purpose:  ' . ($facts['purpose'] ?? '') . ' (judged from its ' . ($facts['purposebasis'] ?? '') . ")\n";
+        echo get_string('cli_previewplan_purpose', 'format_dari', (object) [
+            'purpose' => $facts['purpose'] ?? '',
+            'basis' => $facts['purposebasis'] ?? '',
+        ]) . "\n";
     }
-    echo 'Interpretation:    ' . ($e['interpretation'] ?? '') . "\n";
-    echo 'Visual concept:    ' . ($e['concept'] ?? '') . "\n";
-    echo 'Signature element: ' . ($e['signature_element'] ?? '') . "\n";
-    echo 'Camera perspective: ' . ($e['perspective'] ?? '') . "\n";
-    echo 'Environment:       ' . ($e['environment'] ?? '') . "\n";
-    echo 'People:            ' . ($e['people'] ?? '') . "\n";
-    echo 'Lighting:          ' . ($e['lighting'] ?? '') . "\n";
-    echo 'Categories:        ' . implode(' / ', [$e['env_category'] ?? '', $e['composition'] ?? '',
-        $e['people_arrangement'] ?? '', $e['light_category'] ?? '']) . "\n";
-    echo 'Final prompt (' . str_word_count((string) $row['prompt']) . " words):\n"
+    $fields = [
+        'interpretation' => $e['interpretation'] ?? '',
+        'concept' => $e['concept'] ?? '',
+        'signature' => $e['signature_element'] ?? '',
+        'perspective' => $e['perspective'] ?? '',
+        'environment' => $e['environment'] ?? '',
+        'people' => $e['people'] ?? '',
+        'lighting' => $e['lighting'] ?? '',
+        'categories' => implode(' / ', [$e['env_category'] ?? '', $e['composition'] ?? '',
+            $e['people_arrangement'] ?? '', $e['light_category'] ?? '']),
+    ];
+    foreach ($fields as $field => $value) {
+        echo str_pad(get_string('cli_previewplan_' . $field, 'format_dari'), 20) . $value . "\n";
+    }
+    echo get_string('cli_previewplan_prompt', 'format_dari', str_word_count((string) $row['prompt'])) . "\n"
         . wordwrap((string) $row['prompt'], 100) . "\n\n";
 }
 exit(0);

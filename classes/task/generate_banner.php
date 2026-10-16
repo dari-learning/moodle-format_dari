@@ -91,7 +91,7 @@ class generate_banner extends \core\task\adhoc_task {
         generate_banner_image::set_status($courseid, 'running', '', $sectionid);
         $key = $sectionid > 0 ? 'sectionbanner:' . $sectionid : 'banner';
         \format_dari\local\imagelog::begin($courseid, $key, \core\uuid::generate());
-        \format_dari\local\imagelog::add('started', 'ok', 0, 'Banner job started.');
+        \format_dari\local\imagelog::add('started', 'ok', 0, get_string('imagelog_msg_bannerstarted', 'format_dari'));
         $start = microtime(true);
 
         try {
@@ -113,7 +113,7 @@ class generate_banner extends \core\task\adhoc_task {
                 'done',
                 'ok',
                 (int) round((microtime(true) - $start) * 1000),
-                'Prompt source: ' . \format_dari\local\ai::$lastprompt['source']
+                get_string('imagelog_msg_promptsource', 'format_dari', \format_dari\local\ai::$lastprompt['source'])
             );
         } catch (\format_dari\local\planning_busy_exception $e) {
             // Another worker is planning the course; nothing was requested yet. Try again shortly.
@@ -124,7 +124,7 @@ class generate_banner extends \core\task\adhoc_task {
             $retry->set_next_run_time(time() + 30);
             \core\task\manager::queue_adhoc_task($retry);
             generate_banner_image::set_status($courseid, 'queued', '', $sectionid);
-            \format_dari\local\imagelog::add('requeued', 'info', 0, 'The course plan is being written; retry in 30 s.');
+            \format_dari\local\imagelog::add('requeued', 'info', 0, get_string('imagelog_msg_requeued', 'format_dari'));
         } catch (\Throwable $e) {
             \format_dari\local\imagelog::add(
                 'failed',

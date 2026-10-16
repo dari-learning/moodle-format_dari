@@ -36,7 +36,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import {buildSettingPreview} from 'format_dari/local/settingspreview';
+import {getStrings} from 'core/str';
+import {buildSettingPreview, loadPreviewStrings} from 'format_dari/local/settingspreview';
 
 /**
  * The areas.
@@ -49,19 +50,13 @@ const CATEGORIES = [
     {
         id: 'time',
         order: 6,
-        label: 'Estimated time',
         icon: 'time',
-        desc: 'How long each activity is assumed to take, and which of the four places show the clock badges.',
         match: [/minutes/, /timing/, /hidetime/]
     },
     {
         id: 'tutor',
         order: 8,
-        label: 'Ask Dari and AI images',
         icon: 'tutor',
-        desc:
-            "Ask Dari and AI images. Both use your site's own AI provider (Site administration > " +
-            'General > AI); here you choose what course content is sent and how images look.',
         match: [
             /tutor/,
             /assessmentanswers/,
@@ -73,38 +68,27 @@ const CATEGORIES = [
             /directheading/,
             /supportcontacts/,
             /sendfirstname/,
-            /imagequality/,
-            /imagestyle/,
-            /aiscenewriter/,
+            /imageengine/,
+            /diagnostics/,
             /adminreportlink/
         ]
     },
     {
         id: 'tour',
         order: 9,
-        label: 'First-visit tour',
         icon: 'tour',
-        desc: 'The walkthrough someone sees the first time they open a course, and whether it is read aloud.',
         match: [/tour/]
     },
     {
         id: 'colour',
         order: 1,
-        label: 'Look and colour',
         icon: 'colour',
-        desc:
-            'The accent and every colour the format paints (headings, icons, cards, the side menu), ' +
-            'plus your logo and light or dark mode.',
         match: [/colour/, /opacity/, /scrim/, /fade/, /overlay/, /playerlogo/, /colourmode/, /fontfamily/]
     },
     {
         id: 'index',
         order: 5,
-        label: 'Course index',
         icon: 'index',
-        desc:
-            'The side menu listing every section and activity: where it shows, how it opens, ' +
-            'and whether it becomes a progress tracker.',
         match: [
             /playerindex/,
             /indexstate/,
@@ -119,49 +103,31 @@ const CATEGORIES = [
     {
         id: 'banner',
         order: 2,
-        label: 'Course banner',
         icon: 'banner',
-        desc:
-            "The strip across the top of a course with its name and the learner's progress: " +
-            'whether it shows, its picture, and where it sits.',
         match: [/herobanner/, /heroattop/, /heroimage/, /herosticky/, /showherobanner/, /hero/]
     },
     {
         id: 'cards',
         order: 3,
-        label: 'Section cards',
         icon: 'cards',
-        desc:
-            'The tiles on the course home page, one per section: grid or list, title size, ' +
-            'and which activities they list.',
         match: [/displayascards/, /cardlayout/, /cardtitlesize/, /cardactivitylimit/, /showactivities/, /card/]
     },
     {
         id: 'activity',
         order: 4,
-        label: 'Inside a section',
         icon: 'activity',
-        desc:
-            'How the activities on a section page are laid out, and the arrows that move a learner ' +
-            'from one to the next.',
         match: [/activitydisplaymode/, /navchevrons/]
     },
     {
         id: 'nav',
         order: 7,
-        label: 'Page furniture',
         icon: 'nav',
-        desc:
-            "Moodle's own furniture around a course: the tabs, the breadcrumb trail, the footer " +
-            'and the site logo band.',
         match: [/secondarynav/, /coursenavplace/, /immersive/, /hidefooter/, /hidebreadcrumb/]
     },
     {
         id: 'other',
         order: 10,
-        label: 'Everything else',
         icon: 'other',
-        desc: 'Settings not claimed by an area above.',
         match: []
     }
 ];
@@ -268,24 +234,10 @@ const remember = (value) => {
  * Build the page.
  *
  * @param {Object} strings Localised labels from PHP.
- * @returns {void}
+ * @returns {Promise<void>}
  */
-export const init = (strings) => {
-    // English defaults so a stale language cache costs a word rather than the page.
-    const t = Object.assign(
-        {
-            search: 'Search settings…',
-            nomatches: 'No settings match that search.',
-            settings: 'settings',
-            setting: 'setting',
-            about: 'About this plugin',
-            course: 'Course',
-            appliestoall: 'Applies to every course that already exists',
-            allcourses: 'All courses',
-            current: 'Current'
-        },
-        strings || {}
-    );
+export const init = async(strings) => {
+    const t = Object.assign({}, strings || {});
 
     // Only ever touch THIS plugin's settings page. `#adminsettings` exists on every admin settings
     // page, and settings.php is included while Moodle builds the whole admin tree, so the module
@@ -293,6 +245,19 @@ export const init = (strings) => {
     if (document.body.id !== 'page-admin-setting-formatsettingdari') {
         return;
     }
+
+    // Every word the page draws comes from the language pack: the area names and descriptions
+    // here, and the labels inside the setting previews.
+    const keys = [];
+    CATEGORIES.forEach((cat) => keys.push('settingsui_cat_' + cat.id, 'settingsui_catdesc_' + cat.id));
+    const [values] = await Promise.all([
+        getStrings(keys.map((key) => ({key, component: 'format_dari'}))),
+        loadPreviewStrings()
+    ]);
+    CATEGORIES.forEach((cat, i) => {
+        cat.label = values[i * 2];
+        cat.desc = values[i * 2 + 1];
+    });
 
     const root = document.getElementById('adminsettings');
     if (!root || root.dataset.dsetDone === '1') {

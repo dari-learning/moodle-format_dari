@@ -136,7 +136,7 @@ const fill = (key, a) => String(str[key] || '').replace('{$a}', String(a));
  * @returns {Promise<Object>}
  */
 const call = (name, args) => Ajax.call([{methodname: 'format_dari_' + name, args}])[0].catch((error) => {
-    report('ajax', (error && (error.message || error.errorcode)) || 'Request failed', 'format_dari_' + name);
+    report('ajax', (error && (error.message || error.errorcode)) || 'unknown', 'format_dari_' + name);
     throw error;
 });
 
@@ -461,8 +461,8 @@ const poll = (type, id, name) => {
         setBusy(type, id, stageLabel(status));
         if (attempts === POLL_LIMIT) {
             tell(fill('cardimage_stillworking', name), 'info');
-            report('timeout', 'Still ' + (status.stage || status.status) + ' after ' + status.elapsed + ' s; cron last ran '
-                + status.cronago + ' s ago', type + ':' + id);
+            report('timeout', 'stage=' + (status.stage || status.status) + ' elapsed=' + status.elapsed + ' cronago='
+                + status.cronago, type + ':' + id);
         }
         polls[key] = window.setTimeout(tick, attempts >= POLL_LIMIT ? POLL_SLOW : POLL_EVERY);
     };

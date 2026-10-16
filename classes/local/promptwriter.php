@@ -92,8 +92,7 @@ class promptwriter {
             throw $e;
         } catch (\Throwable $e) {
             self::$last = ['source' => 'fallback', 'reason' => $e->getMessage()];
-            imagelog::add('fallback', 'fail', 0, 'Planning or prompt writing failed; the template prompt was used: '
-                . $e->getMessage());
+            imagelog::add('fallback', 'fail', 0, get_string('imagelog_msg_templatefallback', 'format_dari', $e->getMessage()));
             debugging('format_dari image planning failed; template prompt used: ' . $e->getMessage(), DEBUG_DEVELOPER);
             return $template;
         }
@@ -143,7 +142,7 @@ class promptwriter {
         $stored = trim((string) ($row->prompt ?? ''));
         if ($tracked && !$plan['planned'] && $stored !== '') {
             $prompt = $stored;
-            self::$last = ['source' => 'plan', 'reason' => 'stored prompt reused'];
+            self::$last = ['source' => 'plan', 'reason' => get_string('imagelog_reason_reused', 'format_dari')];
         } else {
             try {
                 $prompt = imagelog::time('prompt_written', fn() => self::write_prompt(
@@ -159,9 +158,12 @@ class promptwriter {
             } catch (\Throwable $e) {
                 // Still the card's own plan, just not rewritten as prose.
                 $prompt = self::assembled_prompt($plan['entry'], $plan['course'], $brief);
-                self::$last = ['source' => 'plan', 'reason' => 'prompt writing failed: ' . $e->getMessage()];
-                imagelog::add('fallback', 'fail', 0, 'The prompt could not be written; it was built from the plan: '
-                    . $e->getMessage());
+                self::$last = ['source' => 'plan', 'reason' => get_string(
+                    'imagelog_reason_writefailed',
+                    'format_dari',
+                    $e->getMessage()
+                )];
+                imagelog::add('fallback', 'fail', 0, get_string('imagelog_msg_planfallback', 'format_dari', $e->getMessage()));
             }
             if ($tracked) {
                 imageplanner::set_prompt($row, $prompt);

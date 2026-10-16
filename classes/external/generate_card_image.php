@@ -265,7 +265,7 @@ class generate_card_image extends generate_banner_image {
             'queued',
             'info',
             0,
-            'mode ' . $mode . ($prompt !== '' ? '; teacher description given' : ''),
+            get_string($prompt !== '' ? 'imagelog_msg_queued_described' : 'imagelog_msg_queued', 'format_dari', $mode),
             $courseid,
             $type . ':' . $id,
             $requestid
@@ -319,7 +319,7 @@ class generate_card_image extends generate_banner_image {
                 'superseded',
                 'info',
                 0,
-                'A newer request replaced this job before the image request.'
+                get_string('imagelog_msg_superseded_request', 'format_dari')
             );
             return '';
         }
@@ -335,7 +335,7 @@ class generate_card_image extends generate_banner_image {
                 'superseded',
                 'info',
                 0,
-                'A newer request replaced this job; its image was not stored.'
+                get_string('imagelog_msg_superseded_store', 'format_dari')
             );
             return '';
         }

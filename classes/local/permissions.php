@@ -113,9 +113,7 @@ class permissions {
 
             foreach ($recs as $rec) {
                 if (in_array($rec->archetype, $graderarchetypes, true)) {
-                    // Note: was an unconditional echo of a raw <script>console.log(...)</script>
-                    // block into the page. Diagnostics now go through debugging() and only fire for
-                    // developers.
+                    // Diagnostics go through debugging() and only fire for developers.
                     if ($diag) {
                         debugging('[dari] grader: archetype=' . $rec->archetype, DEBUG_DEVELOPER);
                     }

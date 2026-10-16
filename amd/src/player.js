@@ -682,7 +682,7 @@ export const readConfig = () => {
         return null;
     }
     try {
-        return JSON.parse(node.textContent || '');
+        return JSON.parse(node.dataset.json || '');
     } catch (e) {
         // Malformed config: leave the course index as core rendered it rather than decorating it
         // with half the data.
@@ -771,7 +771,7 @@ const adoptDrawerControls = (header, strings) => {
     const label =
         typeof strings.closeindex === 'string' && strings.closeindex.indexOf('[[') !== 0
             ? strings.closeindex
-            : 'Close course index';
+            : strings.closecore;
     close.setAttribute('aria-label', label);
     close.setAttribute('title', label);
     close.innerHTML =
@@ -799,7 +799,7 @@ export const init = async(passed) => {
     // after a network round-trip made the whole page jump once the strings landed. Nothing about the
     // class depends on them.
     document.body.classList.add('dari-player-on');
-    const [home, dashboard, mycourses, navlabel, progress, esttime, done, notdone, requires, closeindex] =
+    const [home, dashboard, mycourses, navlabel, progress, esttime, done, notdone, requires, closeindex, closecore] =
         await Promise.all([
             getString('player_home', 'format_dari'),
             getString('player_dashboard', 'format_dari'),
@@ -810,7 +810,8 @@ export const init = async(passed) => {
             getString('player_done', 'format_dari'),
             getString('player_notdone', 'format_dari'),
             getString('player_requires', 'format_dari'),
-            getString('player_closeindex', 'format_dari')
+            getString('player_closeindex', 'format_dari'),
+            getString('closebuttontitle', 'core')
         ]);
     const strings = {
         home,
@@ -822,7 +823,8 @@ export const init = async(passed) => {
         done,
         notdone,
         requires,
-        closeindex
+        closeindex,
+        closecore
     };
     if (!document.getElementById(HEADER_ID)) {
         index.parentNode.insertBefore(buildHeader(config, strings), index);

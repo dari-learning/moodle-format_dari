@@ -1,0 +1,137 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template format_dari/image_plan
+    @copyright  2026 Dari Learning
+    @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+
+    The image plan preview and diagnostics page (imageplan.php), below the page heading.
+
+    Context variables required for this template:
+    * intro string The introduction, already through get_string().
+    * actionurl string Where the plan buttons post to.
+    * sesskey string
+    * withactivities bool Whether the activities checkbox is ticked.
+    * error string An error from the last run, or empty.
+    * stored bool True when the rows are the stored plan rather than a fresh run.
+    * items array Each: caption, rows (each: label, value, isprompt, imageurl).
+    * downloadurl string The CSV download.
+    * hasjobs bool / jobs array Each: when, item, stages (each: text), total, result.
+    * hasbrowser bool / browser array Each: when, message.
+    * empty bool True when the log holds nothing.
+
+    Example context (json):
+    {
+        "intro": "Before any image is generated, Dari plans the course's images.",
+        "actionurl": "https://example.com/course/format/dari/imageplan.php?id=2",
+        "sesskey": "abc123",
+        "withactivities": false,
+        "error": "",
+        "stored": true,
+        "items": [{"caption": "Week 1 [section:5]", "rows": [{"label": "Lighting", "value": "Soft morning light"}]}],
+        "downloadurl": "https://example.com/course/format/dari/imageplan.php?id=2&download=log",
+        "hasjobs": true,
+        "jobs": [{"when": "16/10/26, 09:00", "item": "section:5", "stages": [{"text": "image 12.0 s"}],
+            "total": "14 s", "result": "ok"}],
+        "hasbrowser": false,
+        "browser": [],
+        "empty": false
+    }
+}}
+<div class="format-dari-imageplan">
+    <p>{{intro}}</p>
+    <form method="post" action="{{actionurl}}" class="mb-3">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+        <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" name="activities" value="1" id="dari-imageplan-activities"{{#withactivities}} checked{{/withactivities}}>
+            <label class="form-check-label" for="dari-imageplan-activities">{{#str}} imageplan_withactivities, format_dari {{/str}}</label>
+        </div>
+        <button type="submit" name="action" value="plan" class="btn btn-primary me-2">{{#str}} imageplan_run, format_dari {{/str}}</button>
+        <button type="submit" name="action" value="replan" class="btn btn-secondary">{{#str}} imageplan_replan, format_dari {{/str}}</button>
+    </form>
+    {{#error}}
+    <div class="alert alert-danger" role="alert">{{error}}</div>
+    {{/error}}
+    {{#stored}}
+    <p class="text-muted">{{#str}} imageplan_stored, format_dari {{/str}}</p>
+    {{/stored}}
+    {{#items}}
+    <table class="generaltable table-sm">
+        <caption>{{caption}}</caption>
+        <tbody>
+            {{#rows}}
+            <tr>
+                <th scope="row">{{label}}</th>
+                <td>
+                    {{#imageurl}}
+                    <img src="{{imageurl}}" alt="" class="format-dari-imageplan-thumb">
+                    <img src="{{imageurl}}" alt="" class="format-dari-imageplan-full">
+                    {{/imageurl}}
+                    {{^imageurl}}
+                    <div{{#isprompt}} class="format-dari-imageplan-prompt"{{/isprompt}}>{{value}}</div>
+                    {{/imageurl}}
+                </td>
+            </tr>
+            {{/rows}}
+        </tbody>
+    </table>
+    {{/items}}
+
+    <h3>{{#str}} imagelog, format_dari {{/str}}</h3>
+    <p>{{#str}} imagelog_intro, format_dari {{/str}}</p>
+    <a href="{{downloadurl}}" class="btn btn-secondary mb-3">{{#str}} imagelog_download, format_dari {{/str}}</a>
+    {{#hasjobs}}
+    <table class="generaltable table-sm">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} imagelog_when, format_dari {{/str}}</th>
+                <th scope="col">{{#str}} imagelog_item, format_dari {{/str}}</th>
+                <th scope="col">{{#str}} imagelog_stages, format_dari {{/str}}</th>
+                <th scope="col">{{#str}} imagelog_total, format_dari {{/str}}</th>
+                <th scope="col">{{#str}} imagelog_result, format_dari {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#jobs}}
+            <tr>
+                <td>{{when}}</td>
+                <td>{{item}}</td>
+                <td>{{#stages}}<div>{{text}}</div>{{/stages}}</td>
+                <td>{{total}}</td>
+                <td>{{result}}</td>
+            </tr>
+            {{/jobs}}
+        </tbody>
+    </table>
+    {{/hasjobs}}
+    {{#hasbrowser}}
+    <h4>{{#str}} imagelog_browser, format_dari {{/str}}</h4>
+    <table class="generaltable table-sm">
+        <tbody>
+            {{#browser}}
+            <tr>
+                <td>{{when}}</td>
+                <td><code>{{message}}</code></td>
+            </tr>
+            {{/browser}}
+        </tbody>
+    </table>
+    {{/hasbrowser}}
+    {{#empty}}
+    <p class="text-muted">{{#str}} imagelog_empty, format_dari {{/str}}</p>
+    {{/empty}}
+</div>

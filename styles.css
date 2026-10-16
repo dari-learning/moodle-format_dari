@@ -1,3 +1,25 @@
+/* This file is part of Moodle - http://moodle.org/
+ *
+ * Moodle is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Moodle is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Styles for the Dari course format.
+ *
+ * @package    format_dari
+ * @copyright  2026 Dari Learning
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 /* ==========================================================================
    Dari course format (format_dari) — design system stylesheet
    --------------------------------------------------------------------------
@@ -17001,4 +17023,25 @@ body.format-dari .drf-cmimage-btn:focus-visible {
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 18px;
     }
+}
+
+/* Image plan preview and diagnostics page (imageplan.php). */
+.format-dari-imageplan-thumb {
+    width: 320px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-right: 12px;
+    vertical-align: top;
+}
+
+.format-dari-imageplan-full {
+    max-width: 640px;
+    width: 100%;
+    border-radius: 8px;
+    vertical-align: top;
+}
+
+.format-dari-imageplan-prompt {
+    white-space: pre-wrap;
 }

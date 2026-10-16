@@ -86,27 +86,22 @@ if (!$showindex && !$PAGE->user_is_editing()) {
 if ($hassection && !empty($options['activitydisplaymode']) && !$PAGE->user_is_editing()) {
     $bodyclasses[] = 'dari-activitycards';
 }
-// Note: the body classes computed above are now added server-side in
-// format_dari::page_set_course(), which runs before the <body> tag is written. This file
-// is included after $OUTPUT->header(), so it used to patch them on with an inline <script> —
-// the last inline script in the plugin, a Content-Security-Policy problem, and a source of
-// flash-of-unstyled-content. The computation is kept here only as the single source of truth
-// for the comments; page_set_course() performs the identical logic.
+// The body classes computed above are added server-side by format_dari::page_set_course(),
+// which runs before the body tag is written; this file is included after $OUTPUT->header().
+// The computation is kept here as the reference for that logic.
 unset($bodyclasses, $showindex, $courseindexsetting);
 
 // Render hero OUTSIDE the container so it's not constrained by max-width.
 // FIX-EDITOR-HERO: Editing teachers and course creators need the hero.
 // To access the AI Generate Banner button. Skip for read-only graders (non-editing.
 // Teacher role) who lack moodle/course:update, but always render for editors.
-// Note: $diag was true, which echoed a <script>console.log(...)</script> dump of the.
-// User's roles and capability results into every course page. Diagnostics are now developer-only.
 $drfisgrader = permissions::is_grader($context, false);
 $drfcanedit  = has_capability('moodle/course:update', $context);
 if (!empty($options['showherobanner']) && (!$drfisgrader || $drfcanedit)) {
     $sectionnum = $hassection ? $displaysection : null;
     echo (new hero($course, $options, $sectionnum))->out();
-    // Output chatbox script (HTML is included in hero banner).
-    echo (new chatbox($course))->script();
+    // The chat panel's markup is part of the banner; this queues its AMD module.
+    (new chatbox($course))->init_js();
 }
 
 // The teacher-configured card title size is a genuinely dynamic value, so it rides on the
@@ -119,67 +114,46 @@ $containercss = ($cardtitlesize > 0) ? '--dari-card-title-size:' . $cardtitlesiz
 // attribute unchecked. The hero is OUTSIDE this container and gets the same string of its
 // own, in classes/output/courseformat/hero.php.
 $containercss .= format_dari::get_accent_style($options);
-$containerstyle = ($containercss !== '') ? ' style="' . $containercss . '"' : '';
-echo '<div class="format-dari-container"' . $containerstyle . '>';
-
-// Section description: shown on section page between hero banner and activity list.
+// Section description: shown on a section page between the banner and the activity list.
+$summary = '';
 if ($hassection && !$PAGE->user_is_editing()) {
-    try {
-        $allsections = get_fast_modinfo($course)->get_section_info_all();
-        if (isset($allsections[$displaysection])) {
-            $sectioninfo = $allsections[$displaysection];
-            // Note: uservisible check added — without it the summary of a hidden or.
-            // Restricted section leaked to students who guessed ?section=N.
-            if ($sectioninfo->uservisible && !empty($sectioninfo->summary)) {
-                $summarytext = file_rewrite_pluginfile_urls(
-                    $sectioninfo->summary,
-                    'pluginfile.php',
-                    $context->id,
-                    'course',
-                    'section',
-                    $sectioninfo->id
-                );
-                $summarytext = format_text($summarytext, $sectioninfo->summaryformat, ['context' => $context]);
-                echo '<div class="format-dari-section-summary">' . $summarytext . '</div>';
-            }
-        }
-    } catch (Throwable $e) {
-        debugging('Dari course format section summary error: ' . $e->getMessage(), DEBUG_DEVELOPER);
+    $allsections = get_fast_modinfo($course)->get_section_info_all();
+    $sectioninfo = $allsections[$displaysection] ?? null;
+    // The uservisible check keeps the description of a hidden or restricted section from
+    // students who guess ?section=N.
+    if ($sectioninfo && $sectioninfo->uservisible && !empty($sectioninfo->summary)) {
+        $summarytext = file_rewrite_pluginfile_urls(
+            $sectioninfo->summary,
+            'pluginfile.php',
+            $context->id,
+            'course',
+            'section',
+            $sectioninfo->id
+        );
+        $summary = format_text($summarytext, $sectioninfo->summaryformat, ['context' => $context]);
     }
 }
 
-echo '<div class="course-content">';
-
-if ($hassection) {
-    // In edit mode always use the standard renderer so teachers get drag handles,.
-    // "Add an activity or resource" links, and all normal Moodle edit controls.
-    if (!empty($options['activitydisplaymode']) && !$PAGE->user_is_editing()) {
-        echo (new activitycards($course, $displaysection, $options))->out();
-    } else {
-        $renderer = $PAGE->get_renderer('format_dari');
-        $outputclass = $format->get_output_classname('content');
-        $widget = new $outputclass($format);
-        echo $renderer->render($widget);
-    }
+if ($hassection && !empty($options['activitydisplaymode']) && !$PAGE->user_is_editing()) {
+    // Activity cards on a section page. In edit mode the standard renderer is used instead, so
+    // teachers keep drag handles, "Add an activity or resource" and every normal edit control.
+    $coursecontent = (new activitycards($course, $displaysection, $options))->out();
+} else if (!$hassection && !empty($options['displayascards'])) {
+    // Section cards on the course home page, in edit mode too: card-level edit actions (icon,
+    // rename, delete, duplicate, add section) are on the cards themselves.
+    $coursecontent = (new content($format))->out();
 } else {
-    // Always show the custom card view on the course home page.
-    // Edit mode no longer falls back to the Topics accordion — that caused the entire.
-    // Card layout to disappear when a teacher clicked Edit mode (UX-EDITMODE-WIPE).
-    // Card-level edit actions (icon, rename, delete, duplicate, add section) are now.
-    // Available directly on the cards regardless of edit mode state.
-    if (!empty($options['displayascards'])) {
-        echo (new content($format))->out();
-    } else {
-        $renderer = $PAGE->get_renderer('format_dari');
-        $outputclass = $format->get_output_classname('content');
-        $widget = new $outputclass($format);
-        echo $renderer->render($widget);
-    }
+    $renderer = $PAGE->get_renderer('format_dari');
+    $outputclass = $format->get_output_classname('content');
+    $coursecontent = $renderer->render(new $outputclass($format));
 }
 
-echo '</div>';
-
-echo '</div>';
+echo $OUTPUT->render_from_template('format_dari/course_page', [
+    'containerstyle' => $containercss,
+    'hassummary' => $summary !== '',
+    'summary' => $summary,
+    'content' => $coursecontent,
+]);
 
 // Initialize AMD module for icon picker and progress animations.
 $PAGE->requires->js_call_amd('format_dari/courseformat', 'init');

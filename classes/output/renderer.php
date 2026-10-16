@@ -25,7 +25,7 @@ use core_courseformat\output\section_renderer;
  * This approach properly uses PHP namespace autoloading instead of require_once.
  *
  * @package    format_dari
- * @copyright  2025 Essay Grader AI
+ * @copyright  2026 Dari Learning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class renderer extends section_renderer {

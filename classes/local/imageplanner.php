@@ -211,7 +211,7 @@ class imageplanner {
                 'course_plan',
                 'info',
                 0,
-                'Another worker is planning this course; will retry.',
+                get_string('imagelog_msg_planbusy', 'format_dari'),
                 (int) $course->id
             );
             throw new planning_busy_exception();
@@ -356,7 +356,13 @@ class imageplanner {
             $similar = $teacher === '' ? self::similar_to($entry, $others) : [];
             if ((!$similar && !$repeat) || $attempt === 2) {
                 if ($repeat) {
-                    imagelog::add('diversity', 'fail', 0, $key . ' repeated the rejected concept twice', (int) $course->id);
+                    imagelog::add(
+                        'diversity',
+                        'fail',
+                        0,
+                        get_string('imagelog_msg_repeatedtwice', 'format_dari', $key),
+                        (int) $course->id
+                    );
                 }
                 return $entry;
             }
@@ -366,8 +372,15 @@ class imageplanner {
                     fn($k) => self::summary_line($others[$k]),
                     $similar
                 )) . '. Choose a clearly different concept.';
-            imagelog::add('diversity', 'info', 0, $key . ($repeat ? ' repeated the rejected concept'
-                : ' similar to ' . implode(', ', $similar)), (int) $course->id);
+            imagelog::add(
+                'diversity',
+                'info',
+                0,
+                $repeat
+                ? get_string('imagelog_msg_repeated', 'format_dari', $key)
+                : get_string('imagelog_msg_similar', 'format_dari', (object) ['item' => $key, 'others' => implode(', ', $similar)]),
+                (int) $course->id
+            );
         }
         return $entry;
     }

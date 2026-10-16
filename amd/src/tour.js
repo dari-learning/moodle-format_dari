@@ -587,7 +587,7 @@ export const readConfig = () => {
         return null;
     }
     try {
-        return JSON.parse(node.textContent || '');
+        return JSON.parse(node.dataset.json || '');
     } catch (e) {
         // Malformed config: offer no tour rather than a half-built one.
         return null;

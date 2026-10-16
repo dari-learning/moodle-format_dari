@@ -134,5 +134,30 @@
         <INDEX NAME="timecreated" UNIQUE="false" FIELDS="timecreated"/>
       </INDEXES>
     </TABLE>
+    <TABLE NAME="format_dari_jobstate" COMMENT="State of the latest AI image job, and the last prompt used, for each card and banner">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="targettype" TYPE="char" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="section, cm or banner"/>
+        <FIELD NAME="targetid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="course_sections.id or course_modules.id; for a banner the section id, or 0 for the course banner"/>
+        <FIELD NAME="state" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="idle" SEQUENCE="false" COMMENT="idle, queued, running, done or failed"/>
+        <FIELD NAME="detail" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="The image URL when done, the reason when failed"/>
+        <FIELD NAME="requestid" TYPE="char" LENGTH="36" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="stage" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false" COMMENT="waiting, planning, generating, saving, done or failed"/>
+        <FIELD NAME="timequeued" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="prompt" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="The prompt last sent to the image model"/>
+        <FIELD NAME="promptsource" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="prompttime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="courseid_target" UNIQUE="true" FIELDS="courseid, targettype, targetid"/>
+        <INDEX NAME="courseid_state" UNIQUE="false" FIELDS="courseid, state"/>
+      </INDEXES>
+    </TABLE>
   </TABLES>
 </XMLDB>

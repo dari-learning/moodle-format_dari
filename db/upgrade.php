@@ -32,6 +32,9 @@
  * @return bool
  */
 function xmldb_format_dari_upgrade($oldversion) {
+    global $CFG;
+    require_once($CFG->dirroot . '/course/format/dari/db/upgradelib.php');
+
     if ($oldversion < 2026100805) {
         // The AI art director for images is now on by default. Earlier releases shipped it off,
         // so switch it on for sites that still have that original default.
@@ -56,7 +59,6 @@ function xmldb_format_dari_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026100807, 'format', 'dari');
     }
     if ($oldversion < 2026100901) {
-        global $DB;
         // Images are now painted with one model only (GPT Image 2.5 Sunburst) at high quality, and
         // the art director always writes the prompt when the site has a text model. The settings
         // that chose another image model, a lower quality, a DALL-E style or no art director are gone.
@@ -70,9 +72,7 @@ function xmldb_format_dari_upgrade($oldversion) {
         }
         // Forget remembered scenes and art direction written by the old prompt, which steered every
         // card towards a person at a desk with screens.
-        $DB->delete_records_select('config_plugins', "plugin = :plugin AND (" . $DB->sql_like('name', ':a') . ' OR '
-            . $DB->sql_like('name', ':b') . ')', ['plugin' => 'format_dari', 'a' => 'artscenes\\_%', 'b' => 'artdirection\\_%']);
-        \cache::make('core', 'config')->delete('format_dari');
+        format_dari_unset_config_prefixed(['artscenes_', 'artdirection_']);
         upgrade_plugin_savepoint(true, 2026100901, 'format', 'dari');
     }
     if ($oldversion < 2026100902) {
@@ -104,9 +104,7 @@ function xmldb_format_dari_upgrade($oldversion) {
             $dbman->create_table($table);
         }
         // The single-call art direction and scene memory of earlier versions are no longer used.
-        $DB->delete_records_select('config_plugins', "plugin = :plugin AND (" . $DB->sql_like('name', ':a') . ' OR '
-            . $DB->sql_like('name', ':b') . ')', ['plugin' => 'format_dari', 'a' => 'artscenes\\_%', 'b' => 'artdirection\\_%']);
-        \cache::make('core', 'config')->delete('format_dari');
+        format_dari_unset_config_prefixed(['artscenes_', 'artdirection_']);
         upgrade_plugin_savepoint(true, 2026100903, 'format', 'dari');
     }
     if ($oldversion < 2026100904) {
@@ -160,6 +158,36 @@ function xmldb_format_dari_upgrade($oldversion) {
         // 2.0.4 choice between that and a faster assembled prompt is removed.
         unset_config('promptmode', 'format_dari');
         upgrade_plugin_savepoint(true, 2026100905, 'format', 'dari');
+    }
+    if ($oldversion < 2026101600) {
+        global $DB;
+        $dbman = $DB->get_manager();
+        // Card and banner job states and their last prompts move out of plugin settings into their
+        // own table: they change several times a minute while images are made, and every settings
+        // write purges the configuration cache.
+        $table = new xmldb_table('format_dari_jobstate');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('targettype', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('targetid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('state', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null, 'idle');
+        $table->add_field('detail', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('requestid', XMLDB_TYPE_CHAR, '36', null, null, null, null);
+        $table->add_field('stage', XMLDB_TYPE_CHAR, '20', null, null, null, null);
+        $table->add_field('timequeued', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('prompt', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('promptsource', XMLDB_TYPE_CHAR, '20', null, null, null, null);
+        $table->add_field('prompttime', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('courseid', XMLDB_KEY_FOREIGN, ['courseid'], 'course', ['id']);
+        $table->add_index('courseid_target', XMLDB_INDEX_UNIQUE, ['courseid', 'targettype', 'targetid']);
+        $table->add_index('courseid_state', XMLDB_INDEX_NOTUNIQUE, ['courseid', 'state']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+        format_dari_move_job_state_out_of_config();
+        upgrade_plugin_savepoint(true, 2026101600, 'format', 'dari');
     }
     return true;
 }

@@ -32,7 +32,7 @@ use format_dari\output\courseformat\chatbox;
 use format_dari\output\courseformat\hero;
 
 /**
- * Injects the hero banner and Ask Dari script into pages that format.php does not render.
+ * Injects the hero banner and the Ask Dari module into pages that format.php does not render.
  *
  * @package    format_dari
  * @copyright  2026 Dari Learning
@@ -46,7 +46,7 @@ class before_footer_html_generation {
      * @return void
      */
     public static function callback(before_standard_footer_html_generation $hook): void {
-        global $COURSE, $PAGE, $CFG;
+        global $COURSE, $PAGE, $CFG, $OUTPUT;
 
         if (empty($COURSE->id) || $COURSE->id <= 1) {
             return;
@@ -204,15 +204,8 @@ class before_footer_html_generation {
         // Detect if we're on section.php (uses id param for section ID).
         $issectionphp = \format_dari\local\callbacks::is_section_php_request();
 
-        // Note: the section.php -> view.php redirect used to happen HERE, in the footer,
-        // with an inline <script>window.location.replace(...)</script>. By the time a footer hook
-        // runs the whole page has already been generated and streamed, so every section click cost
-        // two full page renders and showed a visible flash of the standard Moodle section layout
-        // before jumping to the card layout. It also broke without JavaScript, and the section
-        // lookup was not scoped to the current course, so a section id from another course
-        // resolved and redirected here with a foreign section number.
-        // It is now a real server-side redirect() issued from format_dari::page_set_course(),
-        // before any output starts. Nothing to do in the footer.
+        // The section.php -> view.php redirect is a server-side redirect() issued from
+        // format_dari::page_set_course(), before any output starts.
 
         // Note: skip EVERY course/view.php page, not just the all-sections one.
         // format.php renders the hero itself on both the course home page and single-section
@@ -274,19 +267,13 @@ class before_footer_html_generation {
                 // is enough. Moodle's own advice for this is to pass the data through the page
                 // rather than the call, which is what this does.
                 //
-                // A script element of type application/json is inert: the browser does not execute
-                // it, and JSON_HEX_TAG means a "</script>" appearing inside any course or activity
-                // name cannot close the element early.
-                $playerconfig = \format_dari\local\player::get_js_config($COURSE);
-                $encoded = json_encode(
-                    $playerconfig,
-                    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES
-                );
+                // It is rendered by format_dari/page_data as an escaped attribute of a hidden element.
+                $encoded = json_encode(\format_dari\local\player::get_js_config($COURSE), JSON_UNESCAPED_SLASHES);
                 if ($encoded !== false) {
-                    $hook->add_html(
-                        '<script type="application/json" id="dari-player-config">'
-                        . $encoded . '</script>'
-                    );
+                    $hook->add_html($OUTPUT->render_from_template('format_dari/page_data', [
+                        'id' => 'dari-player-config',
+                        'json' => $encoded,
+                    ]));
                     $PAGE->requires->js_call_amd('format_dari/player', 'init');
                 }
             }
@@ -313,19 +300,13 @@ class before_footer_html_generation {
                 // through the page rather than the call. This is the same treatment the player
                 // config above already uses.
                 //
-                // A script element of type application/json is inert: the browser does not execute
-                // it, and JSON_HEX_TAG means a "</script>" appearing in any step's text cannot
-                // close the element early.
-                $tourconfig = \format_dari\local\tour::get_js_config($tourcontext);
-                $encoded = json_encode(
-                    $tourconfig,
-                    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES
-                );
+                // It is rendered by format_dari/page_data, like the player config above.
+                $encoded = json_encode(\format_dari\local\tour::get_js_config($tourcontext), JSON_UNESCAPED_SLASHES);
                 if ($encoded !== false) {
-                    $hook->add_html(
-                        '<script type="application/json" id="dari-tour-config">'
-                        . $encoded . '</script>'
-                    );
+                    $hook->add_html($OUTPUT->render_from_template('format_dari/page_data', [
+                        'id' => 'dari-tour-config',
+                        'json' => $encoded,
+                    ]));
                     $PAGE->requires->js_call_amd('format_dari/tour', 'init');
                 }
             }
@@ -393,15 +374,11 @@ class before_footer_html_generation {
             $hideindex = true;
         }
 
-        // Note: body classes are applied by an AMD module rather than an inline
-        // <script>. They cannot be added with $PAGE->add_body_class() here because the
-        // <body> tag has already been written by the time a footer hook runs; the course
-        // pages themselves handle it server-side in format_dari::page_set_course().
-        // (Note: "the course pages" now includes activity pages -- see above. Anything
-        // added here is applied a full page-load late, so nothing that affects layout belongs in
-        // this list.)
-        // Collecting them and making one js_call_amd removes the last inline scripts, which
-        // any Content-Security-Policy that forbids inline script would otherwise block.
+        // These body classes are applied by the format_dari/bodyclass AMD module. They cannot be
+        // added with $PAGE->add_body_class() here because the body tag has already been written
+        // by the time a footer hook runs; course and activity pages get theirs server-side in
+        // format_dari::page_set_course(). Anything added here is applied a page-load late, so
+        // nothing that affects layout belongs in this list.
         $lateclasses = [];
         if ($hideindex && !$PAGE->user_is_editing()) {
             $lateclasses[] = 'dari-hideindex';
@@ -482,28 +459,18 @@ class before_footer_html_generation {
             $html = (new hero($COURSE, $options, $sectionnum))->out();
         }
 
-        // Note: the hero markup is parked in an inert <template> and moved into place by
-        // an AMD module.
-        //
-        // Two earlier approaches were both wrong. An inline <script> that string-concatenated the
-        // markup is blocked by any Content-Security-Policy forbidding inline script. Passing the
-        // markup as a js_call_amd() argument trips Moodle's own 1024 character guard in
-        // outputrequirementslib, which emitted a debugging warning on every section and activity
-        // page of any site running with developer debugging on.
-        //
-        // <template> is the right primitive: its contents are parsed but inert -- not rendered,
-        // no scripts run, no images fetched -- until the module adopts them.
-        $hook->add_html(
-            \html_writer::tag('template', $html, ['id' => 'dari-hero-source'])
-        );
+        // The banner is parked in an inert template element (format_dari/hero_source) and moved
+        // into place by an AMD module. Passing the markup as a js_call_amd() argument would trip
+        // Moodle's 1024 character warning; a template element's contents are parsed but not
+        // rendered, and fetch nothing, until the module adopts them.
+        $hook->add_html($OUTPUT->render_from_template('format_dari/hero_source', ['html' => $html]));
         $PAGE->requires->js_call_amd('format_dari/heroinject', 'init');
 
-        // Add chatbox script separately (innerHTML doesn't execute scripts).
-        // BUT: Skip for section pages in course view - format.php already outputs the script.
+        // Queue the chat panel's module; its markup is part of the banner. format.php does this
+        // itself on course pages.
         $iscourseviewsection = ($PAGE->pagetype === 'course-view-dari' && $sectionparam !== null);
         if (!$iscourseviewsection) {
-            $chatboxscript = (new chatbox($COURSE))->script();
-            $hook->add_html($chatboxscript);
+            (new chatbox($COURSE))->init_js();
         }
     }
 }

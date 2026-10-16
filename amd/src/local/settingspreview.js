@@ -33,6 +33,259 @@ const captionOr = (caption, fallback) => caption || fallback;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+import {getStrings} from 'core/str';
+
+/** @type {String[]} Every language string the drawings use. */
+const STRING_KEYS = [
+    'pv_12_questions_2_min',
+    'pv_1_hr_10_min',
+    'pv_3_modules_5_activities',
+    'pv_3_modules_5_activities_1_hr_10_min',
+    'pv_3d_render',
+    'pv_a_12_question_quiz_at_2_minutes_a_qu',
+    'pv_a_banner_photograph_darkened_lightly',
+    'pv_a_banner_without_an_image_untinted_o',
+    'pv_a_course_opened_with_the_index_colla',
+    'pv_a_one_minute_look_at_how_this',
+    'pv_a_sample_of_the_course_page_text_in',
+    'pv_a_section_card_listing_its_first_thr',
+    'pv_a_section_card_with_its_total_time_c',
+    'pv_a_section_card_without_its_activity',
+    'pv_a_section_page_as_moodles_standard_a',
+    'pv_a_tour_step_read_aloud_in_the_chosen',
+    'pv_above_the_tabs',
+    'pv_accent_colour',
+    'pv_activity_icons',
+    'pv_activity_tiles',
+    'pv_after_scrolling_down_on_the_left_the',
+    'pv_all_courses',
+    'pv_an_activity_page_banner_without_then',
+    'pv_an_activity_tile_with_its_time_chip',
+    'pv_an_activity_type_with_no_time_of_its',
+    'pv_anything_not_listed',
+    'pv_api_key',
+    'pv_ask_about_this_course',
+    'pv_ask_dari',
+    'pv_ask_dari_answering_a_learner_who_is',
+    'pv_ask_dari_explaining_a_quiz_result_wi',
+    'pv_ask_dari_greeting_a_learner_without',
+    'pv_assessment',
+    'pv_assignment',
+    'pv_assumed_time_per_activity_type',
+    'pv_back',
+    'pv_below_the_banner',
+    'pv_below_the_tabs',
+    'pv_book',
+    'pv_card_background',
+    'pv_consultation',
+    'pv_contact_site_support',
+    'pv_continue',
+    'pv_controls',
+    'pv_course',
+    'pv_course_content',
+    'pv_course_content_up_to_your_limit',
+    'pv_course_home_sections_activities',
+    'pv_course_home_sections_activities2',
+    'pv_course_index',
+    'pv_course_index_rows_with_their_estimat',
+    'pv_course_works_skip_any_time',
+    'pv_current',
+    'pv_dari_academy',
+    'pv_dari_sends_the_question_and_course_c',
+    'pv_dari_uses_your_sites_own_ai_provider',
+    'pv_dark',
+    'pv_dashboard',
+    'pv_data_retention_summary',
+    'pv_done_view',
+    'pv_duty_of_care',
+    'pv_each_activity_type_with_its_assumed',
+    'pv_eliminate_substitute_isolate',
+    'pv_end_tour',
+    'pv_endpoint',
+    'pv_engineer_administrate_ppe',
+    'pv_explain_the_concept_simply',
+    'pv_find_what_could_hurt_someone',
+    'pv_flat',
+    'pv_follow_the_theme',
+    'pv_forum',
+    'pv_from_google_fonts',
+    'pv_general',
+    'pv_generated_card_images',
+    'pv_get_the_mobile_app',
+    'pv_give_me_some_practice_questions',
+    'pv_grades',
+    'pv_grid',
+    'pv_hazard_quiz',
+    'pv_hazards',
+    'pv_hi_sam_what_are_we_working',
+    'pv_hi_there_what_are_we_working',
+    'pv_hide',
+    'pv_hierarchy_of_control',
+    'pv_hierarchy_starts_with_removing',
+    'pv_home',
+    'pv_i_cant_see_your_answers_tell_me',
+    'pv_i_feel_really_stressed',
+    'pv_illustration',
+    'pv_image_model',
+    'pv_in_progress',
+    'pv_in_the_site_header',
+    'pv_index_background',
+    'pv_index_header_band',
+    'pv_large',
+    'pv_leading_safe_workplaces',
+    'pv_learner_first_name',
+    'pv_learning_portal',
+    'pv_lesson',
+    'pv_lesson_no_time_set',
+    'pv_lifeline_13_11_14',
+    'pv_light',
+    'pv_list',
+    'pv_medium',
+    'pv_mins',
+    'pv_module_1',
+    'pv_module_2',
+    'pv_module_3',
+    'pv_moodle_4_4_banners_and_card_images_d',
+    'pv_moodle_4_4_dari_calls_your_provider',
+    'pv_moodle_4_4_dari_sends_requests_strai',
+    'pv_moodle_4_4_the_api_key_dari_uses_wit',
+    'pv_moodle_4_4_the_model_that_writes_ask',
+    'pv_moodles_plain_course_index_on_the_le',
+    'pv_my_courses',
+    'pv_narration_english_australia',
+    'pv_never_share',
+    'pv_next',
+    'pv_no_tint',
+    'pv_off',
+    'pv_off_long_page',
+    'pv_on',
+    'pv_on_cards',
+    'pv_on_today',
+    'pv_openai_compatible',
+    'pv_opens_ask_dari',
+    'pv_page',
+    'pv_participants',
+    'pv_photo_shows_most',
+    'pv_photographic',
+    'pv_pick_a_tool_or_type_your_own_questio',
+    'pv_plain_course_index',
+    'pv_player_sidebar',
+    'pv_powered_by_moodle',
+    'pv_previous_next',
+    'pv_question',
+    'pv_questions_are_counted_when',
+    'pv_recommended',
+    'pv_reports',
+    'pv_risk_assessment',
+    'pv_sample_in_a_similar_font_courses_loa',
+    'pv_scrolls_away',
+    'pv_section_cards_side_by_side_in_a_grid',
+    'pv_section_headings',
+    'pv_set_in_site_admin',
+    'pv_settings',
+    'pv_share',
+    'pv_show',
+    'pv_show_me_a_real_world_example',
+    'pv_shown_as_time_chips',
+    'pv_shown_in',
+    'pv_shows_3_then_2_more',
+    'pv_site_walk',
+    'pv_spotting_hazards',
+    'pv_spotting_hazards2',
+    'pv_spotting_hazards_shown_on_the_left_a',
+    'pv_standard_list',
+    'pv_start_collapsed',
+    'pv_start_open',
+    'pv_stays_at_top',
+    'pv_strong',
+    'pv_student_wellbeing_ext_2040',
+    'pv_text_model',
+    'pv_text_stands_out_most',
+    'pv_that_sounds_hard_you_can_talk_to',
+    'pv_the_accent_colour_on_the_course_page',
+    'pv_the_activity_icons_in_the_course_ind',
+    'pv_the_ask_dari_panel_a_greeting_a_lear',
+    'pv_the_background_of_each_section_card',
+    'pv_the_band_at_the_top_of_the_course_in',
+    'pv_the_banner_under_the_course_tabs_on',
+    'pv_the_breadcrumb_trail_dashboard_my_co',
+    'pv_the_card_background_colour_at_a_weak',
+    'pv_the_course_home_as_moodles_long_page',
+    'pv_the_course_index_background_tinted_w',
+    'pv_the_course_index_beside_the_course_p',
+    'pv_the_course_index_colour_at_a_weak_st',
+    'pv_the_course_index_with_the_general_se',
+    'pv_the_course_page_without_the_banner_o',
+    'pv_the_course_tabs_course_settings_part',
+    'pv_the_course_tabs_under_the_page_title',
+    'pv_the_four_looks_for_ai_card_images_ph',
+    'pv_the_hazard_a_elimination',
+    'pv_the_same_course_page_in_light_mode_o',
+    'pv_the_section_card_title_at_a_small_si',
+    'pv_the_section_heading_bands_in_the_cou',
+    'pv_the_site_footer_with_its_links_at_th',
+    'pv_the_site_logo_band_above_the_navbar',
+    'pv_the_time_is_worked_out',
+    'pv_the_total_course_time_under_the_cour',
+    'pv_the_tour_step_with_narration_muted_o',
+    'pv_then_decide_what_to_do_about_it',
+    'pv_through_it_together',
+    'pv_tinted',
+    'pv_to_do_receive_a_grade',
+    'pv_to_do_submit',
+    'pv_toolbox_talk',
+    'pv_uses_the_fallback_time',
+    'pv_uses_the_themes_own_font',
+    'pv_voice_language',
+    'pv_weak',
+    'pv_welcome_to_your_course',
+    'pv_what_you_chose_and_well_work',
+    'pv_whs_for_supervisors',
+    'pv_why_did_i_get_q3_wrong',
+    'pv_why_supervisors_care',
+    'pv_with_dari',
+    'pv_you_chose_b_ppe_first_the',
+    'pv_your_ai',
+    'pv_your_contacts',
+    'pv_your_duty_of_care',
+    'pv_your_logo_at_the_top_of_the_course_i',
+    'pv_your_logo_here',
+];
+
+/** @type {Object} The strings, loaded once by loadPreviewStrings(). */
+const STRINGS = {};
+
+/**
+ * Load every string the drawings use. Call (and await) before buildSettingPreview().
+ *
+ * @returns {Promise<void>}
+ */
+export const loadPreviewStrings = async() => {
+    if (Object.keys(STRINGS).length) {
+        return;
+    }
+    const values = await getStrings(STRING_KEYS.map((key) => ({key, component: 'format_dari'})));
+    STRING_KEYS.forEach((key, i) => {
+        STRINGS[key] = values[i];
+    });
+};
+
+/**
+ * A loaded string.
+ *
+ * @param {String} key String identifier.
+ * @returns {String}
+ */
+const str = (key) => STRINGS[key] || '';
+
+/**
+ * A time chip label, such as "10 min".
+ *
+ * @param {Number} n Minutes.
+ * @returns {String}
+ */
+const mins = (n) => str('pv_mins').replace('{$a}', String(n));
+
 /** @type {Number} Drawing width. */
 const W = 360;
 /** @type {Number} Drawing height. */
@@ -342,9 +595,11 @@ const drawNavbar = (x, y, w, o) => {
     const fs = narrow ? 8 : 9;
     const links = (() => {
         if (o.tabs) {
-            return narrow ? ['Home', 'Course', 'Grades'] : ['Home', 'Course', 'Grades', 'Participants'];
+            return narrow
+                ? [str('pv_home'), str('pv_course'), str('pv_grades')]
+                : [str('pv_home'), str('pv_course'), str('pv_grades'), str('pv_participants')];
         }
-        return ['Home', 'Dashboard', 'My courses'];
+        return [str('pv_home'), str('pv_dashboard'), str('pv_my_courses')];
     })();
     links.forEach((l, i) => {
         s += drawText(lx, y + 13, l, 'x' + fs + (o.tabs && i > 0 ? ' kb b' : ''));
@@ -371,8 +626,8 @@ const drawLogoband = (x, y, w) =>
     drawRect(x, y, w, 26, 'p-brandsoft') +
     drawRect(x + 8, y + 5, 16, 16, 'p-brand', 4) +
     drawText(x + 16, y + 16.5, 'D', 'x10 b kw', 'm') +
-    drawText(x + 30, y + 16.5, 'Dari Academy', 'x11 b') +
-    (w >= 240 ? drawText(x + w - 8, y + 16, 'Learning portal', 'x9 k3', 'e') : '');
+    drawText(x + 30, y + 16.5, str('pv_dari_academy'), 'x11 b') +
+    (w >= 240 ? drawText(x + w - 8, y + 16, str('pv_learning_portal'), 'x9 k3', 'e') : '');
 
 /**
  * The breadcrumb trail.
@@ -383,7 +638,7 @@ const drawLogoband = (x, y, w) =>
  * @returns {String}
  */
 const drawCrumbs = (x, y, n) => {
-    const parts = ['Dashboard', 'My courses', 'WHS101', 'Spotting hazards'].slice(0, n || 4);
+    const parts = [str('pv_dashboard'), str('pv_my_courses'), 'WHS101', str('pv_spotting_hazards')].slice(0, n || 4);
     let s = '';
     let cx = x;
     parts.forEach((p, i) => {
@@ -409,7 +664,7 @@ const drawCrumbs = (x, y, n) => {
 const drawTabs = (x, y, w) => {
     let s = drawLine(x, y + 16, x + w, y + 16, 'p-line');
     let cx = x + 2;
-    ['Course', 'Settings', 'Participants', 'Grades', 'Reports'].forEach((l, i) => {
+    [str('pv_course'), str('pv_settings'), str('pv_participants'), str('pv_grades'), str('pv_reports')].forEach((l, i) => {
         const lw = tw(l, 9, i === 0);
         if (cx + lw > x + w) {
             return;
@@ -608,13 +863,13 @@ const drawBanner = (x, y, w, h, o) => {
         o.title ||
         (() => {
             if (wide) {
-                return 'Leading Safe Workplaces';
+                return str('pv_leading_safe_workplaces');
             }
             return (() => {
                 if (w < 130) {
                     return 'WHS101';
                 }
-                return 'WHS for Supervisors';
+                return str('pv_whs_for_supervisors');
             })();
         })();
     const btn = (bx, by, k, ai) =>
@@ -639,7 +894,7 @@ const drawBanner = (x, y, w, h, o) => {
             drawText(
                 x + w / 2 + 6,
                 cy + 11,
-                '3 modules · 5 activities · 1 hr 10 min',
+                str('pv_3_modules_5_activities_1_hr_10_min'),
                 'x8 ' +
                     (() => {
                         if (media) {
@@ -656,7 +911,7 @@ const drawBanner = (x, y, w, h, o) => {
             s += drawText(
                 x + 8,
                 y + 28,
-                '3 modules · 5 activities',
+                str('pv_3_modules_5_activities'),
                 'x8 ' +
                     (() => {
                         if (media) {
@@ -771,48 +1026,52 @@ const drawBanner = (x, y, w, h, o) => {
     return s;
 };
 
-/** @type {Array} The index rows. */
-const INDEXROWS = [
+/**
+ * The index rows.
+ *
+ * @returns {Array}
+ */
+const indexRows = () => [
     {
-        sec: 'General',
+        sec: str('pv_general'),
         open: false,
         general: true
     },
     {
-        sec: 'Your duty of care',
+        sec: str('pv_your_duty_of_care'),
         open: true
     },
     {
-        act: 'Why supervisors care',
+        act: str('pv_why_supervisors_care'),
         icon: 'page',
-        time: '10 min',
+        time: mins(10),
         done: true
     },
     {
-        sec: 'Spotting hazards',
+        sec: str('pv_spotting_hazards'),
         open: true
     },
     {
-        act: 'Hierarchy of control',
+        act: str('pv_hierarchy_of_control'),
         icon: 'page',
-        time: '10 min',
+        time: mins(10),
         done: true
     },
     {
-        act: 'Risk assessment',
+        act: str('pv_risk_assessment'),
         icon: 'assign',
-        time: '30 min',
+        time: mins(30),
         done: false,
         current: true
     },
     {
-        act: 'Hazard quiz',
+        act: str('pv_hazard_quiz'),
         icon: 'quiz',
-        time: '15 min',
+        time: mins(15),
         done: false
     },
     {
-        sec: 'Consultation',
+        sec: str('pv_consultation'),
         open: false
     }
 ];
@@ -843,9 +1102,9 @@ const drawIndex = (x, y, w, h, o) => {
     }
     let cy = 0;
     if (o.plain) {
-        s += drawText(8, 14, 'Course index', 'x9 b k2');
+        s += drawText(8, 14, str('pv_course_index'), 'x9 b k2');
         cy = 22;
-        INDEXROWS.forEach((r) => {
+        indexRows().forEach((r) => {
             if (r.general && o.nogeneral) {
                 return;
             }
@@ -864,7 +1123,7 @@ const drawIndex = (x, y, w, h, o) => {
             drawRect(0, 0, w, 22, 'p-surf0') +
             drawRect(7, 4, 14, 14, 'p-brand', 3) +
             drawText(14, 14.5, 'D', 'x9 b kw', 'm') +
-            drawText(25, 14.5, 'Dari Academy', 'x9 b');
+            drawText(25, 14.5, str('pv_dari_academy'), 'x9 b');
         cy = 22;
     } else {
         s +=
@@ -875,9 +1134,9 @@ const drawIndex = (x, y, w, h, o) => {
     }
     s += drawRect(0, cy, w, 34, o.head ? 'p-c' : 'p-head');
     const ink = o.head ? 'kw' : 'kb';
-    s += drawText(7, cy + 14, w < 130 ? 'WHS101' : 'WHS for Supervisors', 'x9 b ' + ink + (o.head ? ' onc' : ''));
+    s += drawText(7, cy + 14, w < 130 ? 'WHS101' : str('pv_whs_for_supervisors'), 'x9 b ' + ink + (o.head ? ' onc' : ''));
     if (o.total !== false) {
-        s += drawText(7, cy + 26, '1 hr 10 min', 'x8 ' + (o.head ? 'kw onc' : 'k2'));
+        s += drawText(7, cy + 26, str('pv_1_hr_10_min'), 'x8 ' + (o.head ? 'kw onc' : 'k2'));
     }
     if (w >= 90) {
         s += drawRing(w - 16, cy + 17, 10, 42, !!o.head);
@@ -892,7 +1151,7 @@ const drawIndex = (x, y, w, h, o) => {
         s += drawHighlight(1, cy + 1, w - 2, 32, 2);
     }
     cy += 34;
-    INDEXROWS.forEach((r) => {
+    indexRows().forEach((r) => {
         if (r.general && o.nogeneral) {
             return;
         }
@@ -996,11 +1255,11 @@ const drawCard = (x, y, w, o) => {
     const mini = w < 110;
     if (mh >= 32) {
         s +=
-            drawRect(x + 9, y + 9, tw(captionOr(o.eyebrow, 'Module 2'), 8, true) + 10, 12, 'p-glass', 6) +
+            drawRect(x + 9, y + 9, tw(captionOr(o.eyebrow, str('pv_module_2')), 8, true) + 10, 12, 'p-glass', 6) +
             drawText(
                 x + 14,
                 y + 17.5,
-                captionOr(o.eyebrow, 'Module 2'),
+                captionOr(o.eyebrow, str('pv_module_2')),
                 'x8 b ' +
                     (() => {
                         if (onpanel) {
@@ -1024,7 +1283,7 @@ const drawCard = (x, y, w, o) => {
     s += drawText(
         x + 10,
         y + mh - 3,
-        captionOr(o.title, 'Spotting hazards'),
+        captionOr(o.title, str('pv_spotting_hazards')),
         ts +
             ' b ' +
             (() => {
@@ -1046,7 +1305,7 @@ const drawCard = (x, y, w, o) => {
                     return 13;
                 })(),
             tw(
-                captionOr(o.title, 'Spotting hazards'),
+                captionOr(o.title, str('pv_spotting_hazards')),
                 (() => {
                     if (o.big) {
                         return 13;
@@ -1090,12 +1349,18 @@ const drawCard = (x, y, w, o) => {
     if (!mini) {
         s += chip('list', (o.acts || 4) + ' activities');
         if (o.time !== false) {
-            s += chip('clock', '45 min', o.mark === 'time');
+            s += chip('clock', mins(45), o.mark === 'time');
         }
         cy += 20;
     }
     if (o.list) {
-        const names = ['Hierarchy of control', 'Risk assessment', 'Hazard quiz', 'Site walk', 'Toolbox talk'];
+        const names = [
+            str('pv_hierarchy_of_control'),
+            str('pv_risk_assessment'),
+            str('pv_hazard_quiz'),
+            str('pv_site_walk'),
+            str('pv_toolbox_talk')
+        ];
         const n = o.limit || names.length;
         names.slice(0, n).forEach((nm, i) => {
             s +=
@@ -1151,9 +1416,9 @@ const drawCard = (x, y, w, o) => {
     if (o.cta !== false && !mini) {
         s +=
             drawLine(x + 8, cy, x + w - 8, cy, 'p-line') +
-            drawText(x + 8, cy + 14, 'In progress', 'x8 k3') +
+            drawText(x + 8, cy + 14, str('pv_in_progress'), 'x8 k3') +
             drawRect(x + w - 66, cy + 4, 58, 15, 'p-brandsoft', 5) +
-            drawText(x + w - 37, cy + 14.5, 'Continue →', 'x8 b kb', 'm');
+            drawText(x + w - 37, cy + 14.5, str('pv_continue'), 'x8 b kb', 'm');
         cy += 24;
     }
     const body = (() => {
@@ -1205,10 +1470,10 @@ const drawTile = (x, y, w, o) => {
         drawRect(x + 3, y + 3, w - 6, mh, 'p-brand', 5) +
         drawRect(x + 8, y + 8, 14, 14, 'p-glass', 3) +
         drawIcon(o.icon || 'page', x + 9, y + 9, 12, 'ic-w') +
-        drawText(x + 8, y + mh - 4, w < 100 ? o.short || 'Controls' : o.title || 'Hierarchy of control', 'x9 b kw');
+        drawText(x + 8, y + mh - 4, w < 100 ? o.short || str('pv_controls') : o.title || str('pv_hierarchy_of_control'), 'x9 b kw');
     let cx = x + 7;
     const cy = y + mh + 10;
-    const kind = o.kind || 'Page';
+    const kind = o.kind || str('pv_page');
     if (w >= 100) {
         s +=
             drawRect(cx, cy, tw(kind, 8) + 20, 13, 'p-chip', 4) +
@@ -1220,7 +1485,7 @@ const drawTile = (x, y, w, o) => {
         s +=
             drawRect(cx, cy, 44, 13, 'p-chip', 4) +
             drawIcon('clock', cx + 3, cy + 2, 9, 'ic-b') +
-            drawText(cx + 15, cy + 9.5, o.timelabel || '10 min', 'x8 k2');
+            drawText(cx + 15, cy + 9.5, o.timelabel || mins(10), 'x8 k2');
         if (o.mark === 'time') {
             s += drawHighlight(cx - 2, cy - 2, 48, 17, 4);
         }
@@ -1237,11 +1502,11 @@ const drawTile = (x, y, w, o) => {
  * @returns {String}
  */
 const drawStdlist = (x, y, w) => {
-    let s = drawText(x, y + 11, 'Spotting hazards', 'x11 b');
+    let s = drawText(x, y + 11, str('pv_spotting_hazards'), 'x11 b');
     const rows = [
-        ['Hierarchy of control', 'page', 'Done: View', true],
-        ['Risk assessment', 'assign', 'To do: Submit', false],
-        ['Hazard quiz', 'quiz', 'To do: Receive a grade', false]
+        [str('pv_hierarchy_of_control'), 'page', str('pv_done_view'), true],
+        [str('pv_risk_assessment'), 'assign', str('pv_to_do_submit'), false],
+        [str('pv_hazard_quiz'), 'quiz', str('pv_to_do_receive_a_grade'), false]
     ];
     let cy = y + 20;
     rows.forEach((r) => {
@@ -1268,14 +1533,14 @@ const drawStdlist = (x, y, w) => {
  * @returns {String}
  */
 const drawFooter = (x, y, w) => {
-    let s = drawRect(x, y, w, 40, 'p-foot') + drawText(x + 10, y + 14, 'Contact site support', 'x9 kfl');
-    s += drawText(x + 10, y + 27, 'Data retention summary', 'x9 kfl');
+    let s = drawRect(x, y, w, 40, 'p-foot') + drawText(x + 10, y + 14, str('pv_contact_site_support'), 'x9 kfl');
+    s += drawText(x + 10, y + 27, str('pv_data_retention_summary'), 'x9 kfl');
     if (w > 220) {
         s +=
-            drawText(x + 130, y + 14, 'Get the mobile app', 'x9 kfl') +
-            drawText(x + 130, y + 27, 'Powered by Moodle', 'x9 kf');
+            drawText(x + 130, y + 14, str('pv_get_the_mobile_app'), 'x9 kfl') +
+            drawText(x + 130, y + 27, str('pv_powered_by_moodle'), 'x9 kf');
     } else {
-        s += drawText(x + 10, y + 37, 'Powered by Moodle', 'x8 kf');
+        s += drawText(x + 10, y + 37, str('pv_powered_by_moodle'), 'x8 kf');
     }
     return s;
 };
@@ -1307,8 +1572,8 @@ const drawChat = (x, y, w, h, o) => {
         drawRect(0.5, 20, w - 1, 11, 'p-brand') +
         drawRect(8, 7, 17, 17, 'p-glass', 4) +
         drawIcon('spark', 10.5, 9.5, 12, 'ic-wf') +
-        drawText(31, 14, 'Ask Dari', 'x10 b kw') +
-        drawText(31, 25, 'WHS for Supervisors', 'x8 kw') +
+        drawText(31, 14, str('pv_ask_dari'), 'x10 b kw') +
+        drawText(31, 25, str('pv_whs_for_supervisors'), 'x8 kw') +
         drawIcon('close', w - 18, 9, 12, 'ic-w');
     let cy = 40;
     const bot = (lines, hl) => {
@@ -1333,7 +1598,7 @@ const drawChat = (x, y, w, h, o) => {
         return b;
     };
     s += bot(
-        [o.name === false ? 'Hi there, what are we working' : 'Hi Sam, what are we working', 'on today?'],
+        [o.name === false ? str('pv_hi_there_what_are_we_working') : str('pv_hi_sam_what_are_we_working'), str('pv_on_today')],
         o.mark === 'name'
     );
     if (o.question) {
@@ -1343,12 +1608,12 @@ const drawChat = (x, y, w, h, o) => {
         s += bot(o.answer, o.mark === 'answer');
     }
     if (o.tools !== false) {
-        s += drawText(8, cy + 8, 'Pick a tool, or type your own question', 'x8 k2');
+        s += drawText(8, cy + 8, str('pv_pick_a_tool_or_type_your_own_questio'), 'x8 k2');
         cy += 14;
         [
-            ['book', 'Explain the concept simply'],
-            ['target', 'Give me some practice questions'],
-            ['building', 'Show me a real-world example']
+            ['book', str('pv_explain_the_concept_simply')],
+            ['target', str('pv_give_me_some_practice_questions')],
+            ['building', str('pv_show_me_a_real_world_example')]
         ].forEach((t) => {
             s +=
                 drawRect(8, cy, w - 16, 19, 'p-card', 5) +
@@ -1360,7 +1625,7 @@ const drawChat = (x, y, w, h, o) => {
     }
     s +=
         drawRect(8, h - 26, w - 16, 19, 'p-card', 6) +
-        drawText(15, h - 13.5, 'Ask about this course…', 'x8 k3') +
+        drawText(15, h - 13.5, str('pv_ask_about_this_course'), 'x8 k3') +
         drawRect(w - 29, h - 24, 18, 15, 'p-brand', 4) +
         drawIcon('send', w - 26, h - 22.5, 11, 'ic-w');
     return s + '</svg>';
@@ -1381,9 +1646,9 @@ const drawTour = (x, y, w, o) => {
         drawRect(x, y, w, 108, 'p-pop', 9) +
         drawRect(x, y, w, 3, 'p-brand', 1.5) +
         drawText(x + 10, y + 17, '1 / 8', 'x9 b kb') +
-        drawText(x + 10, y + 33, 'Welcome to your course', 'x11 b') +
-        drawText(x + 10, y + 47, 'A one-minute look at how this', 'x8 k2') +
-        drawText(x + 10, y + 58, 'course works. Skip any time.', 'x8 k2');
+        drawText(x + 10, y + 33, str('pv_welcome_to_your_course'), 'x11 b') +
+        drawText(x + 10, y + 47, str('pv_a_one_minute_look_at_how_this'), 'x8 k2') +
+        drawText(x + 10, y + 58, str('pv_course_works_skip_any_time'), 'x8 k2');
     if (o.voice !== undefined) {
         s +=
             drawRect(x + w - 26, y + 7, 18, 16, 'p-btn', 4) +
@@ -1401,10 +1666,10 @@ const drawTour = (x, y, w, o) => {
         dx += i === 0 ? 16 : 7;
     }
     s +=
-        drawText(x + 10, y + 95, 'End tour', 'x9 k2') +
-        drawText(x + w - 74, y + 95, 'Back', 'x9 kb') +
+        drawText(x + 10, y + 95, str('pv_end_tour'), 'x9 k2') +
+        drawText(x + w - 74, y + 95, str('pv_back'), 'x9 kb') +
         drawRect(x + w - 46, y + 82, 38, 19, 'p-brand', 5) +
-        drawText(x + w - 27, y + 95, 'Next', 'x9 b kw', 'm');
+        drawText(x + w - 27, y + 95, str('pv_next'), 'x9 b kw', 'm');
     if (o.lang) {
         s +=
             drawRect(x + 10, y + 113, tw(o.lang, 8) + 26, 15, 'p-chip', 7) +
@@ -1427,16 +1692,16 @@ const drawFlow = (o) => {
         drawRect(18, 56, 20, 20, 'p-brand', 5) +
         drawText(28, 70, 'D', 'x11 b kw', 'm') +
         drawText(44, 65, 'Moodle', 'x11 b') +
-        drawText(44, 77, 'with Dari', 'x8 k2') +
-        drawText(18, 96, 'Question', 'x8 k2') +
-        drawText(18, 108, '+ course content', 'x8 k2') +
-        drawText(18, 120, '+ learner first name', 'x8 k3');
+        drawText(44, 77, str('pv_with_dari'), 'x8 k2') +
+        drawText(18, 96, str('pv_question'), 'x8 k2') +
+        drawText(18, 108, str('pv_course_content'), 'x8 k2') +
+        drawText(18, 120, str('pv_learner_first_name'), 'x8 k3');
     s +=
         drawRect(242, 46, 110, 82, 'p-card', 9) +
         drawIcon('cloud', 252, 54, 24, 'ic-b') +
-        drawText(282, 65, 'Your AI', 'x11 b') +
+        drawText(282, 65, str('pv_your_ai'), 'x11 b') +
         drawText(282, 77, 'provider', 'x11 b') +
-        drawText(252, 98, o.direct ? 'OpenAI-compatible' : 'Set in Site admin', 'x8 k2') +
+        drawText(252, 98, o.direct ? str('pv_openai_compatible') : str('pv_set_in_site_admin'), 'x8 k2') +
         drawText(252, 110, o.direct ? 'endpoint' : '> General > AI', 'x8 k2');
     s +=
         drawLine(122, 74, 236, 74, 'p-arrow') +
@@ -1448,10 +1713,10 @@ const drawFlow = (o) => {
         drawText(179, 114, 'answer or image', 'x8 k2', 'm');
     if (o.direct) {
         const rows = [
-            ['endpoint', 'Endpoint', 'https://ai.school.edu/v1'],
-            ['secret', 'API key', '•••••••• 4f2a'],
-            ['textmodel', 'Text model', 'gpt-6-astra'],
-            ['imagemodel', 'Image model', 'gpt-image-2.5-sunburst']
+            ['endpoint', str('pv_endpoint'), 'https://ai.school.edu/v1'],
+            ['secret', str('pv_api_key'), '•••••••• 4f2a'],
+            ['textmodel', str('pv_text_model'), 'gpt-6-astra'],
+            ['imagemodel', str('pv_image_model'), 'gpt-image-2.5-sunburst']
         ];
         rows.forEach((r, i) => {
             const ry = 140 + i * 17;
@@ -1466,12 +1731,12 @@ const drawFlow = (o) => {
         s += drawLine(236, 134, 236, 205, 'p-dash');
     }
     if (o.mark === 'content') {
-        s += drawHighlight(14, 100, 90, 12, 3) + drawCallout(14, 150, 'Course content, up to your limit', 40, 112);
+        s += drawHighlight(14, 100, 90, 12, 3) + drawCallout(14, 150, str('pv_course_content_up_to_your_limit'), 40, 112);
     }
     s += drawText(
         8,
         24,
-        o.direct ? 'Moodle 4.4: Dari calls your provider directly' : "Dari uses your site's own AI provider",
+        o.direct ? str('pv_moodle_4_4_dari_calls_your_provider') : str('pv_dari_uses_your_sites_own_ai_provider'),
         'x10 b'
     );
     return s;
@@ -1511,8 +1776,8 @@ const drawPage = (o) => {
             cy,
             half,
             Object.assign({}, card, {
-                title: 'Consultation',
-                eyebrow: 'Module 3'
+                title: str('pv_consultation'),
+                eyebrow: str('pv_module_3')
             })
         );
     return s;
@@ -1651,7 +1916,7 @@ const drawThumb = (x, y, w, h, style) => {
 const drawings = {
     accentcolour: () => {
         return {
-            cap: 'The accent colour on the course page: banner buttons, index headings, card panels and progress bars.',
+            cap: str('pv_the_accent_colour_on_the_course_page'),
             svg:
                 drawPage({
                     top: 16,
@@ -1664,15 +1929,15 @@ const drawings = {
                 }) +
                 drawHighlight(171, 62, 22, 22, 4) +
                 drawHighlight(1, 70, 116, 22, 2) +
-                drawCallout(210, 24, 'Accent colour', 182, 62)
+                drawCallout(210, 24, str('pv_accent_colour'), 182, 62)
         };
     },
     herobannerfade: () => {
         return {
-            cap: 'A banner without an image, untinted on the left and tinted with the accent colour on the right.',
+            cap: str('pv_a_banner_without_an_image_untinted_o'),
             svg: drawTwo(
                 [
-                    'No tint',
+                    str('pv_no_tint'),
                     false,
                     '0',
                     drawBanner(6, 10, 160, 60, {
@@ -1683,7 +1948,7 @@ const drawings = {
                         })
                 ],
                 [
-                    'Tinted',
+                    str('pv_tinted'),
                     true,
                     '',
                     drawBanner(6, 10, 160, 60, {
@@ -1700,20 +1965,20 @@ const drawings = {
     },
     heroimageoverlay: () => {
         return {
-            cap: 'A banner photograph darkened lightly, medium and strongly behind white title text.',
+            cap: str('pv_a_banner_photograph_darkened_lightly'),
             svg: drawThree([
                 [
-                    'Light',
+                    str('pv_light'),
                     false,
                     'light',
                     drawBanner(4, 10, 106, 120, {
                         image: true,
                         scrim: 0.25,
                         compact: true
-                    }) + drawText(57, 156, 'Photo shows most', 'x8 k2', 'm')
+                    }) + drawText(57, 156, str('pv_photo_shows_most'), 'x8 k2', 'm')
                 ],
                 [
-                    'Medium',
+                    str('pv_medium'),
                     true,
                     'medium',
                     drawBanner(4, 10, 106, 120, {
@@ -1722,37 +1987,37 @@ const drawings = {
                         compact: true
                     }) +
                         drawHighlight(3, 9, 108, 122, 2) +
-                        drawText(57, 156, 'Recommended', 'x8 kb b', 'm')
+                        drawText(57, 156, str('pv_recommended'), 'x8 kb b', 'm')
                 ],
                 [
-                    'Strong',
+                    str('pv_strong'),
                     false,
                     'strong',
                     drawBanner(4, 10, 106, 120, {
                         image: true,
                         scrim: 0.7,
                         compact: true
-                    }) + drawText(57, 156, 'Text stands out most', 'x8 k2', 'm')
+                    }) + drawText(57, 156, str('pv_text_stands_out_most'), 'x8 k2', 'm')
                 ]
             ])
         };
     },
     scrimstrength: () => {
         return {
-            cap: 'A banner photograph darkened lightly, medium and strongly behind white title text.',
+            cap: str('pv_a_banner_photograph_darkened_lightly'),
             svg: drawThree([
                 [
-                    'Light',
+                    str('pv_light'),
                     false,
                     'light',
                     drawBanner(4, 10, 106, 120, {
                         image: true,
                         scrim: 0.25,
                         compact: true
-                    }) + drawText(57, 156, 'Photo shows most', 'x8 k2', 'm')
+                    }) + drawText(57, 156, str('pv_photo_shows_most'), 'x8 k2', 'm')
                 ],
                 [
-                    'Medium',
+                    str('pv_medium'),
                     true,
                     'medium',
                     drawBanner(4, 10, 106, 120, {
@@ -1761,24 +2026,24 @@ const drawings = {
                         compact: true
                     }) +
                         drawHighlight(3, 9, 108, 122, 2) +
-                        drawText(57, 156, 'Recommended', 'x8 kb b', 'm')
+                        drawText(57, 156, str('pv_recommended'), 'x8 kb b', 'm')
                 ],
                 [
-                    'Strong',
+                    str('pv_strong'),
                     false,
                     'strong',
                     drawBanner(4, 10, 106, 120, {
                         image: true,
                         scrim: 0.7,
                         compact: true
-                    }) + drawText(57, 156, 'Text stands out most', 'x8 k2', 'm')
+                    }) + drawText(57, 156, str('pv_text_stands_out_most'), 'x8 k2', 'm')
                 ]
             ])
         };
     },
     playerlogo: () => {
         return {
-            cap: 'Your logo at the top of the course index, above the course title and progress ring.',
+            cap: str('pv_your_logo_at_the_top_of_the_course_i'),
             svg:
                 drawPage({
                     top: 16,
@@ -1786,12 +2051,12 @@ const drawings = {
                         logo: true,
                         mark: 'logo'
                     }
-                }) + drawCallout(140, 24, 'Your logo here', 88, 31)
+                }) + drawCallout(140, 24, str('pv_your_logo_here'), 88, 31)
         };
     },
     indexheadingcolour: () => {
         return {
-            cap: 'The section heading bands in the course index, drawn in the chosen colour.',
+            cap: str('pv_the_section_heading_bands_in_the_cou'),
             svg:
                 drawPage({
                     index: {
@@ -1800,12 +2065,12 @@ const drawings = {
                 }) +
                 drawHighlight(1, 70, 116, 22, 2) +
                 drawHighlight(1, 132, 116, 22, 2) +
-                drawCallout(132, 190, 'Section headings', 112, 143)
+                drawCallout(132, 190, str('pv_section_headings'), 112, 143)
         };
     },
     indexiconcolour: () => {
         return {
-            cap: 'The activity icons in the course index, drawn in the chosen colour.',
+            cap: str('pv_the_activity_icons_in_the_course_ind'),
             svg:
                 drawPage({
                     index: {
@@ -1814,12 +2079,12 @@ const drawings = {
                 }) +
                 drawHighlight(4, 92, 18, 16, 3) +
                 drawHighlight(4, 154, 18, 56, 3) +
-                drawCallout(132, 190, 'Activity icons', 22, 160)
+                drawCallout(132, 190, str('pv_activity_icons'), 22, 160)
         };
     },
     indexcolour: () => {
         return {
-            cap: 'The course index background tinted with the chosen colour.',
+            cap: str('pv_the_course_index_background_tinted_w'),
             svg:
                 drawPage({
                     index: {
@@ -1828,15 +2093,15 @@ const drawings = {
                     }
                 }) +
                 drawHighlight(1, 21, 116, 192, 2) +
-                drawCallout(132, 190, 'Index background', 112, 170)
+                drawCallout(132, 190, str('pv_index_background'), 112, 170)
         };
     },
     indexopacity: () => {
         return {
-            cap: 'The course index colour at a weak strength on the left and a strong one on the right.',
+            cap: str('pv_the_course_index_colour_at_a_weak_st'),
             svg: drawTwo(
                 [
-                    'Weak',
+                    str('pv_weak'),
                     false,
                     '',
                     drawIndex(0, 0, 172, 195, {
@@ -1845,7 +2110,7 @@ const drawings = {
                     })
                 ],
                 [
-                    'Strong',
+                    str('pv_strong'),
                     true,
                     '',
                     drawIndex(0, 0, 172, 195, {
@@ -1858,7 +2123,7 @@ const drawings = {
     },
     cardcolour: () => {
         return {
-            cap: 'The background of each section card, in the chosen colour.',
+            cap: str('pv_the_background_of_each_section_card'),
             svg:
                 drawPage({
                     card: {
@@ -1866,15 +2131,15 @@ const drawings = {
                         bodyop: 0.3,
                         mark: 'body'
                     }
-                }) + drawCallout(140, 196, 'Card background', 180, 176)
+                }) + drawCallout(140, 196, str('pv_card_background'), 180, 176)
         };
     },
     cardopacity: () => {
         return {
-            cap: 'The card background colour at a weak strength on the left and a strong one on the right.',
+            cap: str('pv_the_card_background_colour_at_a_weak'),
             svg: drawTwo(
                 [
-                    'Weak',
+                    str('pv_weak'),
                     false,
                     '',
                     drawCard(10, 8, 152, {
@@ -1883,7 +2148,7 @@ const drawings = {
                     })
                 ],
                 [
-                    'Strong',
+                    str('pv_strong'),
                     true,
                     '',
                     drawCard(10, 8, 152, {
@@ -1897,7 +2162,7 @@ const drawings = {
     },
     playerheadercolour: () => {
         return {
-            cap: 'The band at the top of the course index, with the course title and ring, in the chosen colour.',
+            cap: str('pv_the_band_at_the_top_of_the_course_in'),
             svg:
                 drawPage({
                     top: 16,
@@ -1905,15 +2170,15 @@ const drawings = {
                         head: true,
                         mark: 'header'
                     }
-                }) + drawCallout(140, 26, 'Index header band', 116, 46)
+                }) + drawCallout(140, 26, str('pv_index_header_band'), 116, 46)
         };
     },
     colourmode: () => {
         return {
-            cap: 'The same course page in light mode on the left and dark mode on the right.',
+            cap: str('pv_the_same_course_page_in_light_mode_o'),
             svg: drawTwo(
                 [
-                    'Light',
+                    str('pv_light'),
                     false,
                     'light',
                     drawGroup(
@@ -1933,7 +2198,7 @@ const drawings = {
                     )
                 ],
                 [
-                    'Dark',
+                    str('pv_dark'),
                     true,
                     'dark',
                     drawGroup(
@@ -1957,19 +2222,18 @@ const drawings = {
     },
     fontfamily: () => {
         return {
-            cap: 'A sample of the course page text in the chosen font.',
+            cap: str('pv_a_sample_of_the_course_page_text_in'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawRect(14, 14, 120, 120, 'p-card', 12) +
                 '<text class="x pv-font x-aa" x="74" y="96" text-anchor="middle">Aa</text>' +
-                '<text class="x pv-font x13 b" x="150" y="40">Leading Safe Workplaces</text>' +
-                '<text class="x pv-font x10 k2" x="150" y="58">3 modules · 5 activities · 1 hr 10 min</text>' +
-                '<text class="x pv-font x11 b" x="150" y="86">Spotting hazards</text>' +
-                '<text class="x pv-font x9 k2" x="150" y="102">Find what could hurt someone,</text>' +
-                '<text class="x pv-font x9 k2" x="150" y="114">then decide what to do about it.</text>' +
+                drawText(150, 40, str('pv_leading_safe_workplaces'), 'pv-font x13 b') +
+                drawText(150, 58, str('pv_3_modules_5_activities_1_hr_10_min'), 'pv-font x10 k2') +
+                drawText(150, 86, str('pv_spotting_hazards'), 'pv-font x11 b') +
+                drawText(150, 102, str('pv_find_what_could_hurt_someone'), 'pv-font x9 k2') +
+                drawText(150, 114, str('pv_then_decide_what_to_do_about_it'), 'pv-font x9 k2') +
                 drawRect(150, 122, 70, 17, 'p-brandsoft', 5) +
-                '<text class="x pv-font x9 b kb" x="185" y="134" text-anchor="middle">' +
-                'Continue →</text>' +
+                drawText(185, 134, str('pv_continue'), 'pv-font x9 b kb', 'm') +
                 '<text class="x pv-fontname x10 b kb" x="14" y="160"></text>' +
                 '<text class="x pv-fontnote x8 k3" x="14" y="176"></text>' +
                 drawText(14, 200, 'ABCDEFGHIJKLM abcdefghijklm 0123456789', 'x9 k2 pv-font')
@@ -1977,21 +2241,21 @@ const drawings = {
     },
     showherobanner: () => {
         return {
-            cap: 'The course page without the banner on the left and with it on the right.',
+            cap: str('pv_the_course_page_without_the_banner_o'),
             svg: drawTwo(
                 [
-                    'Off',
+                    str('pv_off'),
                     false,
                     '0',
                     drawNavbar(0, 0, 172) +
                         drawCrumbs(6, 32, 2) +
-                        drawText(6, 50, 'WHS for Supervisors', 'x11 b') +
+                        drawText(6, 50, str('pv_whs_for_supervisors'), 'x11 b') +
                         drawCard(6, 60, 160, {
                             cta: false
                         })
                 ],
                 [
-                    'On',
+                    str('pv_on'),
                     true,
                     '1',
                     drawNavbar(0, 0, 172) +
@@ -2006,31 +2270,31 @@ const drawings = {
     },
     herosticky: () => {
         return {
-            cap: 'After scrolling down: on the left the banner has scrolled away, on the right it stays pinned at the top.',
+            cap: str('pv_after_scrolling_down_on_the_left_the'),
             svg: drawTwo(
                 [
-                    'Scrolls away',
+                    str('pv_scrolls_away'),
                     false,
                     '0',
                     drawNavbar(0, 0, 172) +
                         drawCard(6, 26, 160, {
                             list: true,
                             limit: 3,
-                            title: 'Consultation',
-                            eyebrow: 'Module 3'
+                            title: str('pv_consultation'),
+                            eyebrow: str('pv_module_3')
                         }) +
                         drawLine(166, 40, 166, 140, 'p-scroll')
                 ],
                 [
-                    'Stays at top',
+                    str('pv_stays_at_top'),
                     true,
                     '1',
                     drawNavbar(0, 0, 172) +
                         drawCard(6, 70, 160, {
                             list: true,
                             limit: 3,
-                            title: 'Consultation',
-                            eyebrow: 'Module 3'
+                            title: str('pv_consultation'),
+                            eyebrow: str('pv_module_3')
                         }) +
                         drawRect(0, 20, 172, 58, 'p-shadow') +
                         drawBanner(0, 20, 172, 58, {
@@ -2043,14 +2307,14 @@ const drawings = {
     },
     heroattop: () => {
         return {
-            cap: 'The banner under the course tabs on the left, and moved above the tabs on the right.',
+            cap: str('pv_the_banner_under_the_course_tabs_on'),
             svg: drawTwo(
                 [
-                    'Below the tabs',
+                    str('pv_below_the_tabs'),
                     false,
                     '0',
                     drawNavbar(0, 0, 172) +
-                        drawText(6, 36, 'WHS for Supervisors', 'x11 b') +
+                        drawText(6, 36, str('pv_whs_for_supervisors'), 'x11 b') +
                         drawTabs(6, 42, 160) +
                         drawBanner(6, 66, 160, 56, {
                             compact: true
@@ -2060,7 +2324,7 @@ const drawings = {
                         })
                 ],
                 [
-                    'Above the tabs',
+                    str('pv_above_the_tabs'),
                     true,
                     '1',
                     drawNavbar(0, 0, 172) +
@@ -2078,29 +2342,29 @@ const drawings = {
     },
     displayascards: () => {
         return {
-            cap: "The course home as Moodle's long page of sections on the left, and as section cards on the right.",
+            cap: str('pv_the_course_home_as_moodles_long_page'),
             svg: drawTwo(
-                ['Off: long page', false, '0', drawStdlist(6, 8, 160)],
+                [str('pv_off_long_page'), false, '0', drawStdlist(6, 8, 160)],
                 [
-                    'On: cards',
+                    str('pv_on_cards'),
                     true,
                     '1',
                     drawCard(6, 8, 77, {
                         small: true,
                         cta: false,
-                        title: 'Duty of care',
-                        eyebrow: 'Module 1'
+                        title: str('pv_duty_of_care'),
+                        eyebrow: str('pv_module_1')
                     }) +
                         drawCard(89, 8, 77, {
                             small: true,
                             cta: false,
-                            title: 'Hazards'
+                            title: str('pv_hazards')
                         }) +
                         drawCard(6, 112, 77, {
                             small: true,
                             cta: false,
-                            title: 'Consultation',
-                            eyebrow: 'Module 3'
+                            title: str('pv_consultation'),
+                            eyebrow: str('pv_module_3')
                         })
                 ]
             )
@@ -2108,39 +2372,39 @@ const drawings = {
     },
     cardlayout: () => {
         return {
-            cap: 'Section cards side by side in a grid on the left, and one per row in a list on the right.',
+            cap: str('pv_section_cards_side_by_side_in_a_grid'),
             svg: drawTwo(
                 [
-                    'Grid',
+                    str('pv_grid'),
                     false,
                     '0',
                     drawCard(6, 8, 77, {
                         small: true,
                         cta: false,
-                        title: 'Duty of care',
-                        eyebrow: 'Module 1'
+                        title: str('pv_duty_of_care'),
+                        eyebrow: str('pv_module_1')
                     }) +
                         drawCard(89, 8, 77, {
                             small: true,
                             cta: false,
-                            title: 'Hazards'
+                            title: str('pv_hazards')
                         }) +
                         drawCard(6, 112, 77, {
                             small: true,
                             cta: false,
-                            title: 'Consultation',
-                            eyebrow: 'Module 3'
+                            title: str('pv_consultation'),
+                            eyebrow: str('pv_module_3')
                         })
                 ],
                 [
-                    'List',
+                    str('pv_list'),
                     true,
                     '1',
                     drawCard(6, 8, 160, {
                         mh: 34,
                         cta: false,
-                        title: 'Your duty of care',
-                        eyebrow: 'Module 1'
+                        title: str('pv_your_duty_of_care'),
+                        eyebrow: str('pv_module_1')
                     }) +
                         drawCard(6, 98, 160, {
                             mh: 34,
@@ -2152,11 +2416,11 @@ const drawings = {
     },
     showactivitiesoncards: () => {
         return {
-            cap: 'A section card without its activity list on the left, and listing its activities with ticks on the right.',
+            cap: str('pv_a_section_card_without_its_activity'),
             svg: drawTwo(
-                ['Off', false, '0', drawCard(10, 8, 152, {})],
+                [str('pv_off'), false, '0', drawCard(10, 8, 152, {})],
                 [
-                    'On',
+                    str('pv_on'),
                     true,
                     '1',
                     drawCard(10, 8, 152, {
@@ -2170,7 +2434,7 @@ const drawings = {
     },
     cardactivitylimit: () => {
         return {
-            cap: 'A section card listing its first three activities, then how many more there are.',
+            cap: str('pv_a_section_card_listing_its_first_thr'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawCard(10, 6, 196, {
@@ -2179,12 +2443,12 @@ const drawings = {
                     mark: 'list',
                     cta: false
                 }) +
-                drawCallout(214, 60, 'Shows 3, then “+ 2 more”', 200, 96)
+                drawCallout(214, 60, str('pv_shows_3_then_2_more'), 200, 96)
         };
     },
     cardtitlesize: () => {
         return {
-            cap: 'The section card title at a small size on the left and a large size on the right.',
+            cap: str('pv_the_section_card_title_at_a_small_si'),
             svg: drawTwo(
                 [
                     'Small',
@@ -2196,7 +2460,7 @@ const drawings = {
                     })
                 ],
                 [
-                    'Large',
+                    str('pv_large'),
                     true,
                     '',
                     drawCard(10, 8, 152, {
@@ -2209,13 +2473,13 @@ const drawings = {
     },
     cardimagestyle: () => {
         return {
-            cap: 'The four looks for AI card images: photographic, illustration, 3D render and flat illustration.',
+            cap: str('pv_the_four_looks_for_ai_card_images_ph'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 ['photo', 'illustration', 'render3d', 'flat']
                     .map((st, i) => {
                         const x = 8 + i * 88;
-                        const label = ['Photographic', 'Illustration', '3D render', 'Flat'][i];
+                        const label = [str('pv_photographic'), str('pv_illustration'), str('pv_3d_render'), str('pv_flat')][i];
                         return (
                             '<g class="pv-panel" data-v="' +
                             st +
@@ -2228,29 +2492,29 @@ const drawings = {
                         );
                     })
                     .join('') +
-                drawText(8, 18, 'Generated card images', 'x10 b')
+                drawText(8, 18, str('pv_generated_card_images'), 'x10 b')
         };
     },
     activitydisplaymode: () => {
         return {
-            cap: "A section page as Moodle's standard activity list on the left, and as activity tiles on the right.",
+            cap: str('pv_a_section_page_as_moodles_standard_a'),
             svg: drawTwo(
-                ['Standard list', false, '0', drawStdlist(6, 8, 160)],
+                [str('pv_standard_list'), false, '0', drawStdlist(6, 8, 160)],
                 [
-                    'Activity tiles',
+                    str('pv_activity_tiles'),
                     true,
                     '1',
-                    drawText(6, 19, 'Spotting hazards', 'x11 b') +
+                    drawText(6, 19, str('pv_spotting_hazards'), 'x11 b') +
                         drawTile(6, 28, 78, {}) +
                         drawTile(88, 28, 78, {
-                            title: 'Risk assessment',
-                            "short": 'Assessment',
+                            title: str('pv_risk_assessment'),
+                            "short": str('pv_assessment'),
                             icon: 'assign',
                             kind: 'Assign'
                         }) +
                         drawTile(6, 104, 78, {
-                            title: 'Hazard quiz',
-                            "short": 'Hazard quiz',
+                            title: str('pv_hazard_quiz'),
+                            "short": str('pv_hazard_quiz'),
                             icon: 'quiz',
                             kind: 'Quiz'
                         })
@@ -2260,43 +2524,43 @@ const drawings = {
     },
     shownavchevrons: () => {
         return {
-            cap: 'An activity page banner without, then with, the previous and next activity arrows.',
+            cap: str('pv_an_activity_page_banner_without_then'),
             svg: drawTwo(
                 [
-                    'Off',
+                    str('pv_off'),
                     false,
                     '0',
                     drawBanner(6, 10, 160, 56, {
                         compact: true,
-                        title: 'Hierarchy of control'
+                        title: str('pv_hierarchy_of_control')
                     }) +
-                        drawText(6, 88, 'Eliminate, substitute, isolate,', 'x9 k2') +
-                        drawText(6, 101, 'engineer, administrate, PPE.', 'x9 k2')
+                        drawText(6, 88, str('pv_eliminate_substitute_isolate'), 'x9 k2') +
+                        drawText(6, 101, str('pv_engineer_administrate_ppe'), 'x9 k2')
                 ],
                 [
-                    'On',
+                    str('pv_on'),
                     true,
                     '1',
                     drawBanner(6, 10, 160, 56, {
                         compact: true,
                         chevrons: true,
-                        title: 'Hierarchy of control'
+                        title: str('pv_hierarchy_of_control')
                     }) +
                         drawHighlight(72, 44, 40, 21, 10) +
-                        drawCallout(70, 74, 'Previous / next', 92, 65) +
-                        drawText(6, 110, 'Eliminate, substitute, isolate,', 'x9 k2') +
-                        drawText(6, 123, 'engineer, administrate, PPE.', 'x9 k2')
+                        drawCallout(70, 74, str('pv_previous_next'), 92, 65) +
+                        drawText(6, 110, str('pv_eliminate_substitute_isolate'), 'x9 k2') +
+                        drawText(6, 123, str('pv_engineer_administrate_ppe'), 'x9 k2')
                 ]
             )
         };
     },
     hidegeneral: () => {
         return {
-            cap: 'The course index with the General section on the left, and without it on the right.',
+            cap: str('pv_the_course_index_with_the_general_se'),
             svg: drawTwo(
-                ['Show', false, '0', drawIndex(0, 0, 172, 195, {}) + drawHighlight(1, 51, 170, 21, 2)],
+                [str('pv_show'), false, '0', drawIndex(0, 0, 172, 195, {}) + drawHighlight(1, 51, 170, 21, 2)],
                 [
-                    'Hide',
+                    str('pv_hide'),
                     true,
                     '1 2',
                     drawIndex(0, 0, 172, 195, {
@@ -2308,10 +2572,10 @@ const drawings = {
     },
     indexstate: () => {
         return {
-            cap: 'A course opened with the index collapsed to a button on the left, and open beside the page on the right.',
+            cap: str('pv_a_course_opened_with_the_index_colla'),
             svg: drawTwo(
                 [
-                    'Start collapsed',
+                    str('pv_start_collapsed'),
                     false,
                     '1',
                     drawNavbar(0, 0, 172) +
@@ -2326,7 +2590,7 @@ const drawings = {
                         })
                 ],
                 [
-                    'Start open',
+                    str('pv_start_open'),
                     true,
                     '2',
                     drawNavbar(0, 0, 172) +
@@ -2347,37 +2611,37 @@ const drawings = {
     },
     playerindex: () => {
         return {
-            cap: "Moodle's plain course index on the left, and the player sidebar with progress, times and ticks on the right.",
+            cap: str('pv_moodles_plain_course_index_on_the_le'),
             svg: drawTwo(
                 [
-                    'Plain course index',
+                    str('pv_plain_course_index'),
                     false,
                     '0',
                     drawIndex(0, 0, 172, 195, {
                         plain: true
                     })
                 ],
-                ['Player sidebar', true, '1', drawIndex(0, 0, 172, 195, {})]
+                [str('pv_player_sidebar'), true, '1', drawIndex(0, 0, 172, 195, {})]
             )
         };
     },
     showcourseindex: () => {
         return {
             cap:
-                'The course index beside the course page; you choose on which pages it appears: ' +
-                'course home, sections, activities.',
+                str('pv_the_course_index_beside_the_course_p') + ' ' +
+                str('pv_course_home_sections_activities2'),
             svg:
                 drawPage({}) +
                 drawHighlight(1, 21, 116, 192, 2) +
-                drawCallout(130, 186, 'Course home · Sections · Activities', 112, 150)
+                drawCallout(130, 186, str('pv_course_home_sections_activities'), 112, 150)
         };
     },
     hidetimeindex: () => {
         return {
-            cap: 'Course index rows with their estimated time chips on the left, and without them on the right.',
+            cap: str('pv_course_index_rows_with_their_estimat'),
             svg: drawTwo(
                 [
-                    'Show',
+                    str('pv_show'),
                     false,
                     '0',
                     drawIndex(0, 0, 172, 195, {
@@ -2385,7 +2649,7 @@ const drawings = {
                     })
                 ],
                 [
-                    'Hide',
+                    str('pv_hide'),
                     true,
                     '1',
                     drawIndex(0, 0, 172, 195, {
@@ -2397,10 +2661,10 @@ const drawings = {
     },
     hidetimetotal: () => {
         return {
-            cap: 'The total course time under the course title in the index, shown on the left and hidden on the right.',
+            cap: str('pv_the_total_course_time_under_the_cour'),
             svg: drawTwo(
                 [
-                    'Show',
+                    str('pv_show'),
                     false,
                     '0',
                     drawIndex(0, 0, 172, 195, {
@@ -2408,7 +2672,7 @@ const drawings = {
                     })
                 ],
                 [
-                    'Hide',
+                    str('pv_hide'),
                     true,
                     '1',
                     drawIndex(0, 0, 172, 195, {
@@ -2420,10 +2684,10 @@ const drawings = {
     },
     hidetimesectioncards: () => {
         return {
-            cap: 'A section card with its total time chip on the left, and without it on the right.',
+            cap: str('pv_a_section_card_with_its_total_time_c'),
             svg: drawTwo(
                 [
-                    'Show',
+                    str('pv_show'),
                     false,
                     '0',
                     drawCard(10, 8, 152, {
@@ -2431,7 +2695,7 @@ const drawings = {
                     })
                 ],
                 [
-                    'Hide',
+                    str('pv_hide'),
                     true,
                     '1',
                     drawCard(10, 8, 152, {
@@ -2443,10 +2707,10 @@ const drawings = {
     },
     hidetimeactivitycards: () => {
         return {
-            cap: 'An activity tile with its time chip on the left, and without it on the right.',
+            cap: str('pv_an_activity_tile_with_its_time_chip'),
             svg: drawTwo(
                 [
-                    'Show',
+                    str('pv_show'),
                     false,
                     '0',
                     drawTile(16, 20, 140, {
@@ -2454,7 +2718,7 @@ const drawings = {
                     })
                 ],
                 [
-                    'Hide',
+                    str('pv_hide'),
                     true,
                     '1',
                     drawTile(16, 20, 140, {
@@ -2466,13 +2730,13 @@ const drawings = {
     },
     minutes: () => {
         {
-            let s = drawRect(0, 0, W, H, 'p-page') + drawText(8, 18, 'Assumed time per activity type', 'x10 b');
+            let s = drawRect(0, 0, W, H, 'p-page') + drawText(8, 18, str('pv_assumed_time_per_activity_type'), 'x10 b');
             [
-                ['page', 'Page', '10 min'],
-                ['forum', 'Forum', '10 min'],
-                ['assign', 'Assignment', '30 min'],
-                ['book', 'Book', '15 min'],
-                ['image', 'H5P', '15 min']
+                ['page', str('pv_page'), mins(10)],
+                ['forum', str('pv_forum'), mins(10)],
+                ['assign', str('pv_assignment'), mins(30)],
+                ['book', str('pv_book'), mins(15)],
+                ['image', 'H5P', mins(15)]
             ].forEach((r, i) => {
                 const y = 30 + i * 21;
                 s +=
@@ -2483,9 +2747,9 @@ const drawings = {
                     drawIcon('clock', 113, y + 4.5, 9, 'ic-b') +
                     drawText(124, y + 12, r[2], 'x8 k2');
             });
-            s += drawHighlight(108, 31, 46, 104, 4) + drawCallout(176, 40, 'Shown as time chips', 154, 50);
+            s += drawHighlight(108, 31, 46, 104, 4) + drawCallout(176, 40, str('pv_shown_as_time_chips'), 154, 50);
             return {
-                cap: 'Each activity type with its assumed time, and where those times appear in the course index.',
+                cap: str('pv_each_activity_type_with_its_assumed'),
                 svg:
                     s +
                     drawIndex(176, 58, 176, 150, {
@@ -2496,55 +2760,55 @@ const drawings = {
     },
     minutesperquestion: () => {
         return {
-            cap: 'A 12 question quiz at 2 minutes a question gives a 24 minute time chip.',
+            cap: str('pv_a_12_question_quiz_at_2_minutes_a_qu'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawRect(8, 20, 156, 70, 'p-card', 8) +
                 drawIcon('quiz', 16, 28, 16, 'ic-b') +
-                drawText(38, 40, 'Hazard quiz', 'x11 b') +
-                drawText(16, 60, '12 questions × 2 min', 'x10') +
-                drawText(16, 78, '= 24 min', 'x11 b kb') +
+                drawText(38, 40, str('pv_hazard_quiz'), 'x11 b') +
+                drawText(16, 60, str('pv_12_questions_2_min'), 'x10') +
+                drawText(16, 78, '= ' + mins(24), 'x11 b kb') +
                 drawHighlight(13, 66, 60, 16, 4) +
                 drawLine(170, 55, 192, 55, 'p-arrow') +
                 '<path class="p-arrowh" d="M188 51l6 4-6 4"/>' +
                 drawIndex(200, 10, 152, 196, {}) +
-                drawText(32, 120, 'Questions are counted when', 'x9 k2') +
-                drawText(32, 133, 'the time is worked out.', 'x9 k2')
+                drawText(32, 120, str('pv_questions_are_counted_when'), 'x9 k2') +
+                drawText(32, 133, str('pv_the_time_is_worked_out'), 'x9 k2')
         };
     },
     minutesfallback: () => {
         return {
-            cap: 'An activity type with no time of its own, shown with the fallback time.',
+            cap: str('pv_an_activity_type_with_no_time_of_its'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
-                drawText(8, 18, 'Anything not listed', 'x10 b') +
+                drawText(8, 18, str('pv_anything_not_listed'), 'x10 b') +
                 drawRect(8, 30, 168, 20, 'p-card', 4) +
                 drawIcon('image', 14, 34, 12, 'ic-b') +
-                drawText(31, 43.5, 'Lesson (no time set)', 'x9') +
+                drawText(31, 43.5, str('pv_lesson_no_time_set'), 'x9') +
                 drawRect(130, 34, 40, 12, 'p-chip', 3) +
-                drawText(150, 43, '20 min', 'x8 k2', 'm') +
+                drawText(150, 43, mins(20), 'x8 k2', 'm') +
                 drawHighlight(127, 32, 46, 16, 4) +
-                drawCallout(30, 64, 'Uses the fallback time', 140, 48) +
+                drawCallout(30, 64, str('pv_uses_the_fallback_time'), 140, 48) +
                 drawTile(8, 96, 168, {
-                    title: 'Lesson',
+                    title: str('pv_lesson'),
                     icon: 'image',
                     kind: 'Lesson',
                     mark: 'time',
-                    timelabel: '20 min'
+                    timelabel: mins(20)
                 }) +
                 drawIndex(188, 10, 164, 196, {})
         };
     },
     hidesecondarynav: () => {
         return {
-            cap: 'The course tabs (Course, Settings, Participants, Grades, Reports) shown on the left and hidden on the right.',
+            cap: str('pv_the_course_tabs_course_settings_part'),
             svg: drawTwo(
                 [
-                    'Show',
+                    str('pv_show'),
                     false,
                     '0',
                     drawNavbar(0, 0, 172) +
-                        drawText(6, 36, 'WHS for Supervisors', 'x11 b') +
+                        drawText(6, 36, str('pv_whs_for_supervisors'), 'x11 b') +
                         drawTabs(6, 44, 160) +
                         drawHighlight(4, 42, 164, 20, 3) +
                         drawBanner(6, 70, 160, 50, {
@@ -2555,11 +2819,11 @@ const drawings = {
                         })
                 ],
                 [
-                    'Hide',
+                    str('pv_hide'),
                     true,
                     '1 2',
                     drawNavbar(0, 0, 172) +
-                        drawText(6, 36, 'WHS for Supervisors', 'x11 b') +
+                        drawText(6, 36, str('pv_whs_for_supervisors'), 'x11 b') +
                         drawBanner(6, 44, 160, 50, {
                             compact: true
                         }) +
@@ -2572,10 +2836,10 @@ const drawings = {
     },
     coursenavplace: () => {
         return {
-            cap: 'The course tabs under the page title on the left, and moved into the site header beside Home on the right.',
+            cap: str('pv_the_course_tabs_under_the_page_title'),
             svg: drawTwo(
                 [
-                    'Below the banner',
+                    str('pv_below_the_banner'),
                     false,
                     '0',
                     drawNavbar(0, 0, 172) +
@@ -2589,7 +2853,7 @@ const drawings = {
                         })
                 ],
                 [
-                    'In the site header',
+                    str('pv_in_the_site_header'),
                     true,
                     '1',
                     drawNavbar(0, 0, 172, {
@@ -2608,10 +2872,10 @@ const drawings = {
     },
     immersive: () => {
         return {
-            cap: 'The site logo band above the navbar, shown on the left and hidden on the right so the course starts higher.',
+            cap: str('pv_the_site_logo_band_above_the_navbar'),
             svg: drawTwo(
                 [
-                    'Show',
+                    str('pv_show'),
                     false,
                     '0',
                     drawLogoband(0, 0, 172) +
@@ -2625,7 +2889,7 @@ const drawings = {
                         })
                 ],
                 [
-                    'Hide',
+                    str('pv_hide'),
                     true,
                     '1 2',
                     drawNavbar(0, 0, 172) +
@@ -2641,10 +2905,10 @@ const drawings = {
     },
     hidefooter: () => {
         return {
-            cap: 'The site footer with its links at the bottom of a course page, shown on the left and hidden on the right.',
+            cap: str('pv_the_site_footer_with_its_links_at_th'),
             svg: drawTwo(
                 [
-                    'Show',
+                    str('pv_show'),
                     false,
                     '0',
                     drawCard(6, 6, 160, {
@@ -2654,7 +2918,7 @@ const drawings = {
                         drawHighlight(1, 151, 170, 38, 2)
                 ],
                 [
-                    'Hide',
+                    str('pv_hide'),
                     true,
                     '1 2',
                     drawCard(6, 6, 160, {
@@ -2667,28 +2931,28 @@ const drawings = {
     hidebreadcrumb: () => {
         return {
             cap:
-                'The breadcrumb trail, Dashboard \u203A My courses \u203A WHS101 \u203A' +
-                ' Spotting hazards, shown on the left and hidden on the right.',
+                str('pv_the_breadcrumb_trail_dashboard_my_co') +
+                ' ' + str('pv_spotting_hazards_shown_on_the_left_a'),
             svg: drawTwo(
                 [
-                    'Show',
+                    str('pv_show'),
                     false,
                     '0',
                     drawNavbar(0, 0, 172) +
                         drawCrumbs(6, 36, 3) +
-                        drawText(6, 36 + 13, '› Spotting hazards', 'x9 k2') +
+                        drawText(6, 36 + 13, str('pv_spotting_hazards2'), 'x9 k2') +
                         drawHighlight(3, 26, 166, 28, 3) +
-                        drawText(6, 72, 'Spotting hazards', 'x13 b') +
+                        drawText(6, 72, str('pv_spotting_hazards'), 'x13 b') +
                         drawBanner(6, 82, 160, 48, {
                             compact: true
                         })
                 ],
                 [
-                    'Hide',
+                    str('pv_hide'),
                     true,
                     '1 2',
                     drawNavbar(0, 0, 172) +
-                        drawText(6, 44, 'Spotting hazards', 'x13 b') +
+                        drawText(6, 44, str('pv_spotting_hazards'), 'x13 b') +
                         drawBanner(6, 54, 160, 48, {
                             compact: true
                         }) +
@@ -2702,23 +2966,23 @@ const drawings = {
     },
     enabletutor: () => {
         return {
-            cap: 'The Ask Dari panel: a greeting, a learner question, an answer, and three study tools.',
+            cap: str('pv_the_ask_dari_panel_a_greeting_a_lear'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawBanner(6, 8, 150, 60, {
                     compact: true
                 }) +
                 drawHighlight(54, 32, 20, 20, 4) +
-                drawCallout(18, 82, 'Opens Ask Dari', 64, 52) +
+                drawCallout(18, 82, str('pv_opens_ask_dari'), 64, 52) +
                 drawChat(170, 4, 184, 206, {})
         };
     },
     sendfirstname: () => {
         return {
-            cap: 'Ask Dari greeting a learner without their name on the left, and by first name on the right.',
+            cap: str('pv_ask_dari_greeting_a_learner_without'),
             svg: drawTwo(
                 [
-                    'Off',
+                    str('pv_off'),
                     false,
                     '0',
                     drawChat(4, 4, 164, 186, {
@@ -2728,7 +2992,7 @@ const drawings = {
                     })
                 ],
                 [
-                    'On',
+                    str('pv_on'),
                     true,
                     '1',
                     drawChat(4, 4, 164, 186, {
@@ -2740,25 +3004,25 @@ const drawings = {
     },
     supportcontacts: () => {
         return {
-            cap: 'Ask Dari answering a learner who is struggling with your wellbeing contacts.',
+            cap: str('pv_ask_dari_answering_a_learner_who_is'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawChat(70, 4, 220, 206, {
                     tools: false,
-                    question: 'I feel really stressed',
+                    question: str('pv_i_feel_really_stressed'),
                     answer: [
-                        'That sounds hard. You can talk to:',
-                        'Student wellbeing · ext 2040',
-                        'Lifeline · 13 11 14'
+                        str('pv_that_sounds_hard_you_can_talk_to'),
+                        str('pv_student_wellbeing_ext_2040'),
+                        str('pv_lifeline_13_11_14')
                     ],
                     mark: 'answer'
                 }) +
-                drawCallout(4, 150, 'Your contacts', 92, 120)
+                drawCallout(4, 150, str('pv_your_contacts'), 92, 120)
         };
     },
     maxcontextchars: () => {
         return {
-            cap: "Dari sends the question and course content, up to your limit, to your site's AI provider.",
+            cap: str('pv_dari_sends_the_question_and_course_c'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawFlow({
@@ -2769,33 +3033,33 @@ const drawings = {
     },
     shareassessmentanswers: () => {
         return {
-            cap: "Ask Dari explaining a quiz result without the learner's answers on the left, and using them on the right.",
+            cap: str('pv_ask_dari_explaining_a_quiz_result_wi'),
             svg: drawTwo(
                 [
-                    'Never share',
+                    str('pv_never_share'),
                     false,
                     '0',
                     drawChat(4, 4, 164, 186, {
                         tools: false,
-                        question: 'Why did I get Q3 wrong?',
+                        question: str('pv_why_did_i_get_q3_wrong'),
                         answer: [
-                            "I can't see your answers. Tell me",
-                            "what you chose and we'll work",
-                            'through it together.'
+                            str('pv_i_cant_see_your_answers_tell_me'),
+                            str('pv_what_you_chose_and_well_work'),
+                            str('pv_through_it_together')
                         ]
                     })
                 ],
                 [
-                    'Share',
+                    str('pv_share'),
                     true,
                     '1',
                     drawChat(4, 4, 164, 186, {
                         tools: false,
-                        question: 'Why did I get Q3 wrong?',
+                        question: str('pv_why_did_i_get_q3_wrong'),
                         answer: [
-                            'You chose B (PPE first). The',
-                            'hierarchy starts with removing',
-                            'the hazard: A, elimination.'
+                            str('pv_you_chose_b_ppe_first_the'),
+                            str('pv_hierarchy_starts_with_removing'),
+                            str('pv_the_hazard_a_elimination')
                         ],
                         mark: 'answer'
                     })
@@ -2803,72 +3067,9 @@ const drawings = {
             )
         };
     },
-    imagequality: () => {
-        return {
-            cap: 'An AI image at standard quality on the left and high definition on the right.',
-            svg: drawTwo(
-                [
-                    'Standard',
-                    false,
-                    'standard',
-                    drawThumb(8, 8, 156, 120, 'standard') + drawText(86, 150, 'Faster, cheaper', 'x9 k2', 'm')
-                ],
-                [
-                    'High definition',
-                    true,
-                    'hd',
-                    drawThumb(8, 8, 156, 120, 'hd') + drawText(86, 150, 'Sharper detail', 'x9 k2', 'm')
-                ]
-            )
-        };
-    },
-    imagestyle: () => {
-        return {
-            cap: 'An AI image rendered natural on the left and vivid on the right.',
-            svg: drawTwo(
-                [
-                    'Natural',
-                    false,
-                    'natural',
-                    drawThumb(8, 8, 156, 120, 'natural') + drawText(86, 150, 'True-to-life colour', 'x9 k2', 'm')
-                ],
-                [
-                    'Vivid',
-                    true,
-                    'vivid',
-                    drawThumb(8, 8, 156, 120, 'vivid') + drawText(86, 150, 'Bolder, more dramatic', 'x9 k2', 'm')
-                ]
-            )
-        };
-    },
-    aiscenewriter: () => {
-        return {
-            cap: 'The art director turns the course name into a detailed scene before the image is made.',
-            svg:
-                drawRect(0, 0, W, H, 'p-page') +
-                drawRect(4, 30, 106, 50, 'p-card', 8) +
-                drawText(11, 48, 'Course name', 'x8 k2') +
-                drawText(11, 64, 'WHS for Supervisors', 'x9 b') +
-                drawLine(112, 55, 124, 55, 'p-arrow') +
-                '<path class="p-arrowh" d="M120 51l6 4-6 4"/>' +
-                drawRect(130, 22, 110, 70, 'p-brandsoft', 8) +
-                drawIcon('spark', 138, 30, 14, 'ic-bf') +
-                drawText(156, 41, 'Art director', 'x9 b kb') +
-                drawText(138, 56, '“A supervisor and', 'x8') +
-                drawText(138, 67, 'worker reviewing a', 'x8') +
-                drawText(138, 78, 'site plan at dawn…”', 'x8') +
-                drawHighlight(128, 20, 114, 74, 9) +
-                drawLine(244, 55, 262, 55, 'p-arrow') +
-                '<path class="p-arrowh" d="M258 51l6 4-6 4"/>' +
-                drawThumb(268, 22, 84, 70, 'photo') +
-                drawText(310, 108, 'Card image', 'x8 k2', 'm') +
-                drawText(8, 140, 'Without it, the course name goes to the image model', 'x9 k2') +
-                drawText(8, 153, 'as it is, and pictures come out more generic.', 'x9 k2')
-        };
-    },
     directendpoint: () => {
         return {
-            cap: 'Moodle 4.4: Dari sends requests straight to your OpenAI-compatible endpoint.',
+            cap: str('pv_moodle_4_4_dari_sends_requests_strai'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawFlow({
@@ -2879,7 +3080,7 @@ const drawings = {
     },
     directapikey: () => {
         return {
-            cap: 'Moodle 4.4: the API key Dari uses with your endpoint.',
+            cap: str('pv_moodle_4_4_the_api_key_dari_uses_wit'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawFlow({
@@ -2890,7 +3091,7 @@ const drawings = {
     },
     directtextmodel: () => {
         return {
-            cap: "Moodle 4.4: the model that writes Ask Dari's answers.",
+            cap: str('pv_moodle_4_4_the_model_that_writes_ask'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawFlow({
@@ -2901,7 +3102,7 @@ const drawings = {
     },
     directimages: () => {
         return {
-            cap: 'Moodle 4.4: banners and card images, drawn with the chosen image engine\'s one model.',
+            cap: str('pv_moodle_4_4_banners_and_card_images_d'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawFlow({
@@ -2912,10 +3113,10 @@ const drawings = {
     },
     tourvoiceover: () => {
         return {
-            cap: 'The tour step with narration muted on the left and read aloud on the right.',
+            cap: str('pv_the_tour_step_with_narration_muted_o'),
             svg: drawTwo(
                 [
-                    'Off',
+                    str('pv_off'),
                     false,
                     '0',
                     drawRect(0, 0, 172, 195, 'p-dim') +
@@ -2925,7 +3126,7 @@ const drawings = {
                         })
                 ],
                 [
-                    'On',
+                    str('pv_on'),
                     true,
                     '1',
                     drawRect(0, 0, 172, 195, 'p-dim') +
@@ -2939,17 +3140,17 @@ const drawings = {
     },
     tourvoice: () => {
         return {
-            cap: 'A tour step read aloud in the chosen language.',
+            cap: str('pv_a_tour_step_read_aloud_in_the_chosen'),
             svg:
                 drawRect(0, 0, W, H, 'p-page') +
                 drawBanner(8, 8, 344, 52) +
                 drawRect(7, 7, 346, 54, 'pv-spot', 2) +
                 drawTour(96, 72, 200, {
                     voice: true,
-                    lang: 'Narration: English (Australia)'
+                    lang: str('pv_narration_english_australia')
                 }) +
                 drawHighlight(104, 183, 160, 19, 8) +
-                drawCallout(276, 188, 'Voice language', 264, 192)
+                drawCallout(276, 188, str('pv_voice_language'), 264, 192)
         };
     }
 };
@@ -3042,7 +3243,7 @@ export const buildSettingPreview = (name, item, t) => {
             '</svg>' +
             drawRect(0.5, 18.5, W - 1, H - 1, 'pv-sheet-edge', 8) +
             drawRect(W - 70, 0, 70, 15, 'co-bg', 7.5) +
-            drawText(W - 35, 10.5, t.allcourses || 'All courses', 'x9 b kw', 'm') +
+            drawText(W - 35, 10.5, t.allcourses || str('pv_all_courses'), 'x9 b kw', 'm') +
             '</svg>';
     } else {
         svg =
@@ -3107,7 +3308,7 @@ export const buildSettingPreview = (name, item, t) => {
             if (lab) {
                 lab.textContent = (() => {
                     if (on) {
-                        return t.current || 'Current';
+                        return t.current || str('pv_current');
                     }
                     return '';
                 })();
@@ -3127,7 +3328,7 @@ export const buildSettingPreview = (name, item, t) => {
             let note = '';
             let use = '';
             if (theme) {
-                note = "Uses the theme's own font.";
+                note = str('pv_uses_the_themes_own_font');
             } else if (
                 document.fonts &&
                 document.fonts.check &&
@@ -3135,9 +3336,9 @@ export const buildSettingPreview = (name, item, t) => {
                 (family === 'DM Sans' || Array.from(document.fonts).some((f) => f.family.replace(/"/g, '') === family))
             ) {
                 use = '"' + family + '", ';
-                note = 'Shown in ' + family + '.';
+                note = str('pv_shown_in') + ' ' + family + '.';
             } else {
-                note = 'Sample in a similar font; courses load ' + family + ' from Google Fonts.';
+                note = str('pv_sample_in_a_similar_font_courses_loa') + ' ' + family + ' ' + str('pv_from_google_fonts');
             }
             fig.style.setProperty(
                 '--pv-font',
@@ -3148,7 +3349,7 @@ export const buildSettingPreview = (name, item, t) => {
             if (n) {
                 n.textContent = (() => {
                     if (theme) {
-                        return 'Follow the theme';
+                        return str('pv_follow_the_theme');
                     }
                     return family;
                 })();

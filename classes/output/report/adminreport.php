@@ -463,9 +463,8 @@ class adminreport implements named_templatable, renderable {
      * A long text cell: the shortened text, plus a native <details> disclosure with the full text
      * when there is more to show.
      *
-     * Note: this replaces a hand-rolled show-more/show-less widget that needed an inline
-     * <script> and an onclick attribute on every row. <details>/<summary> is keyboard operable and
-     * screen-reader announced with no JavaScript at all.
+     * The native details element is keyboard operable and screen-reader announced with no
+     * JavaScript at all.
      *
      * @param string $text Raw text from the database.
      * @param int $length Number of characters to show before the disclosure.

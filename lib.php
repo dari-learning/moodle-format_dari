@@ -453,14 +453,10 @@ class format_dari extends format_topics {
             unset($e);
         }
 
-        // Note: section.php renders the standard Moodle section layout, which this format
-        // replaces with activity cards. The redirect to course/view.php used to be an inline
-        // <script>window.location.replace(...)</script> emitted from the FOOTER hook — i.e. after
-        // the entire page had already been generated and streamed. Every section click therefore
-        // cost two full page renders and flashed the wrong layout, and it did nothing at all
-        // without JavaScript. Doing it here, during require_login(), means one render and no
-        // flash. The lookup is scoped to this course so a section id belonging to another course
-        // cannot redirect here with a foreign section number.
+        // The section.php page renders the standard Moodle section layout, which this format replaces with
+        // activity cards, so it is redirected to course/view.php here, during require_login(),
+        // before any output starts. The lookup is scoped to this course so a section id belonging
+        // to another course cannot redirect here with a foreign section number.
         if (!$page->user_is_editing() && $this->is_section_php_request()) {
             $sectionid = optional_param('id', 0, PARAM_INT);
             if ($sectionid > 0) {
@@ -478,11 +474,9 @@ class format_dari extends format_topics {
             }
         }
 
-        // Note: body classes are added here, not from format.php. format.php is included
-        // after $OUTPUT->header() has already written the <body> tag, so it could only patch
-        // these on with an inline <script> — which any Content-Security-Policy that forbids
-        // inline script rejects, and which caused a flash of unstyled content. page_set_course()
-        // runs during require_login(), well before output starts. The section parameter is read
+        // Body classes are added here, not from format.php, which is included after
+        // $OUTPUT->header() has already written the body tag. page_set_course() runs during
+        // require_login(), well before output starts. The section parameter is read
         // straight from the request rather than from $PAGE->url so this does not depend on
         // course/view.php having called set_url() first.
         try {

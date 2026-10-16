@@ -18,16 +18,10 @@
  *
  * Activity pages, section pages and the course reports are rendered by core, not by this
  * format's format.php, so there is no server-side insertion point at the top of the main
- * region. The before_footer_html_generation hook renders the hero into an inert <template>
- * at the end of the document, and this module moves it into place.
- *
- * Note: this replaces a ~50 line inline <script> that string-concatenated the hero
- * HTML into the page. Inline script is blocked by any Content-Security-Policy that forbids
- * it. Passing the markup as a js_call_amd() argument instead was also wrong: Moodle's
- * outputrequirementslib warns when an argument string exceeds 1024 characters, which a
- * rendered hero always does, so every section and activity page logged a debugging notice.
- * A <template> carries the markup with no script, no size limit, and no rendering cost --
- * its contents are parsed but inert until adopted.
+ * region. The before_footer_html_generation hook renders the hero into an inert template element
+ * (format_dari/hero_source) at the end of the document, and this module moves it into place. A
+ * js_call_amd() argument would trip Moodle's 1024 character warning, which a rendered hero always
+ * exceeds; a template element's contents are parsed but inert until adopted.
  *
  * @module     format_dari/heroinject
  * @copyright  2026 Dari Learning

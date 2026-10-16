@@ -79,7 +79,7 @@ if ($action !== '' && confirm_sesskey()) {
             'preview',
             'ok',
             (int) round((microtime(true) - $start) * 1000),
-            count($rows) . ' images planned',
+            get_string('imagelog_msg_planned', 'format_dari', count($rows)),
             (int) $course->id,
             '',
             ''
@@ -87,35 +87,6 @@ if ($action !== '' && confirm_sesskey()) {
     } catch (\moodle_exception $e) {
         $error = $e->getMessage();
     }
-}
-
-echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('imageplan', 'format_dari'));
-echo html_writer::tag('p', get_string('imageplan_intro', 'format_dari', \format_dari\local\imagemodel::string_params()));
-
-// Plan buttons.
-echo html_writer::start_tag('form', ['method' => 'post', 'action' => $url->out(false), 'class' => 'mb-3']);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-echo html_writer::div(html_writer::checkbox(
-    'activities',
-    1,
-    (bool) $withactivities,
-    get_string('imageplan_withactivities', 'format_dari')
-), 'mb-2');
-echo html_writer::tag(
-    'button',
-    get_string('imageplan_run', 'format_dari'),
-    ['type' => 'submit', 'name' => 'action', 'value' => 'plan', 'class' => 'btn btn-primary me-2']
-);
-echo html_writer::tag(
-    'button',
-    get_string('imageplan_replan', 'format_dari'),
-    ['type' => 'submit', 'name' => 'action', 'value' => 'replan', 'class' => 'btn btn-secondary']
-);
-echo html_writer::end_tag('form');
-
-if ($error !== '') {
-    echo $OUTPUT->notification($error, \core\output\notification::NOTIFY_ERROR);
 }
 
 $labels = [
@@ -128,6 +99,7 @@ $labels = [
     'lighting' => 'imageplan_lighting',
 ];
 
+$stored = false;
 if ($rows === null) {
     $rows = [];
     foreach (imageplanner::get_rows((int) $course->id) as $row) {
@@ -141,97 +113,100 @@ if ($rows === null) {
             'entry' => (array) json_decode((string) $row->plan, true),
             'prompt' => (string) ($row->prompt ?? ''), 'row' => $row];
     }
-    if ($rows) {
-        echo html_writer::tag('p', get_string('imageplan_stored', 'format_dari'), ['class' => 'text-muted']);
-    }
+    $stored = !empty($rows);
 }
 
+$items = [];
 foreach ($rows as $item) {
     $entry = $item['entry'];
     $key = (string) $item['key'];
-    $table = new html_table();
-    $table->attributes['class'] = 'generaltable table-sm';
-    $table->caption = s($item['title']) . ' [' . s($key) . ']';
-    $table->captionhide = false;
+    $lines = [];
     if (str_starts_with($key, 'cm:')) {
         $facts = imageplanner::item_facts($course, $key);
-        $table->data[] = [html_writer::tag('strong', get_string('imageplan_purpose', 'format_dari')),
-            s(($facts['purpose'] ?? '') . ' (' . ($facts['purposebasis'] ?? '') . ')')];
+        $lines[] = ['label' => get_string('imageplan_purpose', 'format_dari'),
+            'value' => get_string('imageplan_purposevalue', 'format_dari', (object) [
+                'purpose' => $facts['purpose'] ?? '',
+                'basis' => $facts['purposebasis'] ?? '',
+            ])];
     }
     foreach ($labels as $field => $label) {
-        $table->data[] = [html_writer::tag('strong', get_string($label, 'format_dari')), s((string) ($entry[$field] ?? ''))];
+        $lines[] = ['label' => get_string($label, 'format_dari'), 'value' => (string) ($entry[$field] ?? '')];
     }
     if (($entry['teacher'] ?? '') !== '') {
-        $table->data[] = [html_writer::tag('strong', get_string('imageplan_teacher', 'format_dari')), s($entry['teacher'])];
+        $lines[] = ['label' => get_string('imageplan_teacher', 'format_dari'), 'value' => (string) $entry['teacher']];
     }
-    $table->data[] = [html_writer::tag('strong', get_string('imageplan_categories', 'format_dari')),
-        s(implode(' · ', array_filter([$entry['env_category'] ?? '', $entry['composition'] ?? '',
-            $entry['people_arrangement'] ?? '', $entry['light_category'] ?? ''])))];
-    $table->data[] = [html_writer::tag('strong', get_string('imageplan_prompt', 'format_dari')),
-        html_writer::tag('div', nl2br(s((string) $item['prompt'])))];
+    $lines[] = ['label' => get_string('imageplan_categories', 'format_dari'),
+        'value' => implode(' · ', array_filter([$entry['env_category'] ?? '', $entry['composition'] ?? '',
+            $entry['people_arrangement'] ?? '', $entry['light_category'] ?? '']))];
+    $lines[] = ['label' => get_string('imageplan_prompt', 'format_dari'), 'value' => (string) $item['prompt'],
+        'isprompt' => true];
 
-    // The card's current image, at full width and at the size a card shows it.
+    // The card's current image, at the size a card shows it and at full width.
     [$type, $id] = array_pad(explode(':', $key, 2), 2, 0);
     if (in_array($type, [cardimage::TYPE_SECTION, cardimage::TYPE_CM], true)) {
         $imageurl = cardimage::get_url((int) $course->id, $type, (int) $id);
         if ($imageurl) {
-            $table->data[] = [html_writer::tag('strong', get_string('imageplan_current', 'format_dari')),
-                html_writer::empty_tag('img', ['src' => (string) $imageurl, 'alt' => '', 'style' => 'width: 320px; height: 180px; '
-                    . 'object-fit: cover; border-radius: 8px; margin-right: 12px; vertical-align: top'])
-                . html_writer::empty_tag('img', ['src' => (string) $imageurl, 'alt' => '', 'style' => 'max-width: 640px; '
-                    . 'width: 100%; border-radius: 8px; vertical-align: top'])];
+            $lines[] = ['label' => get_string('imageplan_current', 'format_dari'), 'imageurl' => (string) $imageurl];
         }
     }
     if (isset($item['row'])) {
         $r = $item['row'];
-        $table->data[] = [html_writer::tag('strong', get_string('imageplan_counts', 'format_dari')),
-            s(get_string('imageplan_counts_value', 'format_dari', (object) ['attempts' => (int) $r->attempts,
-                'successes' => (int) $r->successes, 'failures' => (int) $r->failures]))];
+        $lines[] = ['label' => get_string('imageplan_counts', 'format_dari'),
+            'value' => get_string('imageplan_counts_value', 'format_dari', (object) ['attempts' => (int) $r->attempts,
+                'successes' => (int) $r->successes, 'failures' => (int) $r->failures])];
     }
-    echo html_writer::table($table);
+    $items[] = [
+        'caption' => get_string('imageplan_caption', 'format_dari', (object) ['title' => $item['title'], 'key' => $key]),
+        'rows' => $lines,
+    ];
 }
 
 // The diagnostics log.
-echo $OUTPUT->heading(get_string('imagelog', 'format_dari'), 3);
-echo html_writer::tag('p', get_string('imagelog_intro', 'format_dari'));
-echo html_writer::link(
-    new moodle_url($url, ['download' => 'log', 'sesskey' => sesskey()]),
-    get_string('imagelog_download', 'format_dari'),
-    ['class' => 'btn btn-secondary mb-3']
-);
-
 $logrows = imagelog::recent((int) $course->id, 400);
-$jobs = imagelog::jobs($logrows);
-if ($jobs) {
-    $table = new html_table();
-    $table->attributes['class'] = 'generaltable table-sm';
-    $table->head = [get_string('imagelog_when', 'format_dari'), get_string('imagelog_item', 'format_dari'),
-        get_string('imagelog_stages', 'format_dari'), get_string('imagelog_total', 'format_dari'),
-        get_string('imagelog_result', 'format_dari')];
-    foreach (array_slice($jobs, 0, 60, true) as $job) {
-        $stages = [];
-        foreach ($job['stages'] as $stage) {
-            $stages[] = s($stage->stage) . ($stage->durationms ? ' ' . format_float($stage->durationms / 1000, 1) . ' s' : '')
-                . ($stage->status === 'fail' ? ' ✖ ' . s(core_text::substr((string) $stage->message, 0, 200)) : '');
+$jobs = [];
+foreach (array_slice(imagelog::jobs($logrows), 0, 60, true) as $job) {
+    $stages = [];
+    foreach ($job['stages'] as $stage) {
+        $text = (string) $stage->stage;
+        if ($stage->durationms) {
+            $text .= ' ' . get_string('imagelog_seconds', 'format_dari', format_float($stage->durationms / 1000, 1));
         }
-        $table->data[] = [userdate($job['start'], get_string('strftimedatetimeshort', 'core_langconfig')), s($job['itemkey']),
-            implode('<br>', $stages), ($job['end'] - $job['start']) . ' s', s($job['result'])];
+        if ($stage->status === 'fail') {
+            $text .= ' ' . get_string('imagelog_failedwith', 'format_dari', core_text::substr((string) $stage->message, 0, 200));
+        }
+        $stages[] = ['text' => $text];
     }
-    echo html_writer::table($table);
+    $jobs[] = [
+        'when' => userdate($job['start'], get_string('strftimedatetimeshort', 'core_langconfig')),
+        'item' => (string) $job['itemkey'],
+        'stages' => $stages,
+        'total' => get_string('imagelog_seconds', 'format_dari', $job['end'] - $job['start']),
+        'result' => (string) $job['result'],
+    ];
 }
-$browser = array_filter($logrows, fn($r) => $r->stage === 'browser');
-if ($browser) {
-    echo $OUTPUT->heading(get_string('imagelog_browser', 'format_dari'), 4);
-    $table = new html_table();
-    $table->attributes['class'] = 'generaltable table-sm';
-    foreach (array_slice($browser, 0, 50) as $r) {
-        $table->data[] = [userdate((int) $r->timecreated, get_string('strftimedatetimeshort', 'core_langconfig')),
-            html_writer::tag('code', s((string) $r->message))];
-    }
-    echo html_writer::table($table);
-}
-if (!$jobs && !$browser) {
-    echo html_writer::tag('p', get_string('imagelog_empty', 'format_dari'), ['class' => 'text-muted']);
+$browser = [];
+foreach (array_slice(array_filter($logrows, fn($r) => $r->stage === 'browser'), 0, 50) as $r) {
+    $browser[] = [
+        'when' => userdate((int) $r->timecreated, get_string('strftimedatetimeshort', 'core_langconfig')),
+        'message' => (string) $r->message,
+    ];
 }
 
+echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('imageplan', 'format_dari'));
+echo $OUTPUT->render_from_template('format_dari/image_plan', [
+    'intro' => get_string('imageplan_intro', 'format_dari', \format_dari\local\imagemodel::string_params()),
+    'actionurl' => $url->out(false),
+    'sesskey' => sesskey(),
+    'withactivities' => (bool) $withactivities,
+    'error' => $error,
+    'stored' => $stored,
+    'items' => $items,
+    'downloadurl' => (new moodle_url($url, ['download' => 'log', 'sesskey' => sesskey()]))->out(false),
+    'hasjobs' => !empty($jobs),
+    'jobs' => $jobs,
+    'hasbrowser' => !empty($browser),
+    'browser' => $browser,
+    'empty' => !$jobs && !$browser,
+]);
 echo $OUTPUT->footer();

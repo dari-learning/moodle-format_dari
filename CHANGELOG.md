@@ -1,5 +1,27 @@
 # Release record
 
+## 2.1.2
+
+- Version code: `2026101600`
+
+Corrections from the Moodle™ Marketplace review (MMRT-228):
+
+- **README** describes this release (2.1.2) and its supported Moodle versions.
+- **No direct access to the settings table.** Image job progress and stored prompts for cards and
+  banners have their own table, `format_dari_jobstate`, instead of hundreds of plugin settings.
+  The upgrade moves stored prompts into it and removes the old values with `unset_config()`;
+  earlier upgrade steps that deleted old values with SQL now use the configuration API too.
+- **Translatable text.** The settings page areas, every label in the setting previews, the image
+  generation log messages, the image plan page and the command-line preview script use language
+  strings. Text sent to the AI model as instructions stays in English.
+- **Templates and AMD.** The course page container and section description, the image plan page,
+  the banner source on core pages, and the data handed to JavaScript are rendered with Mustache
+  templates (`course_page`, `image_plan`, `hero_source`, `page_data`). The data for the course
+  index and tour is no longer an inline `<script type="application/json">` element.
+- **Licence headers** on every source file, including `amd/src/courseformat.js`, the stylesheet
+  and every template.
+- No change to features or settings.
+
 ## 2.1.1
 
 - Version code: `2026100907`

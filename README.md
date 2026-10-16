@@ -1,12 +1,8 @@
-<!-- The imported 1.0.5 source is preserved at v1.0.5; corrections are versioned separately. -->
-
-[Documentation](https://darilearning.com/docs) · [Report a bug](https://github.com/dari-learning/moodle-format_dari/issues) · [Submission checklist](docs/marketplace-submission.md) · [Moodle™ Marketplace](https://marketplace.moodle.com/)
-
-**Marketplace listing: not approved yet.** Source hosting does not imply approval or independently verified compatibility. This branch is the unreleased **1.0.6** CI-correction candidate; the supplied 1.0.5 ZIP and `v1.0.5` tag are unchanged. See [CHANGELOG.md](CHANGELOG.md) and [the correction pull request](https://github.com/dari-learning/moodle-format_dari/pull/2) for changes and validation results.
-
 # Dari course format (format_dari)
 
-Dari is a course format for Moodle™. It turns a course into a clear, visual learning experience, It also adds **Ask Dari**, a course-aware Ask Dari, and **AI-generated course images**. Both run on **your school's own AI provider**:
+**Version 2.1.2** (`2026101600`) · Moodle™ 4.4 to 5.3 · [Documentation](https://darilearning.com/docs) · [Report a bug](https://github.com/dari-learning/moodle-format_dari/issues) · [Changes](CHANGELOG.md)
+
+Dari is a course format for Moodle™. It turns a course into a clear, visual learning experience. It also adds **Ask Dari**, a course-aware AI study assistant, and **AI-generated course images**. Both run on **your school's own AI provider**:
 
 - **Moodle™ 4.5 and later:** through Moodle™'s built-in AI subsystem.
 - **Moodle™ 4.4:** through an OpenAI-compatible connection you enter in Dari's settings.
@@ -66,11 +62,11 @@ Made by Dari Learning.
 
 ## Requirements
 
-Supports Moodle™ 4.4 to 5.3. Tested on Moodle™ 4.4, 5.0 and 5.3.
+Supports Moodle™ 4.4 to 5.3. Tested on Moodle™ 4.4, 4.5, 5.0 and 5.3.
 
 | | |
 |---|---|
-| Moodle™ | 4.4 to 5.3. Tested on 4.4, 5.0 and 5.3. |
+| Moodle™ | 4.4 to 5.3. Tested on 4.4, 4.5, 5.0 and 5.3. |
 | PHP | As required by your Moodle™ version |
 | Database | Any database Moodle™ supports |
 | Themes | Developed and tested against Boost and Academi. Should work with most Boost-based themes. |
@@ -234,10 +230,11 @@ Hidden activities, and activities restricted from the learner, are never used as
 
 **What image generation sends:**
 
-- the course name and summary, or the card's section or activity title and description
-- the course's art style
-- any detail the teacher typed in
-- with the scene writer on, one extra text request that turns those details into a scene
+- for planning, sent once per course: the course name and description, and every section's title, summary and activity names
+- for an activity card: its title, its description (or its own page text when it has none), its type and its section
+- the course's art style and accent colour
+- any description the teacher typed in
+- the finished prompt, sent to the image engine's model
 
 No learner data is included in image prompts.
 

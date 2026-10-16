@@ -147,6 +147,13 @@ class observer {
             \format_dari\local\cardimage::TYPE_SECTION,
             (int) $event->objectid
         );
+
+        // And the section banner's generation state.
+        \format_dari\local\jobstate::delete(
+            (int) $event->courseid,
+            \format_dari\local\jobstate::TYPE_BANNER,
+            (int) $event->objectid
+        );
     }
 
     /**

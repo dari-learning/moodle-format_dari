@@ -97,15 +97,13 @@ class cardmedia {
      * Activity cards are not drawn while editing, so the module needs to know, for each activity
      * that WOULD be a card, its name, image, colour and module icon, to add an image row to core's
      * activity row. It rides in a data attribute rather than in js_call_amd() arguments, which
-     * Moodle warns about past 1KB, and rather than an inline script, which a Content Security
-     * Policy may block.
+     * Moodle warns about past 1KB.
      *
      * @param \stdClass $course The course.
      * @return string A hidden element carrying the JSON.
      */
     public static function page_data_html(\stdClass $course): string {
-        global $DB;
-
+        global $OUTPUT;
         $courseid = (int) $course->id;
         $modinfo = get_fast_modinfo($course);
         $format = course_get_format($course);
@@ -131,27 +129,7 @@ class cardmedia {
 
         // Generations still queued or running, so a reload keeps showing their progress. Ten
         // minutes is past the six the browser waits; anything older has died with its cron run.
-        $running = [];
-        $like = $DB->sql_like('name', ':name');
-        $rows = $DB->get_records_select(
-            'config_plugins',
-            "plugin = :plugin AND $like",
-            ['plugin' => 'format_dari', 'name' => 'cardstatus\_' . $courseid . '\_%'],
-            '',
-            'id, name, value'
-        );
-        foreach ($rows as $row) {
-            $state = json_decode((string) $row->value, true);
-            if (
-                !is_array($state) || !in_array($state['state'] ?? '', ['queued', 'running'], true)
-                    || (int) ($state['time'] ?? 0) < time() - 600
-            ) {
-                continue;
-            }
-            if (preg_match('/_(s|c)(\d+)$/', $row->name, $m)) {
-                $running[] = ['type' => $m[1] === 's' ? cardimage::TYPE_SECTION : cardimage::TYPE_CM, 'id' => (int) $m[2]];
-            }
-        }
+        $running = \format_dari\local\jobstate::running_cards($courseid, time() - 600);
 
         $aihint = \format_dari\local\ai::image_hint(\context_course::instance($courseid));
         $data = [
@@ -167,10 +145,9 @@ class cardmedia {
             'running' => $running,
         ];
 
-        return \html_writer::div('', '', [
+        return $OUTPUT->render_from_template('format_dari/page_data', [
             'id' => 'dari-cardimage-data',
-            'hidden' => 'hidden',
-            'data-json' => json_encode($data),
+            'json' => json_encode($data),
         ]);
     }
 

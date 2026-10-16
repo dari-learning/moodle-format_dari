@@ -20,9 +20,6 @@
  * section and report pages are rendered by core, and the only plugin hook available there
  * runs after the <body> tag has been written, so $PAGE->add_body_class() is too late.
  *
- * Note: this replaces two inline <script> blocks. Inline script is blocked by any
- * Content-Security-Policy that forbids it.
- *
  * @module     format_dari/bodyclass
  * @copyright  2026 Dari Learning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

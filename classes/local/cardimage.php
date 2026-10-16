@@ -363,22 +363,6 @@ class cardimage {
     }
 
     /**
-     * Name of the config setting holding one card's AI generation state.
-     *
-     * One key per card, for the reason section banners got one each: a teacher working down a
-     * course starts several generations a few seconds apart, and a shared key would let the poll
-     * for one card be answered with another card's image.
-     *
-     * @param int $courseid The course.
-     * @param string $type self::TYPE_SECTION or self::TYPE_CM.
-     * @param int $id course_sections.id or course_modules.id.
-     * @return string
-     */
-    public static function status_key(int $courseid, string $type, int $id): string {
-        return 'cardstatus_' . $courseid . '_' . ($type === self::TYPE_SECTION ? 's' : 'c') . $id;
-    }
-
-    /**
      * Record the state of a card image generation.
      *
      * @param int $courseid The course.
@@ -404,15 +388,13 @@ class cardimage {
         $current = self::get_status($courseid, $type, $id);
         $requestid = (string) ($extra['requestid'] ?? $current['requestid']);
         $same = $requestid === $current['requestid'];
-        $data = [
+        jobstate::save($courseid, $type, $id, [
             'state' => $state,
             'detail' => $detail,
-            'time' => time(),
             'requestid' => $requestid,
             'stage' => (string) ($extra['stage'] ?? ($state === 'queued' ? 'waiting' : ($same ? $current['stage'] : ''))),
-            'queued' => (int) ($extra['queued'] ?? ($same && $current['queued'] ? $current['queued'] : time())),
-        ];
-        set_config(self::status_key($courseid, $type, $id), json_encode($data), 'format_dari');
+            'timequeued' => (int) ($extra['queued'] ?? ($same && $current['queued'] ? $current['queued'] : time())),
+        ]);
     }
 
     /**
@@ -464,18 +446,17 @@ class cardimage {
      * @return array{state: string, detail: string, time: int, requestid: string, stage: string, queued: int}
      */
     public static function get_status(int $courseid, string $type, int $id): array {
-        $raw = get_config('format_dari', self::status_key($courseid, $type, $id));
-        $decoded = ($raw === false || $raw === '') ? null : json_decode($raw, true);
-        if (!is_array($decoded) || !isset($decoded['state'])) {
+        $row = jobstate::get($courseid, $type, $id);
+        if (!$row || (string) $row->state === 'idle') {
             return ['state' => 'idle', 'detail' => '', 'time' => 0, 'requestid' => '', 'stage' => '', 'queued' => 0];
         }
         return [
-            'state' => (string) $decoded['state'],
-            'detail' => (string) ($decoded['detail'] ?? ''),
-            'time' => (int) ($decoded['time'] ?? 0),
-            'requestid' => (string) ($decoded['requestid'] ?? ''),
-            'stage' => (string) ($decoded['stage'] ?? ''),
-            'queued' => (int) ($decoded['queued'] ?? ($decoded['time'] ?? 0)),
+            'state' => (string) $row->state,
+            'detail' => (string) ($row->detail ?? ''),
+            'time' => (int) $row->timemodified,
+            'requestid' => (string) ($row->requestid ?? ''),
+            'stage' => (string) ($row->stage ?? ''),
+            'queued' => (int) ($row->timequeued ?: $row->timemodified),
         ];
     }
 
@@ -488,7 +469,10 @@ class cardimage {
      * @return void
      */
     public static function clear_status(int $courseid, string $type, int $id): void {
-        unset_config(self::status_key($courseid, $type, $id), 'format_dari');
+        if (jobstate::get($courseid, $type, $id)) {
+            jobstate::save($courseid, $type, $id, ['state' => 'idle', 'detail' => '', 'requestid' => '', 'stage' => '',
+                'timequeued' => 0]);
+        }
     }
 
     /**
@@ -512,7 +496,7 @@ class cardimage {
         if ($context) {
             get_file_storage()->delete_area_files($context->id, 'format_dari', self::area($type), $id);
         }
-        self::clear_status($courseid, $type, $id);
+        jobstate::delete($courseid, $type, $id);
 
         global $DB;
         $DB->delete_records('format_dari_cardstyle', ['targettype' => $type, 'targetid' => $id]);
@@ -656,8 +640,8 @@ class cardimage {
     /**
      * Remove every card generation state of a deleted course.
      *
-     * The images themselves go with the course context. The state rows are plugin config and
-     * would not.
+     * The images themselves go with the course context; the job state rows and card colours
+     * are kept in Dari's own tables and are removed here.
      *
      * @param int $courseid The deleted course.
      * @return void
@@ -665,26 +649,14 @@ class cardimage {
     public static function purge_course_status(int $courseid): void {
         global $DB;
 
-        $like = $DB->sql_like('name', ':name');
-        $DB->delete_records_select(
-            'config_plugins',
-            "plugin = :plugin AND $like",
-            ['plugin' => 'format_dari', 'name' => 'cardstatus\_' . $courseid . '\_%']
-        );
-        $DB->delete_records_select(
-            'config_plugins',
-            "plugin = :plugin AND $like",
-            ['plugin' => 'format_dari', 'name' => 'imgprompt\_' . $courseid . '\_%']
-        );
-        // Written behind set_config()'s back, so its cache has to be told.
-        \cache_helper::invalidate_by_definition('core', 'config', [], 'format_dari');
+        jobstate::delete_course($courseid);
 
         $DB->delete_records('format_dari_cardstyle', ['courseid' => $courseid]);
         self::reset_cache();
     }
 
     /** @var string Target type used when storing a banner's prompt. */
-    public const TYPE_BANNER = 'banner';
+    public const TYPE_BANNER = jobstate::TYPE_BANNER;
 
     /**
      * Remember the prompt last sent to the image model for a card or banner.
@@ -700,11 +672,8 @@ class cardimage {
         if ($prompt === '') {
             return;
         }
-        set_config(
-            self::prompt_key($courseid, $type, $id),
-            json_encode(['prompt' => $prompt, 'source' => $source, 'time' => time()]),
-            'format_dari'
-        );
+        jobstate::save($courseid, $type, $id, ['prompt' => $prompt, 'promptsource' => \core_text::substr($source, 0, 20),
+            'prompttime' => time()]);
     }
 
     /**
@@ -716,24 +685,11 @@ class cardimage {
      * @return array{prompt: string, source: string, time: int}
      */
     public static function get_prompt(int $courseid, string $type, int $id): array {
-        $data = json_decode((string) get_config('format_dari', self::prompt_key($courseid, $type, $id)), true);
+        $row = jobstate::get($courseid, $type, $id);
         return [
-            'prompt' => is_array($data) ? (string) ($data['prompt'] ?? '') : '',
-            'source' => is_array($data) ? (string) ($data['source'] ?? '') : '',
-            'time' => is_array($data) ? (int) ($data['time'] ?? 0) : 0,
+            'prompt' => $row ? (string) ($row->prompt ?? '') : '',
+            'source' => $row ? (string) ($row->promptsource ?? '') : '',
+            'time' => $row ? (int) $row->prompttime : 0,
         ];
-    }
-
-    /**
-     * Config key for a stored prompt.
-     *
-     * @param int $courseid The course.
-     * @param string $type Target type.
-     * @param int $id Target id.
-     * @return string
-     */
-    protected static function prompt_key(int $courseid, string $type, int $id): string {
-        $letter = $type === self::TYPE_SECTION ? 's' : ($type === self::TYPE_CM ? 'c' : 'b');
-        return 'imgprompt_' . $courseid . '_' . $letter . $id;
     }
 }

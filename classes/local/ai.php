@@ -247,7 +247,7 @@ class ai {
             return imagelog::time(
                 'text_request',
                 fn() => direct::generate_text($prompt),
-                \core_text::strlen($prompt) . ' chars sent'
+                get_string('imagelog_msg_charssent', 'format_dari', \core_text::strlen($prompt))
             );
         }
 
@@ -265,7 +265,7 @@ class ai {
                 'text_request',
                 $response->get_success() ? 'ok' : 'fail',
                 $ms,
-                \core_text::strlen($prompt) . ' chars sent'
+                get_string('imagelog_msg_charssent', 'format_dari', \core_text::strlen($prompt))
             );
         }
 
@@ -328,8 +328,10 @@ class ai {
         $response = imagemodel::process($action);
         $ms = (int) round((microtime(true) - $start) * 1000);
         if (!$response->get_success()) {
-            imagelog::add('image_request', 'fail', $ms, 'HTTP ' . $response->get_errorcode() . ' '
-                . (method_exists($response, 'get_errormessage') ? (string) $response->get_errormessage() : ''));
+            imagelog::add('image_request', 'fail', $ms, get_string('imagelog_msg_httpfail', 'format_dari', (object) [
+                'code' => $response->get_errorcode(),
+                'message' => method_exists($response, 'get_errormessage') ? (string) $response->get_errormessage() : '',
+            ]));
             self::throw_failure($response, 'error_ai_imagefailed');
         }
         imagelog::add('image_request', 'ok', $ms, imagemodel::model());

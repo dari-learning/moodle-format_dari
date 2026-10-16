@@ -1,0 +1,45 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template format_dari/course_page
+    @copyright  2026 Dari Learning
+    @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+
+    The course page body below the banner: the section description on a section page, then the
+    section cards, the activity cards or core's course content.
+
+    Context variables required for this template:
+    * containerstyle string Custom properties for the container (card title size and course
+      accent), validated in format_dari::get_accent_style(); empty for none.
+    * hassummary bool True on a section page whose section has a visible description.
+    * summary string The description, already through format_text(); triple mustache.
+    * content string The rendered course content; triple mustache.
+
+    Example context (json):
+    {
+        "containerstyle": "--dari-card-title-size:14px;",
+        "hassummary": true,
+        "summary": "<p>What this section covers.</p>",
+        "content": "<ul class=\"dari-section-cards\"></ul>"
+    }
+}}
+<div class="format-dari-container"{{#containerstyle}} style="{{containerstyle}}"{{/containerstyle}}>
+    {{#hassummary}}
+    <div class="format-dari-section-summary">{{{summary}}}</div>
+    {{/hassummary}}
+    <div class="course-content">{{{content}}}</div>
+</div>

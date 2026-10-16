@@ -352,7 +352,7 @@ final class promptwriter_test extends \advanced_testcase {
             $this->assertFalse(get_config('format_dari', $name), $name);
         }
         $this->assertSame('0', get_config('format_dari', 'directimages'));
-        $this->assertEquals(2026100905, get_config('format_dari', 'version'));
+        $this->assertEquals(2026101600, get_config('format_dari', 'version'), 'Every later step runs too.');
         $this->assertFalse(get_config('format_dari', 'promptmode'), 'The 2.0.4 prompt choice is removed');
         $this->assertSame('google', get_config('format_dari', 'imageengine'));
         $this->assertTrue($dbman->table_exists('format_dari_imageplan'));

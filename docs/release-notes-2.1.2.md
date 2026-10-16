@@ -1,4 +1,4 @@
-**Dari Course Format 2.1.1**
+**Dari Course Format 2.1.2**
 
 Supports Moodle 4.4 to 5.3.
 
@@ -29,7 +29,9 @@ This release rebuilds how Dari creates AI images for course banners and section 
 
 **Quality**
 - Passes Moodle's strict plugin checks on Moodle 4.4, 4.5, 5.0 and 5.3: coding standards, PHPDoc, JavaScript and CSS lint, templates, upgrade steps, PHPUnit and Behat.
+- **Plugin review corrections (2.1.2).** Image job progress and stored prompts have their own database table instead of plugin settings, and the plugin no longer reads or writes Moodle's settings table directly. Every word on the settings page, in its previews, and in the image log comes from the language pack, so all of it can be translated. Page markup is rendered with Mustache templates, with no inline scripts. Every source file carries the standard licence header.
 
 **Upgrade notes**
 - Image plans made by earlier versions are cleared and planned again automatically.
+- Stored image prompts move to the new job table during the upgrade; nothing needs doing by hand.
 - Removed settings: image quality, image style, scene writer and prompt building. Dari now always uses the highest-quality option.

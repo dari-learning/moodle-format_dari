@@ -16,8 +16,7 @@
 /**
  * Behaviour of Ask Dari chat panel.
  *
- * This replaces the ~600 line inline <script> the format used to build by string concatenation in
- * PHP. Nothing here is generated server side: every server value arrives as the config object
+ * Nothing here is generated server side: every server value arrives as the config object
  * passed to init(), which Moodle JSON encodes for us, so no PHP value is ever interpolated into
  * JavaScript source. Every user visible string comes from core/str, and every piece of untrusted
  * text (what the learner typed, what the AI service answered, what was replayed out of

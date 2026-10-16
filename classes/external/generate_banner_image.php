@@ -160,12 +160,11 @@ class generate_banner_image extends external_api {
     }
 
     /**
-     * Record the state of a course's banner generation.
+     * Record the state of a course or section banner generation.
      *
-     * Stored in plugin config rather than a new table: it is one short string per course that is
-     * read a few times a minute while a teacher watches a spinner and is meaningless afterwards.
-     * A table would need an install step, an upgrade step, a backup decision and a privacy
-     * declaration for data with a lifetime of about two minutes.
+     * Each banner has its own row: a teacher working down a course starts several generations a
+     * few seconds apart, and a shared state would let the poll for one banner be answered with
+     * another's image.
      *
      * @param int $courseid The course being generated for.
      * @param string $state One of queued, running, done, failed.
@@ -174,55 +173,30 @@ class generate_banner_image extends external_api {
      * @return void
      */
     public static function set_status(int $courseid, string $state, string $detail, int $sectionid = 0): void {
-        set_config(
-            self::status_key($courseid, $sectionid),
-            json_encode(['state' => $state, 'detail' => $detail, 'time' => time()]),
-            'format_dari'
-        );
+        \format_dari\local\jobstate::save($courseid, \format_dari\local\jobstate::TYPE_BANNER, $sectionid, [
+            'state' => $state,
+            'detail' => $detail,
+            'stage' => $state,
+            'timequeued' => $state === 'queued' ? time() : 0,
+        ]);
     }
 
     /**
-     * Name of the config setting holding one generation's state.
-     *
-     * Section banners get their own key. Sharing the course's would mean two generations started
-     * a few seconds apart -- which is exactly how a teacher works through a course's sections --
-     * overwriting each other's state, so the browser polling for one would be told about the
-     * other and could apply the wrong image to the wrong section.
-     *
-     * The course banner's key is left in its original shape so a generation already queued when
-     * a site upgrades is still found by the poll that follows it.
-     *
-     * @param int $courseid The course.
-     * @param int $sectionid course_sections.id, or 0 for the course banner.
-     * @return string
-     */
-    protected static function status_key(int $courseid, int $sectionid): string {
-        if ($sectionid > 0) {
-            return 'bannerstatus_' . $courseid . '_s' . $sectionid;
-        }
-        return 'bannerstatus_' . $courseid;
-    }
-
-    /**
-     * Read back the state of a course's banner generation.
+     * Read back the state of a course or section banner generation.
      *
      * @param int $courseid The course to report on.
      * @param int $sectionid course_sections.id for a section banner, 0 for the course banner.
      * @return array{state: string, detail: string, time: int}
      */
     public static function get_status(int $courseid, int $sectionid = 0): array {
-        $raw = get_config('format_dari', self::status_key($courseid, $sectionid));
-        if ($raw === false || $raw === '') {
-            return ['state' => 'idle', 'detail' => '', 'time' => 0];
-        }
-        $decoded = json_decode($raw, true);
-        if (!is_array($decoded) || !isset($decoded['state'])) {
+        $row = \format_dari\local\jobstate::get($courseid, \format_dari\local\jobstate::TYPE_BANNER, $sectionid);
+        if (!$row || (string) $row->state === 'idle') {
             return ['state' => 'idle', 'detail' => '', 'time' => 0];
         }
         return [
-            'state' => (string) $decoded['state'],
-            'detail' => (string) ($decoded['detail'] ?? ''),
-            'time' => (int) ($decoded['time'] ?? 0),
+            'state' => (string) $row->state,
+            'detail' => (string) ($row->detail ?? ''),
+            'time' => (int) $row->timemodified,
         ];
     }
 

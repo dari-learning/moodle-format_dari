@@ -26,12 +26,9 @@ use stdClass;
 /**
  * Ask Dari chat panel.
  *
- * PHASE 2: the markup lives in templates/chatbox.mustache and the behaviour in
- * amd/src/chatbox.js. {@see self::script()} no longer emits a <script> block; it queues the AMD
- * module with a config object, which Moodle JSON-encodes for us. Nothing this class produces is
- * interpolated into JavaScript source any more, so the whole injection surface that the old
- * inline script had is gone, and the panel works under a Content-Security-Policy that forbids
- * inline script.
+ * The markup lives in templates/chatbox.mustache and the behaviour in amd/src/chatbox.js.
+ * {@see self::init_js()} queues the AMD module with a config object, which Moodle JSON-encodes,
+ * so nothing this class produces is interpolated into JavaScript source.
  *
  * @package    format_dari
  * @copyright  2026 Dari Learning
@@ -183,18 +180,16 @@ class chatbox implements named_templatable, renderable {
      * The method is safe to call more than once per request (format.php and the
      * before_footer_html_generation hook both call it); the module's init() is idempotent.
      *
-     * @return string Always '', kept so callers that echo the return value keep working.
+     * @return void
      */
-    public function script(): string {
+    public function init_js(): void {
         global $PAGE;
 
         if (!permissions::is_tutor_enabled(\context_course::instance($this->get_course()->id))) {
-            return '';
+            return;
         }
 
         $PAGE->requires->js_call_amd('format_dari/chatbox', 'init', [$this->get_js_config()]);
-
-        return '';
     }
 
     /**

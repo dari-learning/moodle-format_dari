@@ -1,9 +1,24 @@
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * Dari course format - Enhanced Course Navigation
  * Adds keyboard navigation, current activity highlighting, and icon picker
  *
  * @module     format_dari/courseformat
- * @copyright  2025 Essay Grader AI
+ * @copyright  2026 Dari Learning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 define(['jquery', 'core/str', 'core/ajax', 'core/notification', 'format_dari/aipolicy'],
@@ -40,68 +55,9 @@ function($, Str, Ajax, Notification, AiPolicy) {
     // the lang string's {$a} still has a value.
     var BANNER_CREDIT_COST = 0;
 
-    // Note: every user-visible literal now comes from core/str. The values here
-    // are last-resort fallbacks only - they are overwritten by loadStrings() before any of the
-    // UI that uses them is built. Keys marked "existing" already live in the plugin lang file.
-    var STR = {
-        addicon: 'Add icon', // Existing
-        changeicon: 'Change icon', // Existing
-        iconsaved: 'Icon saved', // Existing
-        iconsaveerror: 'Error saving icon', // Existing
-        removeicon: 'Remove icon', // Existing
-        selecticon: 'Select icon', // Existing
-        searchicons: 'Search icons', // Existing
-        addsection: 'Add section', // Existing
-        completed: 'Completed', // Existing
-        markasdone: 'Mark as done', // Existing (completionrequirement_manual)
-        deletesection: 'Delete section', // Existing
-        deletesectionconfirm: 'Are you sure you want to delete this section?', // Existing
-        cancel: 'Cancel', // Core
-        deletelabel: 'Delete', // Core
-        close: 'Close', // Core (closebuttontitle)
-        jsDone: 'Done',
-        jsCompletionerror: 'Failed to update completion status',
-        jsSectionduplicated: 'Section duplicated successfully',
-        jsSectionduplicateerror: 'Failed to duplicate section',
-        jsSectionadded: 'Section added',
-        jsSectionadderror: 'Failed to add section',
-        jsSectiondeleted: 'Section deleted successfully',
-        jsSectiondeleteerror: 'Failed to delete section',
-        jsIconremoved: 'Icon removed',
-        bannergenTitle: 'Generate AI banner',
-        bannergenSubtitle: 'AI image generation',
-        bannergenDesc: 'AI reads your course name and generates a professional, photorealistic ' +
-            'full-width banner image tailored to your course subject. The image is automatically ' +
-            'cropped and optimised for your course header, then saved directly to your course.',
-        bannergenExtralabel: 'Add your own detail (optional)',
-        bannergenExtraph: 'e.g. warm evening light, a laboratory bench, muted blues, no people',
-        bannergenExtrahint: 'Anything you type here is added to the image prompt alongside the ' +
-            'course name. Leave it empty for the standard banner.',
-        bannergenCost: 'Your site\'s AI provider',
-        bannergenCostdetail: 'Generated with your school\'s own AI connection',
-        aipolicydeclined: 'You need to accept the AI usage policy before using AI features.',
-        ainotreadytitle: 'AI images are not set up yet',
-        promptused: 'Prompt used last time',
-        promptusedai: 'Written by the AI art director.',
-        promptusedtemplate: 'Built from Dari\'s template (the AI art director was off or unavailable).',
-        bannergenGenerate: 'Generate banner',
-        bannergenLoadingtitle: 'Generating your banner',
-        bannergenLoadingsub: 'AI is crafting a photorealistic banner for your course. ' +
-            'This usually takes one to two minutes - please leave this window open.',
-        bannergenPreviewalt: 'Generated course banner',
-        bannergenApplied: 'Banner applied to your course',
-        bannergenSuccess: 'Your AI banner has been saved to the course.',
-        bannergenFailedtitle: 'Generation failed',
-        bannergenFailed: 'Generation failed. Please try again.',
-        bannergenRetry: 'Try again',
-        bannerdelTitle: 'Remove banner image?',
-        bannerdelDesc: 'The banner image will be permanently removed from this course. ' +
-            'You can generate or upload a new one at any time.',
-        bannerdelConfirm: 'Remove image',
-        bannerdelRemoving: 'Removing',
-        bannerdelError: 'Failed to remove banner. Please try again.',
-        bannerdelRemoved: 'Banner image removed'
-    };
+    // Every user-visible string comes from core/str (STRING_MAP below), loaded by loadStrings()
+    // before any of the UI that uses them is built.
+    var STR = {};
 
     // [local key, string request] - order is preserved by Str.get_strings().
     var STRING_MAP = [
@@ -158,6 +114,9 @@ function($, Str, Ajax, Notification, AiPolicy) {
         ['bannerdelError', {key: 'bannerdel_error', component: 'format_dari'}],
         ['bannerdelRemoved', {key: 'bannerdel_removed', component: 'format_dari'}]
     ];
+    STRING_MAP.forEach(function(entry) {
+        STR[entry[0]] = '';
+    });
 
     /**
      * Fetch every string this module can display. Resolves even when the request fails,

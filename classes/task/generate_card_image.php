@@ -79,7 +79,7 @@ class generate_card_image extends \core\task\adhoc_task {
                 'superseded',
                 'info',
                 0,
-                'A newer request replaced this job before it started.',
+                get_string('imagelog_msg_superseded_start', 'format_dari'),
                 $courseid,
                 $key,
                 $requestid
@@ -95,7 +95,7 @@ class generate_card_image extends \core\task\adhoc_task {
             'started',
             'ok',
             $queued > 0 ? max(0, time() - $queued) * 1000 : 0,
-            'Time waiting for Moodle\'s task runner (cron) before starting.'
+            get_string('imagelog_msg_cronwait', 'format_dari')
         );
         $start = microtime(true);
         cardimage::set_stage($courseid, $type, $id, $requestid, 'planning');
@@ -124,9 +124,12 @@ class generate_card_image extends \core\task\adhoc_task {
                 'done',
                 'ok',
                 (int) round((microtime(true) - $start) * 1000),
-                'Prompt source: ' . \format_dari\local\ai::$lastprompt['source']
-                . (\format_dari\local\ai::$lastprompt['reason'] !== ''
-                    ? ' (' . \format_dari\local\ai::$lastprompt['reason'] . ')' : '')
+                \format_dari\local\ai::$lastprompt['reason'] !== ''
+                    ? get_string('imagelog_msg_promptsourcereason', 'format_dari', (object) [
+                        'source' => \format_dari\local\ai::$lastprompt['source'],
+                        'reason' => \format_dari\local\ai::$lastprompt['reason'],
+                    ])
+                    : get_string('imagelog_msg_promptsource', 'format_dari', \format_dari\local\ai::$lastprompt['source'])
             );
         } catch (\format_dari\local\planning_busy_exception $e) {
             // Another worker is planning this course. Nothing was requested yet, so try again shortly
@@ -142,7 +145,7 @@ class generate_card_image extends \core\task\adhoc_task {
                 'requeued',
                 'info',
                 0,
-                'The course plan is being written by another worker; retry in 30 s.'
+                get_string('imagelog_msg_requeued', 'format_dari')
             );
         } catch (\Throwable $e) {
             if (cardimage::is_current($courseid, $type, $id, $requestid)) {
