@@ -1,0 +1,40 @@
+{
+  "component": "format_dari",
+  "release": "2.1.1",
+  "version_code": 2026100907,
+  "status": "prepared_for_review_not_created",
+  "github_release": {
+    "tag_name": "v2.1.1",
+    "target_commitish": "d0914e4f2d36c1f2a4601c7c738bb54bd8210809",
+    "name": "Dari Course Format 2.1.1 — draft",
+    "body": "Dari Course Format 2.1.1 (format_dari), version code 2026100907. Minimum Moodle 4.4 (2024042200); package-declared range 4.4–5.3.\n\nThe supplied 246-file dari/ package matches source commit d0914e4f2d36c1f2a4601c7c738bb54bd8210809 byte for byte. Original ZIP SHA-256: 590266c9bdda8959c8afe6cb0d6749242d50f371992ca02bf4bf6256bf430f44.\n\nSince 2.1.0: strict CI corrections, offline testing of the Moodle 4.4 direct AI path, version-aware AI tests and regenerated AMD builds. See the changelog at the target commit for the complete release history.\n\nStrict CI passed for Moodle 4.4, 4.5, 5.0 and 5.3, PHP 8.3, PostgreSQL/MariaDB: https://github.com/dari-learning/moodle-format_dari/actions/runs/37791987994\n\nThis is historical 2.1.1 metadata; main already contains 2.1.2. Installation ZIP attachment remains unverified. Not Marketplace approval or independent security certification. Publishing, tagging and Marketplace submission require maintainer approval. Public acquisition is only through the approved Marketplace listing when available.",
+    "draft": true,
+    "prerelease": false,
+    "make_latest": "false"
+  },
+  "package": {
+    "filename": "format_dari_2.1.1_1791471516162.zip",
+    "root": "dari/",
+    "file_count": 246,
+    "uncompressed_bytes": 4379061,
+    "sha256": "590266c9bdda8959c8afe6cb0d6749242d50f371992ca02bf4bf6256bf430f44",
+    "asset_uploaded": false
+  },
+  "ci": {
+    "commit": "d0914e4f2d36c1f2a4601c7c738bb54bd8210809",
+    "run_url": "https://github.com/dari-learning/moodle-format_dari/actions/runs/37791987994",
+    "result": "success",
+    "moodle_branches": [
+      "MOODLE_404_STABLE",
+      "MOODLE_405_STABLE",
+      "MOODLE_500_STABLE",
+      "MOODLE_503_STABLE"
+    ]
+  },
+  "approval": {
+    "publish_release": false,
+    "create_or_replace_tags": false,
+    "submit_to_marketplace": false,
+    "approved_marketplace_listing_url": null
+  }
+}
