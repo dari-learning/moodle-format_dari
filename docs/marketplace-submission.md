@@ -9,7 +9,7 @@
 | Plugin type | Course format |
 | Frankenstyle component | `format_dari` |
 | Version | `2.1.2` |
-| Version code | `2026100907` |
+| Version code | `2026101600` |
 | Repository | https://github.com/dari-learning/moodle-format_dari |
 | Bug tracker | https://github.com/dari-learning/moodle-format_dari/issues |
 | Documentation | https://darilearning.com/docs |
