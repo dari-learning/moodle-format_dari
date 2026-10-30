@@ -13470,9 +13470,17 @@ body.format-dari .drf-tools__btn--remove:hover {
     background: rgba(180, 35, 24, .08);
 }
 
-/* Keep the panel title clear of the tools while editing. */
+/* Keep the panel title clear of the tools while editing. The title keeps the full width and
+   sits above the tool bar: reserving the tools' width beside it left narrow cards a column too
+   thin for an ordinary word. */
+body.format-dari .drf-media:has(.drf-tools):not(.drf-media--image) .drf-media__panel {
+    gap: 6px;
+    padding-block-end: 60px;
+}
+
 body.format-dari .drf-media:has(.drf-tools):not(.drf-media--image) .drf-media__title {
-    padding-inline-end: 150px;
+    font-size: 1.125rem;
+    -webkit-line-clamp: 2;
 }
 
 body.format-dari .drf-media__busy {
@@ -17044,4 +17052,19 @@ body.format-dari .drf-cmimage-btn:focus-visible {
 
 .format-dari-imageplan-prompt {
     white-space: pre-wrap;
+}
+
+/* Card titles always wrap inside the card. A long unbroken word (a unit code, a URL, a name
+   typed without spaces) breaks rather than running past the edge, and the title's flex and
+   grid ancestors are allowed to shrink below its longest word. */
+body.format-dari :is(.drf-card__title, .drf-media__title) {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    hyphens: auto;
+}
+
+body.format-dari :is(.drf-card, .drf-card__link, .drf-card__body, .drf-media__panel) {
+    min-inline-size: 0;
 }

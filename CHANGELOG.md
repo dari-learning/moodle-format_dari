@@ -1,5 +1,18 @@
 # Release record
 
+## 2.1.3
+
+- Version code: `2026103000`
+
+Changes since 2.1.2:
+
+- **Card titles wrap inside the card.** Section and activity card titles, on the colour panel and
+  under an image, break long words (unit codes, names typed without spaces) instead of running
+  past the card edge, and their flex containers may shrink below the longest word.
+- **Edit mode:** the panel title keeps the card's full width and sits above the image tools,
+  instead of being squeezed into the space beside them, which split ordinary words on narrow
+  cards.
+
 ## 2.1.2
 
 - Version code: `2026101600`

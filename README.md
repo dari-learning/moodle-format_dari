@@ -1,6 +1,6 @@
 # Dari course format (format_dari)
 
-**Version 2.1.2** (`2026101600`) · Moodle™ 4.4 to 5.3 · [Documentation](https://darilearning.com/docs) · [Report a bug](https://github.com/dari-learning/moodle-format_dari/issues) · [Changes](CHANGELOG.md)
+**Version 2.1.3** (`2026103000`) · Moodle™ 4.4 to 5.3 · [Documentation](https://darilearning.com/docs) · [Report a bug](https://github.com/dari-learning/moodle-format_dari/issues) · [Changes](CHANGELOG.md)
 
 Dari is a course format for Moodle™. It turns a course into a clear, visual learning experience. It also adds **Ask Dari**, a course-aware AI study assistant, and **AI-generated course images**. Both run on **your school's own AI provider**:
 

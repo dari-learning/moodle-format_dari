@@ -1,4 +1,4 @@
-**Dari Course Format 2.1.2**
+**Dari Course Format 2.1.3**
 
 Supports Moodle 4.4 to 5.3.
 
@@ -10,6 +10,9 @@ This release rebuilds how Dari creates AI images for course banners and section 
 - **Cards differ from each other.** Dari compares setting, framing, people and lighting across the course, so you don't get a row of near-identical images.
 - **Charts, tables and documents are allowed where they suit the topic.** Captions, logos and watermarks are still kept out.
 - **One image model, no silent fallbacks.** Google Nano Banana 2.1 is the default; GPT Image 2.5 Sunburst is the alternative. Dari uses only the model you choose, with no fallback to other providers.
+
+**Card titles**
+- **Titles always wrap inside the card.** A long title, or a long word with no spaces such as a unit code, now wraps onto the next line instead of running past the edge of a section or activity card. In edit mode the title sits above the image tools and uses the card's full width.
 
 **More control for teachers**
 - **Same idea again, or a new idea.** When you regenerate a card that already has an image, you can choose to retry the same idea or get a new one. A failed image never changes the idea on its own.
@@ -29,7 +32,7 @@ This release rebuilds how Dari creates AI images for course banners and section 
 
 **Quality**
 - Passes Moodle's strict plugin checks on Moodle 4.4, 4.5, 5.0 and 5.3: coding standards, PHPDoc, JavaScript and CSS lint, templates, upgrade steps, PHPUnit and Behat.
-- **Plugin review corrections (2.1.2).** Image job progress and stored prompts have their own database table instead of plugin settings, and the plugin no longer reads or writes Moodle's settings table directly. Every word on the settings page, in its previews, and in the image log comes from the language pack, so all of it can be translated. Page markup is rendered with Mustache templates, with no inline scripts. Every source file carries the standard licence header.
+- **Plugin review corrections.** Image job progress and stored prompts have their own database table instead of plugin settings, and the plugin no longer reads or writes Moodle's settings table directly. Every word on the settings page, in its previews, and in the image log comes from the language pack, so all of it can be translated. Page markup is rendered with Mustache templates, with no inline scripts. Every source file carries the standard licence header.
 
 **Upgrade notes**
 - Image plans made by earlier versions are cleared and planned again automatically.
